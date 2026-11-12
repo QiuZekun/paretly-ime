@@ -95,8 +95,11 @@ jobs:
           dmg="$(find dist -type f -name 'Paretly-unsigned.dmg' -print -quit)"
           test -n "${dmg}"
           ls -lh "${dmg}"
+          # Published next to the disk image so the app can verify the download.
+          sha256sum "${dmg}" > "${dmg}.sha256"
           gh release create "${GITHUB_REF_NAME}" \
             "${dmg}" \
+            "${dmg}.sha256" \
             --title "${GITHUB_REF_NAME}" \
             --generate-notes \
             --verify-tag

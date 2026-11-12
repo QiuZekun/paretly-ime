@@ -42,6 +42,11 @@ final class ParetlySettingsModel: ObservableObject {
   @Published var statusKind: ThemeStatusKind = .neutral
   @Published var banner: String?
   @Published var applying = false
+  @Published var automaticUpdateChecks = ParetlyUpdatePreferences.shared.automatic {
+    didSet {
+      ParetlyUpdatePreferences.shared.automatic = automaticUpdateChecks
+    }
+  }
 
   var onPreviewDarkChange: ((Bool) -> Void)?
 
