@@ -71,6 +71,94 @@ final class ParetlyReleaseTests: XCTestCase {
     XCTAssertEqual(newest?.version.display, "1.0.0")
   }
 
+  func testNoReleaseNewerReleaseAndSameVersion() {
+    let current = ParetlyVersion.parse("0.1.0")!
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.outcome(fetch: .catalog([]), current: current, skipped: nil, manual: true),
+      .nothingPublished(version: "0.1.0")
+    )
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.outcome(fetch: .noPublishedRelease, current: current, skipped: nil, manual: true),
+      .nothingPublished(version: "0.1.0")
+    )
+    let same = sampleRelease("0.1.0")
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.outcome(fetch: .catalog([same]), current: current, skipped: nil, manual: true),
+      .upToDate(version: "0.1.0")
+    )
+    let newer = sampleRelease("0.2.0")
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.outcome(fetch: .catalog([newer]), current: current, skipped: nil, manual: true),
+      .offer(newer)
+    )
+    let older = sampleRelease("0.0.9")
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.outcome(fetch: .catalog([older]), current: current, skipped: nil, manual: true),
+      .upToDate(version: "0.1.0")
+    )
+  }
+
+  func testNotFoundIsNotAFailure() throws {
+    let body = #"{"message":"Not Found","documentation_url":"https://docs.github.com"}"#.data(using: .utf8)!
+    let current = ParetlyVersion.parse("0.1.0")!
+    let statuses: [Int?] = [404, nil]
+    for status in statuses {
+      let fetch = ParetlyReleaseCatalog.interpret(statusCode: status, data: body, transportError: nil)
+      XCTAssertEqual(fetch, .noPublishedRelease)
+      XCTAssertEqual(
+        ParetlyReleaseCatalog.outcome(fetch: fetch, current: current, skipped: nil, manual: true),
+        .nothingPublished(version: "0.1.0")
+      )
+    }
+    let empty = "[]".data(using: .utf8)!
+    let listed = ParetlyReleaseCatalog.interpret(statusCode: 200, data: empty, transportError: nil)
+    XCTAssertEqual(listed, .catalog([]))
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.outcome(fetch: listed, current: current, skipped: nil, manual: true),
+      .nothingPublished(version: "0.1.0")
+    )
+  }
+
+  func testDraftsAndPrereleasesCountAsNothingPublished() throws {
+    let data = """
+    [
+      {"tag_name":"v9.0.0","draft":true,"prerelease":false,"assets":[{"name":"Paretly-unsigned.dmg","size":1,"browser_download_url":"https://example.com/d.dmg"}]},
+      {"tag_name":"v8.0.0","draft":false,"prerelease":true,"assets":[{"name":"Paretly-unsigned.dmg","size":1,"browser_download_url":"https://example.com/p.dmg"}]}
+    ]
+    """.data(using: .utf8)!
+    let fetch = ParetlyReleaseCatalog.interpret(statusCode: 200, data: data, transportError: nil)
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.outcome(
+        fetch: fetch,
+        current: ParetlyVersion.parse("0.1.0"),
+        skipped: nil,
+        manual: true
+      ),
+      .nothingPublished(version: "0.1.0")
+    )
+  }
+
+  func testHttpAndTransportFailuresKeepTheReason() {
+    let limited = #"{"message":"API rate limit exceeded"}"#.data(using: .utf8)!
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.interpret(statusCode: 403, data: limited, transportError: nil),
+      .failed(.http(status: 403, message: "API rate limit exceeded"))
+    )
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.interpret(statusCode: 500, data: Data(), transportError: nil),
+      .failed(.http(status: 500, message: ""))
+    )
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.interpret(statusCode: 200, data: #"{"message":"nope"}"#.data(using: .utf8), transportError: nil),
+      .failed(.unreadable)
+    )
+    let offline = "The Internet connection appears to be offline."
+    XCTAssertEqual(
+      ParetlyReleaseCatalog.interpret(statusCode: nil, data: nil, transportError: offline),
+      .failed(.transport(offline))
+    )
+  }
+
   func testManualCheckStillOffersASkippedVersion() {
     let current = ParetlyVersion.parse("0.1.0")!
     let release = sampleRelease("1.2.0")

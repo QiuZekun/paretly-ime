@@ -68,6 +68,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
   }
 
   func checkManually() {
+    activateForAlert()
     fetchReleases(manual: true)
   }
 
@@ -81,73 +82,87 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     request.setValue("Paretly", forHTTPHeaderField: "User-Agent")
     request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
     request.timeoutInterval = 30
-    let task = URLSession.shared.dataTask(with: request) { data, _, error in
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+      let status = (response as? HTTPURLResponse)?.statusCode
       DispatchQueue.main.async {
-        self.handleList(data: data, error: error, manual: manual)
+        self.handleList(data: data, status: status, error: error, manual: manual)
       }
     }
     task.resume()
   }
 
-  private func handleList(data: Data?, error: Error?, manual: Bool) {
-    if error != nil || data == nil {
+  private func handleList(data: Data?, status: Int?, error: Error?, manual: Bool) {
+    let fetch = ParetlyReleaseCatalog.interpret(
+      statusCode: status,
+      data: data,
+      transportError: error?.localizedDescription
+    )
+    let outcome = ParetlyReleaseCatalog.outcome(
+      fetch: fetch,
+      current: currentVersion(),
+      skipped: ParetlyUpdatePreferences.shared.skippedVersion.flatMap(ParetlyVersion.parse),
+      manual: manual
+    )
+    switch outcome {
+    case .failed(let failure):
       if manual {
         inform(
           title: NSLocalizedString("Could not check for updates.", comment: "Update"),
-          detail: NSLocalizedString("Paretly could not reach GitHub. Check the network and try again.", comment: "Update")
+          detail: failureDetail(failure)
         )
       }
-      return
-    }
-    guard let data else {
-      return
-    }
-    let releases: [ParetlyRelease]
-    do {
-      releases = try ParetlyReleaseCatalog.releases(from: data)
-    } catch {
-      if manual {
-        inform(
-          title: NSLocalizedString("Could not check for updates.", comment: "Update"),
-          detail: NSLocalizedString("GitHub returned a response Paretly could not read.", comment: "Update")
-        )
-      }
-      return
-    }
-    ParetlyUpdatePreferences.shared.lastCheck = Date()
-    guard let current = currentVersion() else {
+    case .missingVersion:
       if manual {
         inform(
           title: NSLocalizedString("Could not check for updates.", comment: "Update"),
           detail: NSLocalizedString("This copy of Paretly has no version number.", comment: "Update")
         )
       }
-      return
-    }
-    let skipped = ParetlyUpdatePreferences.shared.skippedVersion.flatMap(ParetlyVersion.parse)
-    let decision = ParetlyReleaseCatalog.decide(
-      current: current,
-      newest: ParetlyReleaseCatalog.newestStable(in: releases),
-      skipped: skipped,
-      manual: manual
-    )
-    switch decision {
-    case .available(let release):
-      offer(release, current: current)
-    case .upToDate:
+    case .nothingPublished(let version):
+      ParetlyUpdatePreferences.shared.lastCheck = Date()
+      if manual {
+        inform(
+          title: NSLocalizedString("You're up to date", comment: "Update"),
+          detail: String(
+            format: NSLocalizedString("No newer version has been published yet (current version %@).", comment: "Update"),
+            version
+          ),
+          informational: true
+        )
+      }
+    case .upToDate(let version):
+      ParetlyUpdatePreferences.shared.lastCheck = Date()
       if manual {
         inform(
           title: NSLocalizedString("Paretly is up to date.", comment: "Update"),
-          detail: String(format: NSLocalizedString("You have version %@.", comment: "Update"), current.display)
+          detail: String(format: NSLocalizedString("You have version %@.", comment: "Update"), version),
+          informational: true
         )
       }
-    case .noRelease:
-      if manual {
-        inform(
-          title: NSLocalizedString("Could not check for updates.", comment: "Update"),
-          detail: NSLocalizedString("No stable GitHub release with a disk image was found.", comment: "Update")
-        )
+    case .offer(let release):
+      ParetlyUpdatePreferences.shared.lastCheck = Date()
+      guard let current = currentVersion() else {
+        restoreIfIdle()
+        return
       }
+      offer(release, current: current)
+    }
+  }
+
+  private func failureDetail(_ failure: ParetlyReleaseFailure) -> String {
+    switch failure {
+    case .transport(let reason):
+      if reason.isEmpty {
+        return NSLocalizedString("Paretly could not reach GitHub. Check the network and try again.", comment: "Update")
+      }
+      return reason
+    case .http(let status, let message):
+      if message.isEmpty {
+        return String(format: NSLocalizedString("GitHub returned HTTP %d.", comment: "Update"), status)
+      }
+      return String(format: NSLocalizedString("GitHub returned HTTP %d. %@", comment: "Update"), status, message)
+    case .unreadable:
+      return NSLocalizedString("GitHub returned a response Paretly could not read.", comment: "Update")
     }
   }
 
@@ -169,8 +184,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     alert.addButton(withTitle: NSLocalizedString("Download & Install", comment: "Update"))
     alert.addButton(withTitle: NSLocalizedString("Later", comment: "Update"))
     alert.addButton(withTitle: NSLocalizedString("Skip this version", comment: "Update"))
-    bringForward()
-    switch alert.runModal() {
+    switch present(alert) {
     case .alertFirstButtonReturn:
       download(release)
     case .alertThirdButtonReturn:
@@ -358,17 +372,25 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     progressLabel = nil
   }
 
-  private func inform(title: String, detail: String) {
+  private func inform(title: String, detail: String, informational: Bool = false) {
     let alert = NSAlert()
+    alert.alertStyle = informational ? .informational : .warning
     alert.messageText = title
     alert.informativeText = detail
     alert.addButton(withTitle: NSLocalizedString("OK", comment: "Update"))
-    bringForward()
-    alert.runModal()
+    _ = present(alert)
     restoreIfIdle()
   }
 
-  private func bringForward() {
+  @discardableResult
+  private func present(_ alert: NSAlert) -> NSApplication.ModalResponse {
+    activateForAlert()
+    alert.window.level = .floating
+    alert.window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    return alert.runModal()
+  }
+
+  private func activateForAlert() {
     let settingsVisible = ParetlySettingsController.shared.window?.isVisible == true
     if !settingsVisible {
       NSApp.setActivationPolicy(.regular)

@@ -58,6 +58,10 @@ if [[ "${archs}" == *"arm64"* && "${archs}" == *"x86_64"* ]]; then
   echo "${info}" | grep -q "x86_64"
 fi
 
+# Xcode may rewrite the input method's AppIcon.icns from the asset catalog.
+# Copy the generated icns again so the shipped bundle and the Launchpad app
+# both use the file whose OSTypes match the PNG sizes.
+cp "${root}/resources/AppIcon.icns" "${app}/Contents/Resources/AppIcon.icns"
 cp "${root}/resources/AppIcon.icns" "${dest}/Contents/Resources/AppIcon.icns"
 for lang in en zh-Hans zh-Hant; do
   mkdir -p "${dest}/Contents/Resources/${lang}.lproj"
@@ -122,3 +126,4 @@ mkdir -p "${app}/Contents/Resources"
 tar -cf "${app}/Contents/Resources/ParetlyLauncher.tar" -C "${stage}" Paretly.app
 test -f "${app}/Contents/Resources/ParetlyLauncher.tar"
 echo "Packed Launchpad app into ${app}/Contents/Resources/ParetlyLauncher.tar"
+python3 "${root}/tools/inspect-icns.py" "${app}"

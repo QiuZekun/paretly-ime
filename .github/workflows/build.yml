@@ -65,6 +65,13 @@ jobs:
             test "${bundle}" = "0.1.0"
           fi
 
+      # iconutil expands AppIcon.icns and sips prints each PNG's pixel size.
+      # ic14 must be 512x512 (256 pt @2x). A 16px image in that slot is what
+      # made Launchpad show a blurred icon.
+      - name: Check app icon sizes
+        shell: bash
+        run: python3 tools/inspect-icns.py "build/Build/Products/Release/Paretly.app"
+
       - name: Upload unsigned disk image
         uses: actions/upload-artifact@v4
         with:

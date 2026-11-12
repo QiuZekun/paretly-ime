@@ -86,6 +86,74 @@
         }
       }
     },
+    "GitHub returned HTTP %d." : {
+      "comment" : "Update",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 返回了 HTTP %d。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 傳回了 HTTP %d。"
+          }
+        }
+      }
+    },
+    "GitHub returned HTTP %d. %@" : {
+      "comment" : "Update",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 返回了 HTTP %d。%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 傳回了 HTTP %d。%@"
+          }
+        }
+      }
+    },
+    "You're up to date" : {
+      "comment" : "Update",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前已是最新版本"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前已是最新版本"
+          }
+        }
+      }
+    },
+    "No newer version has been published yet (current version %@)." : {
+      "comment" : "Update",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前还没有发布新版本（当前版本 %@）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前還沒有發布新版本（目前版本 %@）。"
+          }
+        }
+      }
+    },
     "Paretly could not reach GitHub. Check the network and try again." : {
       "comment" : "Update",
       "localizations" : {
@@ -167,23 +235,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "目前版本是 %@。"
-          }
-        }
-      }
-    },
-    "No stable GitHub release with a disk image was found." : {
-      "comment" : "Update",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "没有找到带磁盘镜像的正式 GitHub Release。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "沒有找到帶磁碟映像的正式 GitHub Release。"
           }
         }
       }
