@@ -157,6 +157,9 @@ struct SquirrelApp {
           NSApp.squirrelAppDelegate.openSettings()
         }
       }
+      DispatchQueue.main.async {
+        ParetlyUpdatePresenter.shared.checkAutomaticallyIfDue()
+      }
 
       // finally run everything
       app.run()

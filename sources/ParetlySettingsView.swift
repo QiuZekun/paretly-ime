@@ -50,6 +50,7 @@ struct ParetlySettingsView: View {
       VStack(spacing: 0) {
         header(palette)
         Divider().overlay(palette.line)
+        updateRow(palette)
         if let banner = model.banner {
           Text(banner)
             .font(.system(size: 13))
@@ -117,6 +118,25 @@ struct ParetlySettingsView: View {
     .padding(.horizontal, 20)
     .padding(.top, 16)
     .padding(.bottom, 10)
+  }
+
+  private func updateRow(_ palette: SettingsChrome) -> some View {
+    HStack(spacing: 12) {
+      Toggle(isOn: $model.automaticUpdateChecks) {
+        Text(settingsText("Check for updates automatically"))
+          .font(.system(size: 13))
+      }
+      .toggleStyle(.checkbox)
+      Spacer(minLength: 8)
+      Button(action: { ParetlyUpdatePresenter.shared.checkManually() }) {
+        Text(settingsText("Check for Updates…"))
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundStyle(palette.accent)
+      }
+      .buttonStyle(.plain)
+    }
+    .padding(.horizontal, 20)
+    .padding(.vertical, 8)
   }
 
   private func previewSwitch(_ palette: SettingsChrome) -> some View {

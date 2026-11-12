@@ -151,11 +151,19 @@ python3 resources/icons/generate.py
 
 在要发布的提交上推送标签 `v*`。标签必须是 `v` 加上由点分开的两到四段数字，例如 `v0.1.0`。`v0.1.0-rc1` 这种不会通过版本检查。
 
-GitHub Actions 会沿用原来的 macOS 任务打未签名的 `Paretly-unsigned.dmg`。构建前把标签去掉前缀 `v`，设成 `CFBundleShortVersionString`（同时写入 `CFBundleVersion` 和 pkg 版本）。然后用 `GITHUB_TOKEN`（`contents: write`）建一个 GitHub Release，附上这个 dmg，说明由 GitHub 自动生成。
+GitHub Actions 会沿用原来的 macOS 任务打未签名的 `Paretly-unsigned.dmg`。构建前把标签去掉前缀 `v`，设成 `CFBundleShortVersionString`（同时写入 `CFBundleVersion` 和 pkg 版本）。然后用 `GITHUB_TOKEN`（`contents: write`）建一个 GitHub Release，附上这个 dmg 和 `Paretly-unsigned.dmg.sha256`（`sha256sum` 的结果），说明由 GitHub 自动生成。
 
 第一个发布用的标签是 `v0.1.0`，对应 `CHANGELOG.md` 里的同名条目。推送这个标签才会真正发出 Release。不要用 `package/bump_version`：那是鼠须管留下的本地脚本，会自己提交并打标签。
 
 `main` 和 pull request 上的构建不发布，版本号保持工程里的 `0.1.0`。
+
+## 检查更新
+
+输入法菜单和设置窗口（启动台里的 Paretly 打开的就是这个窗口）都有 **检查更新…**。Paretly 读取 GitHub Releases 里 `QiuZekun/paretly-ime` 的最新正式版本（跳过草稿和预发布），用标签 `vX.Y.Z` 和本机的 `CFBundleShortVersionString` 比较。
+
+有新版本时弹出说明，可以选择 **下载并安装**、**以后再说** 或 **跳过此版本**。下载写到 `~/Downloads/Paretly-unsigned.dmg`，核对文件大小；Release 里如果有 `.sha256` 文件，再核对 SHA-256。然后在访达里打开磁盘镜像。安装包没有签名，所以不会悄悄替换正在运行的程序。如果系统拦截，按对话框里的说明到隐私与安全性里打开。
+
+已经是最新版本时会说明。网络失败只在你手动检查时提示。输入法启动时最多每天自动检查一次，设置里的开关默认是开的。这里不用 Sparkle：未签名的安装包没法走 Sparkle 的 EdDSA 签名安装。
 
 ## 许可与致谢
 
@@ -317,11 +325,17 @@ An alias to the input method would not show up in Launchpad: the target is outsi
 
 Push a `v*` tag on the commit you want to ship. The tag must be `v` plus two to four numeric components, such as `v0.1.0`. A tag like `v0.1.0-rc1` fails the version check.
 
-GitHub Actions reuses the existing macOS job to build `Paretly-unsigned.dmg`. Before the build it strips the leading `v` and sets `CFBundleShortVersionString` (and `CFBundleVersion`, and the package version) from that number. It then publishes a GitHub Release with `GITHUB_TOKEN` (`contents: write`), attaches the dmg, and uses GitHub's auto-generated notes.
+GitHub Actions reuses the existing macOS job to build `Paretly-unsigned.dmg`. Before the build it strips the leading `v` and sets `CFBundleShortVersionString` (and `CFBundleVersion`, and the package version) from that number. It then publishes a GitHub Release with `GITHUB_TOKEN` (`contents: write`), attaches the dmg and `Paretly-unsigned.dmg.sha256` (from `sha256sum`), and uses GitHub's auto-generated notes.
 
 The tag for the first release is `v0.1.0`, the entry at the top of `CHANGELOG.md`. Pushing that tag is what creates the Release. Do not use `package/bump_version`; that leftover Squirrel script commits and creates a tag locally.
 
 Pushes to `main` and pull requests only build the disk image. They keep the project version `0.1.0` and do not publish a Release.
+
+### Updates
+
+The input menu and the settings window (the Paretly app in Launchpad opens that window) both have **Check for Updates…**. Paretly reads the latest stable GitHub Release of `QiuZekun/paretly-ime` (drafts and prereleases are skipped) and compares the `vX.Y.Z` tag with `CFBundleShortVersionString`.
+
+A newer release shows its notes and three buttons: **Download & Install**, **Later**, and **Skip this version**. The disk image is saved to `~/Downloads/Paretly-unsigned.dmg`. Paretly checks the file size and, when the release includes a `.sha256` file, the SHA-256 digest, then opens the image in Finder. The package is unsigned, so Paretly does not replace the running copy. The dialog explains Gatekeeper. If you are already up to date, it says so. Network failures are reported only for a manual check. An automatic check runs at most once a day on launch. The Settings switch defaults to on. Sparkle is not used for this: an unsigned disk image cannot go through Sparkle's EdDSA install path.
 
 ### Credits and licenses
 
