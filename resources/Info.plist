@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Paretly</string>
 	<key>CFBundleIconFile</key>
-	<string>Paretly.icns</string>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>

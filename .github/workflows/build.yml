@@ -12,7 +12,12 @@ permissions:
 jobs:
   dmg:
     name: macOS unsigned pkg and dmg
-    runs-on: macos-latest
+    # macos-latest is the arm64 pool, which is currently cancelling jobs
+    # before a runner is assigned. macos-15-intel is a separate pool.
+    # ARCHS makes the app universal from that Intel machine.
+    runs-on: macos-15-intel
+    env:
+      ARCHS: arm64 x86_64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
