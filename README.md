@@ -127,7 +127,7 @@ bash tools/update-rime-ice.sh
 
 ### 图标
 
-菜单栏图标和 App 图标从 `resources/icons/src/` 的 SVG 生成。现在是占位图：菜单栏是圆角方框里的黑色粗体 P，App 图标是圆角方块上的白色粗体 P。换正式图时，替换 SVG，运行下面的脚本，把生成的文件一起提交：
+菜单栏图标和 App 图标从 `resources/icons/src/` 的 SVG 生成。菜单栏是实心圆角方块，里面镂空一枚 Inter Display ExtraBold 的 P（模板图，浅色和深色菜单栏由系统着色）。App 图标是 macOS 圆角方块，纵向渐变 `#262830` 到 `#0A0A0C`，白色粗体 P，下面一条圆角蓝条 `#5A96FF`，带轻微投影。换图时替换 SVG，运行下面的脚本，把生成的文件一起提交：
 
 ```sh
 python3 resources/icons/generate.py
@@ -293,7 +293,7 @@ Without it, the Xcode project version `0.1.0` is used.
 
 ### Icons
 
-Menu-bar and app icons are generated from the SVGs in `resources/icons/src/`. The current art is a placeholder: a black bold P inside a rounded-square outline for the menu bar, and a white bold P on a rounded square for the app icon. Replace the SVGs, rerun the script, and commit the generated files:
+Menu-bar and app icons are generated from the SVGs in `resources/icons/src/`. The menu icon is a filled rounded square with an Inter Display ExtraBold P knocked out, so macOS can tint the template on light and dark menu bars. The app icon is a macOS rounded square with a vertical gradient from `#262830` to `#0A0A0C`, a white bold P, a short rounded `#5A96FF` bar under the P, and a soft shadow. Replace the SVGs, rerun the script, and commit the generated files:
 
 ```sh
 python3 resources/icons/generate.py

@@ -4,9 +4,11 @@
 Sources (replace these when the final art is ready, then rerun this script):
 
   resources/icons/src/menu-template.svg
-      Monochrome menu-bar template. Black shapes on a transparent 16x16 canvas.
+      Monochrome menu-bar template. A filled rounded square with a bold P knocked
+      out, on a transparent 16x16 canvas.
   resources/icons/src/app-icon.svg
-      App icon. A rounded square with a white mark, drawn on a 1024x1024 canvas.
+      App icon. Dark vertical gradient squircle, white P, blue bar, and a soft
+      shadow, on a 1024x1024 canvas.
 
 Outputs:
 
@@ -21,8 +23,9 @@ Outputs:
       The same artwork as a macOS app icon set, plus Contents.json.
 
 The script uses only the Python 3 standard library. SVG support is the subset
-these sources need: filled paths with M/L/H/V/C/Z (absolute or relative) and
-even-odd or nonzero fill.
+these sources need: filled paths with M/L/H/V/C/Z (absolute or relative),
+even-odd or nonzero fill, a vertical user-space linearGradient, and a drop
+shadow written as feGaussianBlur + feOffset + feFuncA on a group.
 """
 
 from __future__ import annotations
@@ -106,12 +109,25 @@ def main() -> None:
     print(f"Wrote {APPICONSET.relative_to(ROOT)} ({len(ICONSET_SPECS)} images)")
 
 
+class Shape:
+    def __init__(self, fill, rule: str, subpaths: list, shadow: tuple[float, float, float, float] | None):
+        # fill is ("solid", rgba) or ("vgrad", top_rgba, bottom_rgba, y0, y1)
+        # shadow is (dx, dy, sigma, alpha_scale) in user units
+        self.fill = fill
+        self.rule = rule
+        self.subpaths = subpaths
+        self.shadow = shadow
+
+
 class Picture:
-    def __init__(self, view_width: float, view_height: float, shapes: list[tuple[tuple[int, int, int, int], str, list[list[tuple[float, float, str]]]]]):
+    def __init__(self, view_width: float, view_height: float, shapes: list[Shape]):
         self.view_width = view_width
         self.view_height = view_height
-        # shape: (rgba, fill-rule, subpaths of (x, y, cmd) where cmd is 'L' or 'C' start markers)
         self.shapes = shapes
+
+
+def _tag(element: ET.Element) -> str:
+    return element.tag.rsplit("}", 1)[-1]
 
 
 def parse_svg(path: Path) -> Picture:
@@ -123,22 +139,97 @@ def parse_svg(path: Path) -> Picture:
     parts = [float(n) for n in view.replace(",", " ").split()]
     if len(parts) != 4 or parts[0] != 0 or parts[1] != 0:
         raise SystemExit(f"{path} viewBox must be '0 0 W H'")
-    shapes = []
-    for element in root:
-        tag = element.tag.rsplit("}", 1)[-1]
-        if tag != "path":
-            raise SystemExit(f"{path} has unsupported <{tag}>; use filled <path> only")
-        fill = element.get("fill", "#000000")
-        rule = element.get("fill-rule", "nonzero")
-        if rule not in ("nonzero", "evenodd"):
-            raise SystemExit(f"unsupported fill-rule {rule}")
-        data = element.get("d")
-        if not data:
-            raise SystemExit(f"{path} has a path without d")
-        shapes.append((parse_color(fill), rule, parse_path(data)))
+    width, height = parts[2], parts[3]
+    gradients: dict[str, tuple] = {}
+    filters: dict[str, tuple[float, float, float, float]] = {}
+    shapes: list[Shape] = []
+
+    def parse_defs(element: ET.Element) -> None:
+        for child in element:
+            tag = _tag(child)
+            ident = child.get("id")
+            if tag == "linearGradient" and ident:
+                gradients[ident] = _parse_vertical_gradient(child, height)
+            elif tag == "filter" and ident:
+                filters[ident] = _parse_shadow_filter(child)
+
+    def walk(element: ET.Element, shadow: tuple[float, float, float, float] | None) -> None:
+        for child in element:
+            tag = _tag(child)
+            if tag == "defs":
+                parse_defs(child)
+            elif tag == "g":
+                next_shadow = shadow
+                filt = child.get("filter")
+                if filt:
+                    if not filt.startswith("url(#") or not filt.endswith(")"):
+                        raise SystemExit(f"unsupported filter reference {filt}")
+                    next_shadow = filters[filt[5:-1]]
+                walk(child, next_shadow)
+            elif tag == "path":
+                shapes.append(_parse_path_element(child, shadow, gradients))
+            elif tag == "title":
+                continue
+            else:
+                raise SystemExit(f"{path} has unsupported <{tag}>")
+
+    walk(root, None)
     if not shapes:
         raise SystemExit(f"{path} has no paths")
-    return Picture(parts[2], parts[3], shapes)
+    return Picture(width, height, shapes)
+
+
+def _parse_path_element(element: ET.Element, shadow, gradients: dict[str, tuple]) -> Shape:
+    fill_attr = element.get("fill", "#000000")
+    if fill_attr.startswith("url(#") and fill_attr.endswith(")"):
+        fill = gradients[fill_attr[5:-1]]
+    else:
+        fill = ("solid", parse_color(fill_attr))
+    rule = element.get("fill-rule", "nonzero")
+    if rule not in ("nonzero", "evenodd"):
+        raise SystemExit(f"unsupported fill-rule {rule}")
+    data = element.get("d")
+    if not data:
+        raise SystemExit("path without d")
+    return Shape(fill, rule, parse_path(data), shadow)
+
+
+def _parse_vertical_gradient(element: ET.Element, view_height: float) -> tuple:
+    y0 = float(element.get("y1", "0"))
+    y1 = float(element.get("y2", str(view_height)))
+    stops = []
+    for child in element:
+        if _tag(child) != "stop":
+            continue
+        offset = child.get("offset", "0").strip()
+        if offset.endswith("%"):
+            offset_value = float(offset[:-1]) / 100
+        else:
+            offset_value = float(offset)
+        stops.append((offset_value, parse_color(child.get("stop-color", "#000000"))))
+    stops.sort()
+    if len(stops) != 2 or abs(stops[0][0]) > 0.001 or abs(stops[1][0] - 1) > 0.001:
+        raise SystemExit("gradients must be two stops at 0 and 1")
+    return ("vgrad", stops[0][1], stops[1][1], y0, y1)
+
+
+def _parse_shadow_filter(element: ET.Element) -> tuple[float, float, float, float]:
+    sigma = 0.0
+    dx = 0.0
+    dy = 0.0
+    alpha = 1.0
+    for child in element:
+        tag = _tag(child)
+        if tag == "feGaussianBlur":
+            sigma = float(child.get("stdDeviation", "0").split()[0])
+        elif tag == "feOffset":
+            dx = float(child.get("dx", "0"))
+            dy = float(child.get("dy", "0"))
+        elif tag == "feComponentTransfer":
+            for func in child:
+                if _tag(func) == "feFuncA" and func.get("type") == "linear":
+                    alpha = float(func.get("slope", "1"))
+    return (dx, dy, sigma, alpha)
 
 
 def parse_color(value: str) -> tuple[int, int, int, int]:
@@ -293,17 +384,79 @@ def rasterize(picture: Picture, pixels: int, supersample: int) -> bytes:
         raise SystemExit("raster icons must be square")
     canvas = bytearray(pixels * pixels * 4)
     tolerance = 0.35 / scale
-    for color, rule, subpaths in picture.shapes:
+    user_scale = pixels / picture.view_width
+    for shape in picture.shapes:
+        if shape.shadow and shape.shadow[2] > 0:
+            _composite_shadow(canvas, picture, shape, pixels, user_scale)
         mask = bytearray(size * size)
         polygons = []
-        for subpath in subpaths:
+        for subpath in shape.subpaths:
             polygon = flatten(subpath, tolerance)
             if len(polygon) >= 2:
                 polygons.append([(x * scale, y * scale) for x, y in polygon])
-        _fill_mask(mask, size, polygons, rule)
-        layer = _downsample_mask(mask, size, pixels, color)
+        _fill_mask(mask, size, polygons, shape.rule)
+        layer = _downsample_mask(mask, size, pixels, shape.fill, picture.view_height)
         _composite(canvas, layer)
     return bytes(canvas)
+
+
+def _composite_shadow(canvas: bytearray, picture: Picture, shape: Shape, pixels: int, user_scale: float) -> None:
+    dx, dy, sigma, alpha_scale = shape.shadow
+    mask = bytearray(pixels * pixels)
+    tolerance = 0.35 / user_scale
+    polygons = []
+    for subpath in shape.subpaths:
+        polygon = flatten(subpath, tolerance)
+        if len(polygon) >= 2:
+            polygons.append([(x * user_scale, y * user_scale) for x, y in polygon])
+    _fill_mask(mask, pixels, polygons, shape.rule)
+    blurred = _gaussian_blur(mask, pixels, sigma * user_scale)
+    shift_x = int(round(dx * user_scale))
+    shift_y = int(round(dy * user_scale))
+    layer = bytearray(pixels * pixels * 4)
+    for y in range(pixels):
+        source_y = y - shift_y
+        if not 0 <= source_y < pixels:
+            continue
+        for x in range(pixels):
+            source_x = x - shift_x
+            if not 0 <= source_x < pixels:
+                continue
+            coverage = blurred[source_y * pixels + source_x]
+            if coverage == 0:
+                continue
+            layer[(y * pixels + x) * 4 + 3] = int(coverage * alpha_scale + 0.5)
+    _composite(canvas, bytes(layer))
+
+
+def _gaussian_blur(mask: bytearray, size: int, sigma: float) -> bytearray:
+    import math
+    if sigma <= 0.15:
+        return mask
+    radius = max(1, int(math.ceil(sigma * 3)))
+    kernel = [math.exp(-0.5 * (i / sigma) ** 2) for i in range(-radius, radius + 1)]
+    total = sum(kernel)
+    kernel = [value / total for value in kernel]
+    horizontal = [0.0] * (size * size)
+    for y in range(size):
+        row = y * size
+        for x in range(size):
+            acc = 0.0
+            for offset, weight in enumerate(kernel):
+                sample = x + offset - radius
+                if 0 <= sample < size:
+                    acc += mask[row + sample] * weight
+            horizontal[row + x] = acc
+    out = bytearray(size * size)
+    for y in range(size):
+        for x in range(size):
+            acc = 0.0
+            for offset, weight in enumerate(kernel):
+                sample = y + offset - radius
+                if 0 <= sample < size:
+                    acc += horizontal[sample * size + x] * weight
+            out[y * size + x] = max(0, min(255, int(acc + 0.5)))
+    return out
 
 
 def _fill_mask(mask: bytearray, size: int, polygons: list[list[tuple[float, float]]], rule: str) -> None:
@@ -346,12 +499,12 @@ def _stamp(mask: bytearray, row: int, size: int, start: float, end: float) -> No
         mask[row + x0 : row + x1] = b"\xff" * (x1 - x0)
 
 
-def _downsample_mask(mask: bytearray, size: int, pixels: int, color: tuple[int, int, int, int]) -> bytes:
+def _downsample_mask(mask: bytearray, size: int, pixels: int, fill, view_height: float) -> bytes:
     factor = size // pixels
     area = factor * factor
-    red, green, blue, _alpha = color
     out = bytearray(pixels * pixels * 4)
     for y in range(pixels):
+        red, green, blue = _fill_rgb(fill, (y + 0.5) / pixels * view_height)
         for x in range(pixels):
             total = 0
             base = y * factor * size + x * factor
@@ -366,6 +519,17 @@ def _downsample_mask(mask: bytearray, size: int, pixels: int, color: tuple[int, 
             out[offset + 2] = blue
             out[offset + 3] = (total * 255 + area // 2) // area
     return bytes(out)
+
+
+def _fill_rgb(fill, y_user: float) -> tuple[int, int, int]:
+    if fill[0] == "solid":
+        red, green, blue, _alpha = fill[1]
+        return red, green, blue
+    _kind, top, bottom, y0, y1 = fill
+    span = y1 - y0
+    t = 0.0 if span == 0 else (y_user - y0) / span
+    t = min(1.0, max(0.0, t))
+    return tuple(int(top[channel] * (1 - t) + bottom[channel] * t + 0.5) for channel in range(3))
 
 
 def _composite(dst: bytearray, src: bytes) -> None:
@@ -407,10 +571,12 @@ def build_pdf(picture: Picture) -> bytes:
     width = picture.view_width
     height = picture.view_height
     commands = ["0 0 0 RG", "0 0 0 rg"]
-    for color, rule, subpaths in picture.shapes:
-        red, green, blue, _alpha = color
+    for shape in picture.shapes:
+        if shape.fill[0] != "solid":
+            raise SystemExit("PDF export only supports solid fills")
+        red, green, blue, _alpha = shape.fill[1]
         commands.append(f"{red / 255:.4f} {green / 255:.4f} {blue / 255:.4f} rg")
-        for subpath in subpaths:
+        for subpath in shape.subpaths:
             for index, item in enumerate(subpath):
                 if item[0] == "M":
                     commands.append(f"{_pdf_x(item[1])} {_pdf_y(item[2], height)} m")
@@ -423,7 +589,7 @@ def build_pdf(picture: Picture) -> bytes:
                     )
                 if item[0] == "Z" or (index == len(subpath) - 1 and item[0] != "Z"):
                     commands.append("h")
-        commands.append("f*" if rule == "evenodd" else "f")
+        commands.append("f*" if shape.rule == "evenodd" else "f")
     stream = "\n".join(commands).encode("ascii") + b"\n"
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
