@@ -7,19 +7,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Squirrel"
+            "value" : "Paretly"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠须管"
+            "value" : "Paretly"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠鬚管"
+            "value" : "Paretly"
           }
         }
       }
@@ -31,88 +31,88 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Squirrel"
+            "value" : "Paretly"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠须管"
+            "value" : "Paretly"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠鬚管"
+            "value" : "Paretly"
           }
         }
       }
     },
-    "im.rime.inputmethod.Squirrel" : {
+    "com.qiuzekun.inputmethod.Paretly" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Squirrel"
+            "value" : "Paretly"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠须管"
+            "value" : "Paretly"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠鬚管"
+            "value" : "Paretly"
           }
         }
       }
     },
-    "im.rime.inputmethod.Squirrel.Hans" : {
+    "com.qiuzekun.inputmethod.Paretly.Hans" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Squirrel - Simplified"
+            "value" : "Paretly - Simplified"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠须管"
+            "value" : "Paretly"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠须管"
+            "value" : "Paretly"
           }
         }
       }
     },
-    "im.rime.inputmethod.Squirrel.Hant" : {
+    "com.qiuzekun.inputmethod.Paretly.Hant" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Squirrel - Traditional"
+            "value" : "Paretly - Traditional"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠鬚管"
+            "value" : "Paretly"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "鼠鬚管"
+            "value" : "Paretly"
           }
         }
       }

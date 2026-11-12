@@ -7,8 +7,8 @@ cd "$(dirname $0)"
 source common.sh
 
 app_version="$(get_app_version)"
-target_pkg="Squirrel-${app_version}.pkg"
-download_url="https://github.com/rime/squirrel/releases/download/${app_version}/${target_pkg}"
+target_pkg="Paretly-${app_version}.pkg"
+download_url="https://github.com/QiuZekun/paretly-ime/releases/download/${app_version}/${target_pkg}"
 
 verify_archive() {
     if ! [ -f "${target_pkg}" ]; then
@@ -25,7 +25,7 @@ create_archive() {
         echo >&2 "ERROR: target archive already exists: ${target_pkg}"
         exit 1
     fi
-    cp Squirrel.pkg "${target_pkg}"
+    cp Paretly.pkg "${target_pkg}"
     echo 'sha256 checksum:'
     shasum -a 256 "${target_pkg}"
 }
@@ -53,13 +53,13 @@ cat > "${appcast_file}" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
-    <title>【鼠鬚管】輸入法更新頻道</title>
-    <link>https://rime.github.io/release/squirrel/appcast.xml</link>
-    <description>鼠鬚管 Appcast 更新頻道</description>
+    <title>【Paretly】輸入法更新頻道</title>
+    <link>https://github.com/QiuZekun/paretly-ime</link>
+    <description>Paretly Appcast 更新頻道</description>
     <language>zh</language>
     <item>
-      <title>鼠鬚管 ${app_version}</title>
-      <sparkle:releaseNotesLink>https://rime.github.io/release/squirrel/</sparkle:releaseNotesLink>
+      <title>Paretly ${app_version}</title>
+      <sparkle:releaseNotesLink>https://github.com/QiuZekun/paretly-ime</sparkle:releaseNotesLink>
       <sparkle:minimumSystemVersion>13.0.0</sparkle:minimumSystemVersion>
       <pubDate>${pub_date}</pubDate>
       <enclosure url="${download_url}"
@@ -81,13 +81,13 @@ cat > "${appcast_file}" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
-    <title>【鼠鬚管】輸入法測試頻道</title>
-    <link>https://rime.github.io/testing/squirrel/appcast.xml</link>
-    <description>鼠鬚管測試版 Appcast 更新頻道</description>
+    <title>【Paretly】輸入法測試頻道</title>
+    <link>https://github.com/QiuZekun/paretly-ime</link>
+    <description>Paretly測試版 Appcast 更新頻道</description>
     <language>zh</language>
     <item>
-      <title>鼠鬚管 ${app_version}</title>
-      <sparkle:releaseNotesLink>https://rime.github.io/testing/squirrel/</sparkle:releaseNotesLink>
+      <title>Paretly ${app_version}</title>
+      <sparkle:releaseNotesLink>https://github.com/QiuZekun/paretly-ime</sparkle:releaseNotesLink>
       <sparkle:minimumSystemVersion>13.0.0</sparkle:minimumSystemVersion>
       <pubDate>${pub_date}</pubDate>
       <enclosure url="${download_url}"
@@ -110,13 +110,13 @@ cat > "${appcast_file}" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
-    <title>【鼠鬚管】輸入法本地測試</title>
+    <title>【Paretly】輸入法本地測試</title>
     <link>file://${PROJECT_ROOT}/package/${appcast_file}</link>
-    <description>鼠鬚管 Appcast 更新本地測試</description>
+    <description>Paretly Appcast 更新本地測試</description>
     <language>zh</language>
     <item>
-      <title>鼠鬚管 ${app_version}</title>
-      <sparkle:releaseNotesLink>https://rime.github.io/testing/squirrel/</sparkle:releaseNotesLink>
+      <title>Paretly ${app_version}</title>
+      <sparkle:releaseNotesLink>https://github.com/QiuZekun/paretly-ime</sparkle:releaseNotesLink>
       <sparkle:minimumSystemVersion>10.9.0</sparkle:minimumSystemVersion>
       <pubDate>${pub_date}</pubDate>
       <enclosure url="${download_url}"

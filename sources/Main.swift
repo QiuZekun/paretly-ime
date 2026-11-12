@@ -15,10 +15,26 @@ struct SquirrelApp {
   } else {
     try! FileManager.default.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: false).appendingPathComponent("Rime", isDirectory: true)
   }
-  static let appDir = "/Library/Input Library/Squirrel.app".withCString { dir in
-    URL(fileURLWithFileSystemRepresentation: dir, isDirectory: false, relativeTo: nil)
-  }
-  static let logDir = FileManager.default.temporaryDirectory.appending(component: "rime.squirrel", directoryHint: .isDirectory)
+  // Squirrel 1.1.2 hardcoded "/Library/Input Library/Squirrel.app", which is not
+  // where macOS loads input methods. Prefer an installed copy in either
+  // Input Methods directory, then the running bundle if it already lives there.
+  static let appDir: URL = {
+    let home = FileManager.default.homeDirectoryForCurrentUser
+    let candidates = [
+      URL(fileURLWithPath: "/Library/Input Methods/Paretly.app", isDirectory: true),
+      home.appendingPathComponent("Library/Input Methods/Paretly.app", isDirectory: true)
+    ]
+    let fm = FileManager.default
+    for candidate in candidates where fm.fileExists(atPath: candidate.path) {
+      return candidate
+    }
+    let bundleURL = Bundle.main.bundleURL
+    if bundleURL.lastPathComponent == "Paretly.app" && bundleURL.path.contains("/Input Methods/") {
+      return bundleURL
+    }
+    return candidates[0]
+  }()
+  static let logDir = FileManager.default.temporaryDirectory.appending(component: "rime.paretly", directoryHint: .isDirectory)
 
   // swiftlint:disable:next cyclomatic_complexity
   static func main() {
@@ -31,11 +47,11 @@ struct SquirrelApp {
         switch args[1] {
         case "--quit":
           let bundleId = Bundle.main.bundleIdentifier!
-          let runningSquirrels = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId)
-          runningSquirrels.forEach { $0.terminate() }
+          let runningCopies = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId)
+          runningCopies.forEach { $0.terminate() }
           return true
         case "--reload":
-          DistributedNotificationCenter.default().postNotificationName(.init("SquirrelReloadNotification"), object: nil)
+          DistributedNotificationCenter.default().postNotificationName(.init("ParetlyReloadNotification"), object: nil)
           return true
         case "--register-input-source", "--install":
           installer.register()
@@ -72,13 +88,13 @@ struct SquirrelApp {
           SquirrelApplicationDelegate.showMessage(msgText: NSLocalizedString("deploy_update", comment: ""))
           // Build all schemas in current directory
           var builderTraits = RimeTraits.rimeStructInit()
-          builderTraits.setCString("rime.squirrel-builder", to: \.app_name)
+          builderTraits.setCString("rime.paretly-builder", to: \.app_name)
           rimeAPI.setup(&builderTraits)
           rimeAPI.deployer_initialize(nil)
           _ = rimeAPI.deploy()
           return true
         case "--sync":
-          DistributedNotificationCenter.default().postNotificationName(.init("SquirrelSyncNotification"), object: nil)
+          DistributedNotificationCenter.default().postNotificationName(.init("ParetlySyncNotification"), object: nil)
           return true
         case "--help":
           print(helpDoc)
@@ -110,7 +126,7 @@ struct SquirrelApp {
 
       if NSApp.squirrelAppDelegate.problematicLaunchDetected() {
         print("Problematic launch detected!")
-        let args = ["Problematic launch detected! Squirrel may be suffering a crash due to improper configuration. Revert previous modifications to see if the problem recurs."]
+        let args = ["Problematic launch detected! Paretly may be suffering a crash due to improper configuration. Revert previous modifications to see if the problem recurs."]
         let task = Process()
         task.executableURL = "/usr/bin/say".withCString { dir in
           URL(fileURLWithFileSystemRepresentation: dir, isDirectory: false, relativeTo: nil)
@@ -121,12 +137,12 @@ struct SquirrelApp {
         NSApp.squirrelAppDelegate.setupRime()
         NSApp.squirrelAppDelegate.startRime(fullCheck: false)
         NSApp.squirrelAppDelegate.loadSettings()
-        print("Squirrel reporting!")
+        print("Paretly reporting!")
       }
 
       // finally run everything
       app.run()
-      print("Squirrel is quitting...")
+      print("Paretly is quitting...")
       rimeAPI.finalize()
     }
     return
@@ -135,11 +151,11 @@ struct SquirrelApp {
   static let helpDoc = """
 Supported arguments:
 Perform actions:
-  --quit                     quit all Squirrel process
+  --quit                     quit all Paretly processes
   --reload                   deploy
   --sync                     sync user data
   --build                    build all schemas in current directory
-Install Squirrel:
+Install Paretly:
   --install, --register-input-source    register input source
   --enable-input-source [source id...]  input source list optional
   --disable-input-source [source id...] input source list optional
