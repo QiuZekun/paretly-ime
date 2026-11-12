@@ -174,19 +174,19 @@
         }
       }
     },
-    "Settings..." : {
+    "Settings…" : {
       "comment" : "Menu item",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用户设定..."
+            "value" : "Paretly 设置…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用戶設定"
+            "value" : "Paretly 設定…"
           }
         }
       }
@@ -227,6 +227,325 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "同步用戶資料"
+          }
+        }
+      }
+    },
+    "Paretly Settings" : {
+      "comment" : "Window title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 设置"
+          }
+        }
+      }
+    },
+    "Paretly Colors" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 配色"
+          }
+        }
+      }
+    },
+    "Light Preview" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色预览"
+          }
+        }
+      }
+    },
+    "Dark Preview" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色预览"
+          }
+        }
+      }
+    },
+    "Apply" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        }
+      }
+    },
+    "Light" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色"
+          }
+        }
+      }
+    },
+    "Dark" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
+          }
+        }
+      }
+    },
+    "Used when the system appearance is light" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统浅色外观时使用"
+          }
+        }
+      }
+    },
+    "Used when the system appearance is dark" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统深色外观时使用"
+          }
+        }
+      }
+    },
+    "Horizontal" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "横排"
+          }
+        }
+      }
+    },
+    "Vertical" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "竖排"
+          }
+        }
+      }
+    },
+    "Candidate size" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候选字号"
+          }
+        }
+      }
+    },
+    "Label size" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "序号字号"
+          }
+        }
+      }
+    },
+    "Corner radius" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圆角"
+          }
+        }
+      }
+    },
+    "Click a card to fill the selected slot, then Apply to save and redeploy." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点卡片赋给当前槽位，再点应用写入并重新部署"
+          }
+        }
+      }
+    },
+    "Writing…" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在写入…"
+          }
+        }
+      }
+    },
+    "Saved and redeployed." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已写入并重新部署。"
+          }
+        }
+      }
+    },
+    "No changes to write." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有需要写入的改动。"
+          }
+        }
+      }
+    },
+    "Could not read the bundled theme file." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到随包的 paretly.yaml。"
+          }
+        }
+      }
+    },
+    "Could not read the user theme file." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取用户目录里的 paretly.yaml。"
+          }
+        }
+      }
+    },
+    "No color schemes found in paretly.yaml." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未能在 paretly.yaml 里解析到配色。"
+          }
+        }
+      }
+    },
+    "Could not write paretly.custom.yaml." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法写入 paretly.custom.yaml。"
+          }
+        }
+      }
+    },
+    "Unknown light color scheme." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知浅色配色。"
+          }
+        }
+      }
+    },
+    "Unknown dark color scheme." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知深色配色。"
+          }
+        }
+      }
+    },
+    "Layout must be horizontal or vertical." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排列方式只能是横排或竖排。"
+          }
+        }
+      }
+    },
+    "Candidate size must be between 12 and 28." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候选字号需在 12–28 之间。"
+          }
+        }
+      }
+    },
+    "Label size must be between 10 and 24." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "序号字号需在 10–24 之间。"
+          }
+        }
+      }
+    },
+    "Corner radius must be between 0 and 20." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圆角需在 0–20 之间。"
+          }
+        }
+      }
+    },
+    "Not in the theme file" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "（文件中未见此配色）"
           }
         }
       }
