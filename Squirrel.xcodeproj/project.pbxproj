@@ -89,6 +89,13 @@
 		D26434552706A15100857391 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D26434542706A15100857391 /* QuartzCore.framework */; };
 		E93074B70A5C264700470842 /* InputMethodKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93074B60A5C264700470842 /* InputMethodKit.framework */; };
 		F45E005F2B8CA81C00179B75 /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F45E005E2B8CA81C00179B75 /* UserNotifications.framework */; };
+		A7E1A0112C0A000100000001 /* ParetlyThemeDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0012C0A000100000001 /* ParetlyThemeDocument.swift */; };
+		A7E1A0122C0A000100000001 /* ParetlyCandidatePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0022C0A000100000001 /* ParetlyCandidatePreview.swift */; };
+		A7E1A0132C0A000100000001 /* ParetlySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0032C0A000100000001 /* ParetlySettingsView.swift */; };
+		A7E1A0142C0A000100000001 /* ParetlySettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0042C0A000100000001 /* ParetlySettingsWindow.swift */; };
+		A7E1A0152C0A000100000001 /* ParetlyThemeDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0012C0A000100000001 /* ParetlyThemeDocument.swift */; };
+		A7E1A0162C0A000100000001 /* ParetlyThemeSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0052C0A000100000001 /* ParetlyThemeSettingsTests.swift */; };
+		A7E1A0172C0A000100000001 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A7E1A0062C0A000100000001 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -295,6 +302,13 @@
 		D26434542706A15100857391 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		E93074B60A5C264700470842 /* InputMethodKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = InputMethodKit.framework; path = /System/Library/Frameworks/InputMethodKit.framework; sourceTree = "<absolute>"; };
 		F45E005E2B8CA81C00179B75 /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
+		A7E1A0012C0A000100000001 /* ParetlyThemeDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyThemeDocument.swift; path = sources/ParetlyThemeDocument.swift; sourceTree = "<group>"; };
+		A7E1A0022C0A000100000001 /* ParetlyCandidatePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyCandidatePreview.swift; path = sources/ParetlyCandidatePreview.swift; sourceTree = "<group>"; };
+		A7E1A0032C0A000100000001 /* ParetlySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlySettingsView.swift; path = sources/ParetlySettingsView.swift; sourceTree = "<group>"; };
+		A7E1A0042C0A000100000001 /* ParetlySettingsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlySettingsWindow.swift; path = sources/ParetlySettingsWindow.swift; sourceTree = "<group>"; };
+		A7E1A0052C0A000100000001 /* ParetlyThemeSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyThemeSettingsTests.swift; path = tests/ParetlyThemeSettingsTests.swift; sourceTree = "<group>"; };
+		A7E1A0062C0A000100000001 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		A7E1A0072C0A000100000001 /* ParetlyThemeSettingsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ParetlyThemeSettingsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -306,6 +320,14 @@
 				F45E005F2B8CA81C00179B75 /* UserNotifications.framework in Frameworks */,
 				E93074B70A5C264700470842 /* InputMethodKit.framework in Frameworks */,
 				447765C925C30E97002415AF /* Sparkle.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A7E1A0222C0A000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A7E1A0172C0A000100000001 /* XCTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -326,6 +348,10 @@
 				B39771242BED899F0093A49B /* SquirrelConfig.swift */,
 				B35D2FE72BF00839009D156B /* BridgingFunctions.swift */,
 				B38E9B8F2BE9AE1E0036ABEF /* Squirrel-Bridging-Header.h */,
+				A7E1A0012C0A000100000001 /* ParetlyThemeDocument.swift */,
+				A7E1A0022C0A000100000001 /* ParetlyCandidatePreview.swift */,
+				A7E1A0032C0A000100000001 /* ParetlySettingsView.swift */,
+				A7E1A0042C0A000100000001 /* ParetlySettingsWindow.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -355,6 +381,7 @@
 			isa = PBXGroup;
 			children = (
 				44F1EB381431F8270015FD04 /* Paretly.app */,
+				A7E1A0072C0A000100000001 /* ParetlyThemeSettingsTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -371,6 +398,7 @@
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
+				A7E1A0242C0A000100000001 /* Tests */,
 			);
 			indentWidth = 2;
 			name = Squirrel;
@@ -491,6 +519,14 @@
 			name = plum;
 			sourceTree = "<group>";
 		};
+		A7E1A0242C0A000100000001 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A7E1A0052C0A000100000001 /* ParetlyThemeSettingsTests.swift */,
+			);
+			name = Tests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -518,6 +554,22 @@
 			productName = Squirrel;
 			productReference = 44F1EB381431F8270015FD04 /* Paretly.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A7E1A0232C0A000100000001 /* ParetlyThemeSettingsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A7E1A0272C0A000100000001 /* Build configuration list for PBXNativeTarget "ParetlyThemeSettingsTests" */;
+			buildPhases = (
+				A7E1A0212C0A000100000001 /* Sources */,
+				A7E1A0222C0A000100000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ParetlyThemeSettingsTests;
+			productName = ParetlyThemeSettingsTests;
+			productReference = A7E1A0072C0A000100000001 /* ParetlyThemeSettingsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -550,6 +602,7 @@
 			projectRoot = "";
 			targets = (
 				8D1107260486CEB800E47090 /* Squirrel */,
+				A7E1A0232C0A000100000001 /* ParetlyThemeSettingsTests */,
 			);
 		};
 /* End PBXProject section */
@@ -585,6 +638,19 @@
 				B38E9B912BE9AE1E0036ABEF /* SquirrelApplicationDelegate.swift in Sources */,
 				B39771272BED9B250093A49B /* SquirrelTheme.swift in Sources */,
 				B35D2FE82BF00839009D156B /* BridgingFunctions.swift in Sources */,
+				A7E1A0112C0A000100000001 /* ParetlyThemeDocument.swift in Sources */,
+				A7E1A0122C0A000100000001 /* ParetlyCandidatePreview.swift in Sources */,
+				A7E1A0132C0A000100000001 /* ParetlySettingsView.swift in Sources */,
+				A7E1A0142C0A000100000001 /* ParetlySettingsWindow.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A7E1A0212C0A000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A7E1A0152C0A000100000001 /* ParetlyThemeDocument.swift in Sources */,
+				A7E1A0162C0A000100000001 /* ParetlyThemeSettingsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -827,6 +893,50 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A7E1A0252C0A000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qiuzekun.inputmethod.Paretly.theme-tests;
+				PRODUCT_MODULE_NAME = ParetlyThemeSettingsTests;
+				PRODUCT_NAME = ParetlyThemeSettingsTests;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+			};
+			name = Debug;
+		};
+		A7E1A0262C0A000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qiuzekun.inputmethod.Paretly.theme-tests;
+				PRODUCT_MODULE_NAME = ParetlyThemeSettingsTests;
+				PRODUCT_NAME = ParetlyThemeSettingsTests;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+			};
+			name = Release;
+		};
 		C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "Squirrel" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -844,6 +954,15 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		A7E1A0272C0A000100000001 /* Build configuration list for PBXNativeTarget "ParetlyThemeSettingsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A7E1A0252C0A000100000001 /* Debug */,
+				A7E1A0262C0A000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};

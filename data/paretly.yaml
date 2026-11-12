@@ -17,9 +17,8 @@ show_notifications_when: appropriate
 
 style:
   color_scheme: native
-  # Optional: define both light and dark color schemes to match system appearance
-  #color_scheme: solarized_light
-  #color_scheme_dark: solarized_dark
+  # Dark appearance. Light stays on the system native theme.
+  color_scheme_dark: clean_black
 
   # horizontal is Deprecated since 0.36, Squirrel 0.15, removed since 1.0.1
   candidate_list_layout: stacked  # stacked | linear
@@ -242,6 +241,30 @@ preset_color_schemes:
     hilited_candidate_label_color: 0xa0c98915
     hilited_candidate_text_color: 0xc98915
     hilited_candidate_back_color: 0xeeeeee
+
+  # Dark counterpart of clean_white: same metrics, inverted ground and text.
+  # Secondary grays and the blue accent are lifted so they stay readable on
+  # the near-black ground (a raw invert of #808080 would fail contrast).
+  clean_black:
+    name: 简约黑／Clean Black
+    author: Paretly, dark counterpart of 简约白／Clean White by Chongyu Zhu
+    candidate_list_layout: linear
+    candidate_format: '%c %@'
+    corner_radius: 6
+    border_height: 6
+    border_width: 6
+    font_point: 16
+    label_font_point: 12
+    back_color: 0x1C1C1C
+    border_color: 0x3A3A3A
+    text_color: 0xC8C8C8
+    hilited_text_color: 0xFFFFFF
+    candidate_text_color: 0xF2F2F2
+    comment_text_color: 0xA8A8A8
+    label_color: 0xA0A0A0
+    hilited_candidate_back_color: 0x1C1C1C
+    hilited_candidate_text_color: 0xF0C85E
+    hilited_candidate_label_color: 0xE0F0C85E
 
   apathy:
     name: 冷漠／Apathy

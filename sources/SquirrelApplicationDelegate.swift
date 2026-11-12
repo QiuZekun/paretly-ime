@@ -84,6 +84,10 @@ final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUSta
     NSWorkspace.shared.open(SquirrelApp.userDir)
   }
 
+  func openSettings() {
+    ParetlySettingsController.shared.present()
+  }
+
   func checkForUpdates() {
     if updateController.updater.canCheckForUpdates {
       print("Checking for updates")

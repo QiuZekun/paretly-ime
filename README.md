@@ -2,7 +2,7 @@
 
 开源、开箱即用的 macOS 输入法。基于 Rime，默认带上雾凇拼音，装好就能打字，不用自己找方案、改配置。
 
-当前是第一阶段：能编译、能安装、能用的未签名安装包。设置窗口和新的深色主题还没做，正式发布（签名、公证）也还没做。
+安装包还没签名，也还没公证。输入法菜单可以打开设置窗口。
 
 ## 安装
 
@@ -45,6 +45,14 @@
 ```sh
 "/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --reload
 ```
+
+## 设置
+
+输入法菜单里选 **Paretly 设置…**（系统语言是英文时显示 **Settings…**）。可以给浅色和深色各选一套配色，并改横排或竖排、候选字号、序号字号和圆角。配色卡片来自随包 `paretly.yaml` 的 `preset_color_schemes`，再叠上 `~/Library/Rime/paretly.yaml` 里的同名覆盖。
+
+**应用** 只把这次改过的键写进 `~/Library/Rime/paretly.custom.yaml` 的 `patch:`，文件里原有的其它补丁会保留。这个文件如果已经存在，第一次覆盖前会复制成 `paretly.custom.yaml.bak`。写完后 Paretly 在进程内重新部署，效果和上面的 `--reload` 一样。
+
+深色默认是「简约黑」（`clean_black`）。浅色默认仍是 `native`。
 
 ## 从源码构建
 
@@ -89,7 +97,7 @@ Paretly 以 **GNU GPL-3.0** 发布，见仓库里的 `LICENSE.txt`。上游源�
 
 Paretly is an open-source macOS input method built on Rime. It ships with [Rime ICE](https://github.com/iDvel/rime-ice) (雾凇拼音) already selected, so a new install can type without writing a config by hand.
 
-This is phase 1: an unsigned installer. A native settings window and a new dark theme are later work. Signing and notarization need a paid Apple Developer account and are not done yet.
+The installer is still unsigned. Signing and notarization need a paid Apple Developer account and are not done yet. The input menu opens a settings window.
 
 ### Install
 
@@ -117,6 +125,14 @@ Reload / redeploy:
 ```sh
 "/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --reload
 ```
+
+### Settings
+
+Open the input menu and choose **Settings…** (简体中文菜单显示 **Paretly 设置…**). Pick a light scheme and a dark scheme, then set horizontal or vertical candidates, candidate size, label size, and corner radius. Cards come from `preset_color_schemes` in the bundled `paretly.yaml`, with the same keys from `~/Library/Rime/paretly.yaml` overlaid.
+
+**Apply** writes only the keys you changed into `~/Library/Rime/paretly.custom.yaml` under `patch:`. Other patches in that file stay. The first time Apply overwrites an existing file, it is copied to `paretly.custom.yaml.bak`. Paretly then redeploys in-process, the same work as `--reload` above.
+
+Dark mode defaults to **简约黑 / Clean Black** (`clean_black`). Light mode stays on `native`.
 
 ### Build
 
