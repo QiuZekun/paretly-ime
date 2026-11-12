@@ -1,3 +1,20 @@
+<a name="v0.1.0"></a>
+## v0.1.0 (2026-11-12)
+
+Paretly 的第一个版本。基于鼠须管（Squirrel）1.1.2，改名、换上雾凇拼音，并带上未签名、未公证的磁盘镜像。公证需要付费的 Apple Developer 账号。
+
+### 主要功能更新 | Major Updates
+- 产品名为 Paretly，输入法标识 `com.qiuzekun.inputmethod.Paretly`，安装到 `/Library/Input Methods/Paretly.app`
+- 默认方案是雾凇拼音（rime-ice `2026.06.30`，`6810e8916d160498620a16fef2135956fecbd485`）
+- 输入法菜单可以打开「Paretly 设置…」。深色默认配色是简约黑（`clean_black`），浅色默认仍是 `native`
+- 「应用」把改过的键写进 `~/Library/Rime/paretly.custom.yaml`
+
+### 构建 | Build
+- 未签名磁盘镜像 `Paretly-unsigned.dmg`
+- 推送标签 `v*`（例如 `v0.1.0`）时，沿用原来的 dmg 任务构建，把 `CFBundleShortVersionString` 设成标签去掉 `v` 之后的版本号，再用 `GITHUB_TOKEN` 发布 GitHub Release，附上 dmg，说明由 GitHub 自动生成
+
+鼠须管 1.1.2 及更早的更新记录留在下面。
+
 <a name="1.1.2"></a>
 ## 1.1.2 (2026-01-13)
 

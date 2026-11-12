@@ -7,13 +7,19 @@ INSTALL_LOCATION='/Library/Input Methods'
 cd "$(dirname $0)"
 source common.sh
 
+if [ -n "${MARKETING_VERSION:-}" ]; then
+    version="${MARKETING_VERSION}"
+else
+    version="$(get_app_version)"
+fi
+
 pkgbuild \
     --info PackageInfo \
     --root "${PROJECT_ROOT}/${DERIVED_DATA_PATH}/Build/Products/Release" \
     --filter '.*\.swiftmodule$' \
     --component-plist Squirrel-component.plist \
     --identifier "${BUNDLE_IDENTIFIER}" \
-    --version "$(get_app_version)" \
+    --version "${version}" \
     --install-location "${INSTALL_LOCATION}" \
     --scripts "${PROJECT_ROOT}/scripts" \
     Paretly.pkg

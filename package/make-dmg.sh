@@ -17,12 +17,17 @@ cat > "${stage}/安装说明.txt" << 'EOF'
 打开 Paretly.pkg 安装。
 输入法会装到 /Library/Input Methods/Paretly.app。
 
-这个安装包没有签名，也没有公证。如果系统拦截：
+这个安装包没有签名，也没有公证。公证需要付费的 Apple Developer 账号。
+如果系统拦截：
 系统设置 > 隐私与安全性 > 仍要打开
-或在 Paretly.pkg 上按住 Control 点按，选择「打开」。
+或执行：xattr -dr com.apple.quarantine，路径换成这个磁盘镜像或 Paretly.pkg
+也可以在 Paretly.pkg 上按住 Control 点按，选择「打开」。
 
 装好后如果菜单栏没有 Paretly：
 系统设置 > 键盘 > 输入法 > 添加，选择简体中文或繁体中文下的 Paretly。
+
+输入法菜单里可以打开「Paretly 设置…」。
+用户配置在 ~/Library/Rime，设置写在 paretly.custom.yaml。
 
 重新部署：
 "/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --reload
