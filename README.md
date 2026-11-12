@@ -127,7 +127,7 @@ bash tools/update-rime-ice.sh
 
 ### 图标
 
-菜单栏图标和 App 图标从 `resources/icons/src/` 的 SVG 生成。菜单栏是实心圆角方块，里面镂空一枚 Inter Display ExtraBold 的 P（模板图，浅色和深色菜单栏由系统着色）。App 图标是 macOS 圆角方块，纵向渐变 `#262830` 到 `#0A0A0C`，白色粗体 P，下面一条圆角蓝条 `#5A96FF`，带轻微投影。换图时替换 SVG，运行下面的脚本，把生成的文件一起提交：
+菜单栏图标和 App 图标从 `resources/icons/src/` 的 SVG 生成。菜单栏是一枚黑色粗体 P，右边一条细的文字光标，没有外框（模板图，浅色和深色菜单栏由系统着色）。App 图标是 macOS 圆角方块，纵向渐变 `#262830` 到 `#0A0A0C`，白色粗体 P，下面一条圆角蓝条 `#5A96FF`，带轻微投影。换图时替换 SVG，运行下面的脚本，把生成的文件一起提交：
 
 ```sh
 python3 resources/icons/generate.py
@@ -135,9 +135,9 @@ python3 resources/icons/generate.py
 
 脚本只用 Python 3 标准库，会重写：
 
-- `resources/paretly.tiff`：16 pt 的 @1x（16×16，72 dpi）和 @2x（32×32，144 dpi）。`Info.plist` 里 `TISIconIsTemplate` 为真，`tsInputMethodIconFileKey` 和每个输入模式的 `tsInputModeMenuIconFileKey`（以及备用、面板图标）都指向这个文件。系统会按模板图给浅色和深色菜单栏重新着色。
-- `resources/paretly.pdf`：同一张图的 16×16 pt 矢量，角色和鼠须管的 `rime.pdf` 一样，打进 App 里。
-- `resources/AppIcon.icns`，以及 `Assets.xcassets/AppIcon.appiconset/` 的全套尺寸。`CFBundleIconFile` 是 `AppIcon.icns`。
+- `resources/paretly.tiff`：16 pt 和 18 pt 的 @1x / @2x（16×16@72 dpi、32×32@144 dpi、18×18@72 dpi、36×36@144 dpi）。`Info.plist` 里 `TISIconIsTemplate` 为真，`tsInputMethodIconFileKey` 和每个输入模式的 `tsInputModeMenuIconFileKey`（以及备用、面板图标）都指向这个文件。系统会按模板图给浅色和深色菜单栏重新着色。
+- `resources/paretly.pdf`：同一张图的 18×18 pt 矢量，角色和鼠须管的 `rime.pdf` 一样，打进 App 里。
+- `resources/AppIcon.icns` 带上 macOS 要的全部尺寸（16、32、64、128、256、512、1024，含 @2x 对应的类型），`Assets.xcassets/AppIcon.appiconset/` 是同一套图。`CFBundleIconFile` 是 `AppIcon.icns`。输入法和 `/Applications` 里的启动台 App 都用这个文件。
 
 ### 启动台
 
@@ -163,7 +163,7 @@ GitHub Actions 会沿用原来的 macOS 任务打未签名的 `Paretly-unsigned.
 
 有新版本时弹出说明，可以选择 **下载并安装**、**以后再说** 或 **跳过此版本**。下载写到 `~/Downloads/Paretly-unsigned.dmg`，核对文件大小；Release 里如果有 `.sha256` 文件，再核对 SHA-256。然后在访达里打开磁盘镜像。安装包没有签名，所以不会悄悄替换正在运行的程序。如果系统拦截，按对话框里的说明到隐私与安全性里打开。
 
-已经是最新版本时会说明。网络失败只在你手动检查时提示。输入法启动时最多每天自动检查一次，设置里的开关默认是开的。这里不用 Sparkle：未签名的安装包没法走 Sparkle 的 EdDSA 签名安装。
+已经是最新版本时会说明。仓库还没有正式 Release，或者 GitHub 对最新 Release 返回 404 时，手动检查显示「当前已是最新版本」，并写明目前还没有发布新版本和当前版本号；这不是错误。只有网络或 HTTP 失败才会报错，并带上原因。输入法菜单和设置窗口里的按钮都会触发同一次检查，提示会把输入法调到前台。输入法启动时最多每天自动检查一次，设置里的开关默认是开的。这里不用 Sparkle：未签名的安装包没法走 Sparkle 的 EdDSA 签名安装。
 
 ## 许可与致谢
 
@@ -301,7 +301,7 @@ Without it, the Xcode project version `0.1.0` is used.
 
 ### Icons
 
-Menu-bar and app icons are generated from the SVGs in `resources/icons/src/`. The menu icon is a filled rounded square with an Inter Display ExtraBold P knocked out, so macOS can tint the template on light and dark menu bars. The app icon is a macOS rounded square with a vertical gradient from `#262830` to `#0A0A0C`, a white bold P, a short rounded `#5A96FF` bar under the P, and a soft shadow. Replace the SVGs, rerun the script, and commit the generated files:
+Menu-bar and app icons are generated from the SVGs in `resources/icons/src/`. The menu icon is a black bold P with a thin text cursor to its right and no box, so macOS can tint the template on light and dark menu bars. The app icon is a macOS rounded square with a vertical gradient from `#262830` to `#0A0A0C`, a white bold P, a short rounded `#5A96FF` bar under the P, and a soft shadow. Replace the SVGs, rerun the script, and commit the generated files:
 
 ```sh
 python3 resources/icons/generate.py
@@ -309,9 +309,9 @@ python3 resources/icons/generate.py
 
 The script uses only the Python 3 standard library. It rewrites:
 
-- `resources/paretly.tiff` — a 16 pt template with @1x (16×16 at 72 dpi) and @2x (32×32 at 144 dpi). `TISIconIsTemplate` is true, and `tsInputMethodIconFileKey` plus each mode's `tsInputModeMenuIconFileKey` (and the alternate and palette keys) name this file. macOS tints the template for light and dark menu bars.
-- `resources/paretly.pdf` — the same drawing as a 16×16 pt vector, the role `rime.pdf` has in Squirrel. It is copied into the app.
-- `resources/AppIcon.icns` and every size in `Assets.xcassets/AppIcon.appiconset/`. `CFBundleIconFile` is `AppIcon.icns`.
+- `resources/paretly.tiff` — 16 pt and 18 pt templates, each at @1x and @2x (16×16 at 72 dpi, 32×32 at 144 dpi, 18×18 at 72 dpi, 36×36 at 144 dpi). `TISIconIsTemplate` is true, and `tsInputMethodIconFileKey` plus each mode's `tsInputModeMenuIconFileKey` (and the alternate and palette keys) name this file. macOS tints the template for light and dark menu bars.
+- `resources/paretly.pdf` — the same drawing as an 18×18 pt vector, the role `rime.pdf` has in Squirrel. It is copied into the app.
+- `resources/AppIcon.icns` with every size macOS reads (16, 32, 64, 128, 256, 512, 1024, including the @2x types) and the same images in `Assets.xcassets/AppIcon.appiconset/`. `CFBundleIconFile` is `AppIcon.icns`. The input method and the Launchpad app in `/Applications` both use that file.
 
 ### Launchpad
 
@@ -335,7 +335,7 @@ Pushes to `main` and pull requests only build the disk image. They keep the proj
 
 The input menu and the settings window (the Paretly app in Launchpad opens that window) both have **Check for Updates…**. Paretly reads the latest stable GitHub Release of `QiuZekun/paretly-ime` (drafts and prereleases are skipped) and compares the `vX.Y.Z` tag with `CFBundleShortVersionString`.
 
-A newer release shows its notes and three buttons: **Download & Install**, **Later**, and **Skip this version**. The disk image is saved to `~/Downloads/Paretly-unsigned.dmg`. Paretly checks the file size and, when the release includes a `.sha256` file, the SHA-256 digest, then opens the image in Finder. The package is unsigned, so Paretly does not replace the running copy. The dialog explains Gatekeeper. If you are already up to date, it says so. Network failures are reported only for a manual check. An automatic check runs at most once a day on launch. The Settings switch defaults to on. Sparkle is not used for this: an unsigned disk image cannot go through Sparkle's EdDSA install path.
+A newer release shows its notes and three buttons: **Download & Install**, **Later**, and **Skip this version**. The disk image is saved to `~/Downloads/Paretly-unsigned.dmg`. Paretly checks the file size and, when the release includes a `.sha256` file, the SHA-256 digest, then opens the image in Finder. The package is unsigned, so Paretly does not replace the running copy. The dialog explains Gatekeeper. If you are already up to date, it says so. When the repo has no published release, or GitHub returns 404 for the latest release, a manual check says you're up to date and that no newer version has been published yet (with the current version). That is not an error. Only a network or HTTP failure is reported, and the alert includes the reason. The input menu and the Settings button both run this check, and the alert is brought forward. An automatic check runs at most once a day on launch. The Settings switch defaults to on. Sparkle is not used for this: an unsigned disk image cannot go through Sparkle's EdDSA install path.
 
 ### Credits and licenses
 

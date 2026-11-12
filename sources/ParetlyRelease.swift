@@ -86,6 +86,30 @@ enum ParetlyReleaseError: Error, Equatable {
   case notAReleaseList
 }
 
+/// What a manual or automatic check should do with one GitHub response.
+enum ParetlyManualResult: Equatable {
+  /// A newer stable release with a disk image.
+  case offer(ParetlyRelease)
+  /// A stable release exists and it is not newer than this copy.
+  case upToDate(version: String)
+  /// No published stable release (empty list, only drafts, or HTTP 404).
+  case nothingPublished(version: String)
+  case failed(ParetlyReleaseFailure)
+  case missingVersion
+}
+
+enum ParetlyReleaseFailure: Equatable {
+  case transport(String)
+  case http(status: Int, message: String)
+  case unreadable
+}
+
+enum ParetlyReleaseFetch: Equatable {
+  case catalog([ParetlyRelease])
+  case noPublishedRelease
+  case failed(ParetlyReleaseFailure)
+}
+
 enum ParetlyReleaseCatalog {
   static func releases(from data: Data) throws -> [ParetlyRelease] {
     let object = try JSONSerialization.jsonObject(with: data)
@@ -113,6 +137,58 @@ enum ParetlyReleaseCatalog {
     return .available(newest)
   }
 
+  /// 404 and GitHub's `{"message":"Not Found"}` body mean there is no published
+  /// release (`/releases/latest` returns that before the first release). An
+  /// empty list is a catalog the caller turns into `nothingPublished`.
+  static func interpret(statusCode: Int?, data: Data?, transportError: String?) -> ParetlyReleaseFetch {
+    if statusCode == 404 || githubMessage(in: data) == "Not Found" {
+      return .noPublishedRelease
+    }
+    if let transportError {
+      return .failed(.transport(transportError))
+    }
+    if let statusCode, !(200..<300).contains(statusCode) {
+      return .failed(.http(status: statusCode, message: githubMessage(in: data)))
+    }
+    guard let data else {
+      return .failed(.unreadable)
+    }
+    do {
+      return .catalog(try releases(from: data))
+    } catch {
+      return .failed(.unreadable)
+    }
+  }
+
+  static func outcome(
+    fetch: ParetlyReleaseFetch,
+    current: ParetlyVersion?,
+    skipped: ParetlyVersion?,
+    manual: Bool
+  ) -> ParetlyManualResult {
+    switch fetch {
+    case .failed(let failure):
+      return .failed(failure)
+    case .noPublishedRelease:
+      guard let current else {
+        return .missingVersion
+      }
+      return .nothingPublished(version: current.display)
+    case .catalog(let releases):
+      guard let current else {
+        return .missingVersion
+      }
+      switch decide(current: current, newest: newestStable(in: releases), skipped: skipped, manual: manual) {
+      case .available(let release):
+        return .offer(release)
+      case .upToDate:
+        return .upToDate(version: current.display)
+      case .noRelease:
+        return .nothingPublished(version: current.display)
+      }
+    }
+  }
+
   static func automaticCheckIsDue(automatic: Bool, lastCheck: Date?, now: Date, interval: TimeInterval = 24 * 60 * 60) -> Bool {
     guard automatic else {
       return false
@@ -121,6 +197,15 @@ enum ParetlyReleaseCatalog {
       return true
     }
     return now.timeIntervalSince(lastCheck) >= interval
+  }
+
+  private static func githubMessage(in data: Data?) -> String {
+    guard let data,
+          let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let message = object["message"] as? String else {
+      return ""
+    }
+    return message.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   private static func parseRelease(_ row: [String: Any]) -> ParetlyRelease? {

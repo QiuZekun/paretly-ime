@@ -4,8 +4,9 @@
 Sources (replace these when the final art is ready, then rerun this script):
 
   resources/icons/src/menu-template.svg
-      Monochrome menu-bar template. A filled rounded square with a bold P knocked
-      out, on a transparent 16x16 canvas.
+      Menu-bar template on a 256x256 canvas: a black Inter Display ExtraBold P
+      centered in (0,0)-(216,256) at 220px, and a caret from (210,40) to
+      (230,216). No box. Transparent background.
   resources/icons/src/app-icon.svg
       App icon. Dark vertical gradient squircle, white P, blue bar, and a soft
       shadow, on a 1024x1024 canvas.
@@ -13,19 +14,22 @@ Sources (replace these when the final art is ready, then rerun this script):
 Outputs:
 
   resources/paretly.pdf
-      16x16 pt vector template, the same role as Squirrel's resources/rime.pdf.
+      18x18 pt vector template. macOS can scale it without blurring.
   resources/paretly.tiff
-      16 pt template with a 16x16 image at 72 dpi (@1x) and a 32x32 image at
-      144 dpi (@2x). Info.plist points the input-menu keys at this file.
+      Template bitmaps at 16 pt and 18 pt, each with @1x (72 dpi) and @2x
+      (144 dpi). Info.plist points the input-menu keys at this file.
   resources/AppIcon.icns
-      App icon with the sizes macOS reads from an icns.
+      Every PNG size macOS reads, stored under the OSType for that size.
+      A 16px PNG must not be filed as ic14: Launchpad would scale it up.
   Assets.xcassets/AppIcon.appiconset/
       The same artwork as a macOS app icon set, plus Contents.json.
 
-The script uses only the Python 3 standard library. SVG support is the subset
-these sources need: filled paths with M/L/H/V/C/Z (absolute or relative),
-even-odd or nonzero fill, a vertical user-space linearGradient, and a drop
-shadow written as feGaussianBlur + feOffset + feFuncA on a group.
+Each bitmap is rasterized from the SVG at that pixel size (supersampled).
+The script never scales a smaller bitmap up. It uses only the Python 3
+standard library. SVG support is the subset these sources need: filled paths
+with M/L/H/V/C/Z (absolute or relative), even-odd or nonzero fill, a vertical
+user-space linearGradient, and a drop shadow written as feGaussianBlur +
+feOffset + feFuncA on a group.
 """
 
 from __future__ import annotations
@@ -53,36 +57,47 @@ ICONSET_SPECS = (
     ("icon_512x512@2x.png", 1024),
 )
 
-# PNG-backed icns types written by iconutil on macOS 10.8 and later.
+# OSTypes iconutil writes for a complete macOS iconset, and the PNG pixel size
+# each type must contain. ic11–ic14 are the @2x images (16@2x, 32@2x, 128@2x,
+# 256@2x). ic10 is 512@2x. Filing a 16px PNG as ic14 is what made Launchpad
+# upscale the icon until it looked blurred.
 ICNS_TYPES = (
-    ("ic14", 16),
-    ("ic12", 32),
-    ("ic13", 32),
-    ("ic11", 64),
+    ("icp4", 16),
+    ("icp5", 32),
+    ("icp6", 64),
     ("ic07", 128),
     ("ic08", 256),
     ("ic09", 512),
     ("ic10", 1024),
+    ("ic11", 32),
+    ("ic12", 64),
+    ("ic13", 256),
+    ("ic14", 512),
 )
 
 
 def main() -> None:
     menu = parse_svg(SRC / "menu-template.svg")
     app = parse_svg(SRC / "app-icon.svg")
-    if abs(menu.view_width - 16) > 0.01 or abs(menu.view_height - 16) > 0.01:
-        raise SystemExit("menu-template.svg must use a 16x16 viewBox")
+    if menu.view_width < 16 or abs(menu.view_width - menu.view_height) > 0.01:
+        raise SystemExit("menu-template.svg must use a square viewBox of at least 16")
     if abs(app.view_width - 1024) > 0.01 or abs(app.view_height - 1024) > 0.01:
         raise SystemExit("app-icon.svg must use a 1024x1024 viewBox")
 
-    pdf = build_pdf(menu)
+    # 18 pt matches the menu bar. The drawing is vector, so 16 pt slots stay sharp.
+    pdf = build_pdf(menu, points=18)
     (ROOT / "resources" / "paretly.pdf").write_bytes(pdf)
 
-    menu_1x = rasterize(menu, 16, supersample=8)
-    menu_2x = rasterize(menu, 32, supersample=4)
+    menu_specs = (
+        (16, 72),
+        (32, 144),
+        (18, 72),
+        (36, 144),
+    )
     tiff = build_tiff(
-        (
-            (menu_1x, 16, 16, (72, 1)),
-            (menu_2x, 32, 32, (144, 1)),
+        tuple(
+            (rasterize(menu, pixels, supersample=8), pixels, pixels, (dpi, 1))
+            for pixels, dpi in menu_specs
         )
     )
     (ROOT / "resources" / "paretly.tiff").write_bytes(tiff)
@@ -567,9 +582,15 @@ def encode_png(rgba: bytes) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
 
 
-def build_pdf(picture: Picture) -> bytes:
-    width = picture.view_width
-    height = picture.view_height
+def build_pdf(picture: Picture, points: float | None = None) -> bytes:
+    if abs(picture.view_width - picture.view_height) > 0.01:
+        raise SystemExit("PDF icons must be square")
+    page = picture.view_width if points is None else points
+    scale = page / picture.view_width
+
+    def xy(x: float, y: float) -> str:
+        return f"{x * scale:.3f} {page - y * scale:.3f}"
+
     commands = ["0 0 0 RG", "0 0 0 rg"]
     for shape in picture.shapes:
         if shape.fill[0] != "solid":
@@ -579,14 +600,12 @@ def build_pdf(picture: Picture) -> bytes:
         for subpath in shape.subpaths:
             for index, item in enumerate(subpath):
                 if item[0] == "M":
-                    commands.append(f"{_pdf_x(item[1])} {_pdf_y(item[2], height)} m")
+                    commands.append(f"{xy(item[1], item[2])} m")
                 elif item[0] in ("L", "Z"):
-                    commands.append(f"{_pdf_x(item[1])} {_pdf_y(item[2], height)} l")
+                    commands.append(f"{xy(item[1], item[2])} l")
                 elif item[0] == "C":
                     _, x1, y1, x2, y2, x, y = item
-                    commands.append(
-                        f"{_pdf_x(x1)} {_pdf_y(y1, height)} {_pdf_x(x2)} {_pdf_y(y2, height)} {_pdf_x(x)} {_pdf_y(y, height)} c"
-                    )
+                    commands.append(f"{xy(x1, y1)} {xy(x2, y2)} {xy(x, y)} c")
                 if item[0] == "Z" or (index == len(subpath) - 1 and item[0] != "Z"):
                     commands.append("h")
         commands.append("f*" if shape.rule == "evenodd" else "f")
@@ -595,7 +614,7 @@ def build_pdf(picture: Picture) -> bytes:
         b"<< /Type /Catalog /Pages 2 0 R >>",
         b"<< /Type /Pages /Count 1 /Kids [3 0 R] >>",
         (
-            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {width:.2f} {height:.2f}] "
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {page:.2f} {page:.2f}] "
             "/Resources << /ProcSet [/PDF] >> "
             "/Group << /Type /Group /S /Transparency /CS /DeviceRGB /I true >> "
             "/Contents 4 0 R >>"
@@ -620,17 +639,9 @@ def build_pdf(picture: Picture) -> bytes:
     return bytes(body)
 
 
-def _pdf_x(value: float) -> str:
-    return f"{value:.3f}"
-
-
-def _pdf_y(value: float, height: float) -> str:
-    return f"{height - value:.3f}"
-
-
 def build_tiff(images: tuple[tuple[bytes, int, int, tuple[int, int]], ...]) -> bytes:
-    # Classic little-endian TIFF. Each image is 16 points tall:
-    # 16 px at 72 dpi (@1x) and 32 px at 144 dpi (@2x). ExtraSamples 2 is straight alpha.
+    # Classic little-endian TIFF. 16 px at 72 dpi is 16 pt @1x; 32 px at 144 dpi
+    # is 16 pt @2x. 18 px / 36 px are the 18 pt pair. ExtraSamples 2 is straight alpha.
     for rgba, width, height, _dpi in images:
         if len(rgba) != width * height * 4:
             raise SystemExit("TIFF image has the wrong number of bytes")
@@ -750,8 +761,8 @@ def contents_json() -> str:
 
 def verify_pdf(data: bytes) -> None:
     text = data.decode("latin1")
-    if "/MediaBox [0 0 16.00 16.00]" not in text:
-        raise SystemExit("paretly.pdf is not a 16x16 pt page")
+    if "/MediaBox [0 0 18.00 18.00]" not in text:
+        raise SystemExit("paretly.pdf is not an 18x18 pt page")
     if " 1 1 1 rg" in text or "1.0000 1.0000 1.0000 rg" in text:
         raise SystemExit("paretly.pdf paints a white background")
 
@@ -774,8 +785,15 @@ def verify_tiff(data: bytes) -> None:
         num, den = struct.unpack_from("<II", data, xres_at)
         seen.append((width, height, num / den))
         offset = struct.unpack_from("<I", data, offset + 2 + count * 12)[0]
-    if seen != [(16, 16, 72.0), (32, 32, 144.0)]:
-        raise SystemExit(f"paretly.tiff representations are {seen}, expected 16px@72dpi and 32px@144dpi")
+    expected = [(16, 16, 72.0), (32, 32, 144.0), (18, 18, 72.0), (36, 36, 144.0)]
+    if seen != expected:
+        raise SystemExit(f"paretly.tiff representations are {seen}, expected {expected}")
+
+
+def png_dimensions(data: bytes) -> tuple[int, int]:
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise SystemExit("icns element is not a PNG")
+    return struct.unpack_from(">II", data, 16)
 
 
 def verify_icns(data: bytes) -> None:
@@ -784,15 +802,21 @@ def verify_icns(data: bytes) -> None:
     total = struct.unpack_from(">I", data, 4)[0]
     if total != len(data):
         raise SystemExit("AppIcon.icns size header does not match the file")
+    expected_sizes = {ostype: pixels for ostype, pixels in ICNS_TYPES}
     found = []
     cursor = 8
     while cursor < len(data):
         ostype = data[cursor : cursor + 4].decode("ascii")
         size = struct.unpack_from(">I", data, cursor + 4)[0]
+        payload = data[cursor + 8 : cursor + size]
+        width, height = png_dimensions(payload)
+        expected = expected_sizes.get(ostype)
+        if expected is None or (width, height) != (expected, expected):
+            raise SystemExit(f"{ostype} holds a {width}x{height} PNG, expected {expected}")
         found.append(ostype)
         cursor += size
-    expected = [ostype for ostype, _pixels in ICNS_TYPES]
-    if found != expected:
+    expected_order = [ostype for ostype, _pixels in ICNS_TYPES]
+    if found != expected_order:
         raise SystemExit(f"AppIcon.icns types are {found}")
 
 
