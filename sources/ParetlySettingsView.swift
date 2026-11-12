@@ -89,6 +89,19 @@ struct ParetlySettingsView: View {
         .foregroundStyle(palette.status(model.statusKind))
         .lineLimit(1)
       Spacer(minLength: 8)
+      Button(action: { model.redeploy() }) {
+        Text(settingsText("Deploy"))
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundStyle(palette.accent)
+          .padding(.horizontal, 12)
+          .padding(.vertical, 6)
+          .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+              .stroke(palette.accent, lineWidth: 1)
+          )
+      }
+      .buttonStyle(.plain)
+      .disabled(model.applying)
       Button(action: { model.apply() }) {
         Text(settingsText("Apply"))
           .font(.system(size: 13, weight: .semibold))

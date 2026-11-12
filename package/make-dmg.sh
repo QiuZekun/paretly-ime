@@ -26,7 +26,10 @@ cat > "${stage}/安装说明.txt" << 'EOF'
 装好后如果菜单栏没有 Paretly：
 系统设置 > 键盘 > 输入法 > 添加，选择简体中文或繁体中文下的 Paretly。
 
-输入法菜单里可以打开「Paretly 设置…」。
+启动台里会多一个 Paretly。点它打开「Paretly 设置…」。
+输入法本体在 /Library/Input Methods，启动台不列出那个目录。
+
+输入法菜单里也可以打开「Paretly 设置…」。设置窗口里有「重新部署」。
 用户配置在 ~/Library/Rime，设置写在 paretly.custom.yaml。
 
 重新部署：

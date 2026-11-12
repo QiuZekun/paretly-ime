@@ -35,6 +35,8 @@ struct SquirrelApp {
     return candidates[0]
   }()
   static let logDir = FileManager.default.temporaryDirectory.appending(component: "rime.paretly", directoryHint: .isDirectory)
+  // Set by `--show-settings` when this process is the one that will become the server.
+  static var presentSettingsOnLaunch = false
 
   // swiftlint:disable:next cyclomatic_complexity
   static func main() {
@@ -96,6 +98,16 @@ struct SquirrelApp {
         case "--sync":
           DistributedNotificationCenter.default().postNotificationName(.init("ParetlySyncNotification"), object: nil)
           return true
+        case "--show-settings":
+          let bundleId = Bundle.main.bundleIdentifier!
+          let others = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId)
+            .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
+          if !others.isEmpty {
+            DistributedNotificationCenter.default().postNotificationName(.init("ParetlyShowSettingsNotification"), object: nil)
+            return true
+          }
+          SquirrelApp.presentSettingsOnLaunch = true
+          break
         case "--help":
           print(helpDoc)
           return true
@@ -140,6 +152,12 @@ struct SquirrelApp {
         print("Paretly reporting!")
       }
 
+      if SquirrelApp.presentSettingsOnLaunch {
+        DispatchQueue.main.async {
+          NSApp.squirrelAppDelegate.openSettings()
+        }
+      }
+
       // finally run everything
       app.run()
       print("Paretly is quitting...")
@@ -153,6 +171,7 @@ Supported arguments:
 Perform actions:
   --quit                     quit all Paretly processes
   --reload                   deploy
+  --show-settings            open Paretly Settings
   --sync                     sync user data
   --build                    build all schemas in current directory
 Install Paretly:

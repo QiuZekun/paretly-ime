@@ -17,6 +17,7 @@ Paretly 是 macOS 上的开源输入法，基于 [Rime / 中州韵](https://rime
 1. 下载 `Paretly-unsigned.dmg`。第一个版本的标签是 `v0.1.0`。
 2. 打开磁盘镜像，双击里面的 `Paretly.pkg`。
 3. 安装位置是 `/Library/Input Methods/Paretly.app`。安装包会注册并尝试启用输入法，完成后可能会要求注销再登录。
+4. 启动台里会有 **Paretly**。点它打开设置窗口。输入法本体仍在「输入法」目录里，启动台不显示那个目录。
 
 也可以把 `Paretly.app` 放到 `~/Library/Input Methods/`，然后执行：
 
@@ -53,7 +54,7 @@ xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.dmg
 
 ## 打开设置
 
-菜单栏点 Paretly 的输入法图标，选 **Paretly 设置…**。系统语言是英文时这一项显示 **Settings…**，繁体中文显示 **Paretly 設定…**。
+菜单栏点 Paretly 的输入法图标，选 **Paretly 设置…**。系统语言是英文时这一项显示 **Settings…**，繁体中文显示 **Paretly 設定…**。启动台里的 **Paretly** 打开的是同一个窗口。窗口右上角的 **重新部署** 不改配色，只重新部署。
 
 可以给浅色和深色各选一套配色，并改横排或竖排、候选字号、序号字号和圆角。配色卡片来自随包 `paretly.yaml` 的 `preset_color_schemes`，再叠上 `~/Library/Rime/paretly.yaml` 里的同名覆盖。
 
@@ -83,10 +84,10 @@ Paretly 自己的前端设置写在：
 3. 删除程序。用安装包装的：
 
 ```sh
-sudo rm -rf "/Library/Input Methods/Paretly.app"
+sudo rm -rf "/Library/Input Methods/Paretly.app" "/Applications/Paretly.app"
 ```
 
-自己拷到用户目录的，删除 `~/Library/Input Methods/Paretly.app`。
+自己拷到用户目录的，删除 `~/Library/Input Methods/Paretly.app`。启动台里的 Paretly 也要删：`sudo rm -rf "/Applications/Paretly.app"`。
 
 4. 可选：忘掉安装包记录。
 
@@ -123,6 +124,28 @@ MARKETING_VERSION=0.1.0 make dmg
 ```sh
 bash tools/update-rime-ice.sh
 ```
+
+### 图标
+
+菜单栏图标和 App 图标从 `resources/icons/src/` 的 SVG 生成。现在是占位图：菜单栏是圆角方框里的黑色粗体 P，App 图标是圆角方块上的白色粗体 P。换正式图时，替换 SVG，运行下面的脚本，把生成的文件一起提交：
+
+```sh
+python3 resources/icons/generate.py
+```
+
+脚本只用 Python 3 标准库，会重写：
+
+- `resources/paretly.tiff`：16 pt 的 @1x（16×16，72 dpi）和 @2x（32×32，144 dpi）。`Info.plist` 里 `TISIconIsTemplate` 为真，`tsInputMethodIconFileKey` 和每个输入模式的 `tsInputModeMenuIconFileKey`（以及备用、面板图标）都指向这个文件。系统会按模板图给浅色和深色菜单栏重新着色。
+- `resources/paretly.pdf`：同一张图的 16×16 pt 矢量，角色和鼠须管的 `rime.pdf` 一样，打进 App 里。
+- `resources/AppIcon.icns`，以及 `Assets.xcassets/AppIcon.appiconset/` 的全套尺寸。`CFBundleIconFile` 是 `AppIcon.icns`。
+
+### 启动台
+
+输入法在 `/Library/Input Methods`，`LSUIElement` 为真，启动台不会列出它。`make` 编译 `launcher/main.swift`，放进 `Paretly.app/Contents/Resources/ParetlyLauncher.tar`。`scripts/postinstall` 再解到 `/Applications/Paretly.app`。
+
+这是一个普通前台 App，图标和输入法相同，名字也是 Paretly。点开后如果输入法已在运行，就通知它打开现有的设置窗口；没在运行就先把输入法拉起来再打开。设置窗口里的「重新部署」调用原来的 `deploy()`。
+
+不用指向输入法的替身。替身的目标不在启动台扫描的目录里，而且打开 `LSUIElement` 的输入法不会出现设置窗口。安装包里也不把第二个 `.app` 嵌进输入法目录，避免 `pkgbuild` 把它当成另一个可重定位的 bundle。
 
 ## 发布
 
@@ -173,6 +196,7 @@ Download the disk image from the GitHub Releases page: <https://github.com/QiuZe
 1. Download `Paretly-unsigned.dmg`. The first release tag is `v0.1.0`.
 2. Open the disk image and run `Paretly.pkg`.
 3. The package installs to `/Library/Input Methods/Paretly.app`. It registers the input source and tries to enable it. You may need to log out and back in.
+4. Launchpad gains a **Paretly** app. Open it to show the settings window. The input method itself stays in Input Methods, which Launchpad does not list.
 
 A copy in `~/Library/Input Methods/` also works. Run `Paretly --register-input-source` and `--enable-input-source` from that bundle.
 
@@ -204,7 +228,7 @@ The first deploy selects schema `rime_ice`. Switch schemas with Control+` or F4.
 
 ### Open settings
 
-From the input menu, choose **Paretly 设置…**. The English title is **Settings…**. Traditional Chinese shows **Paretly 設定…**.
+From the input menu, choose **Paretly 设置…**. The English title is **Settings…**. Traditional Chinese shows **Paretly 設定…**. The **Paretly** app in Launchpad opens the same window. **Deploy** in that window redeploys without writing theme changes.
 
 Pick a light scheme and a dark scheme, then set horizontal or vertical candidates, candidate size, label size, and corner radius. Cards come from `preset_color_schemes` in the bundled `paretly.yaml`, with the same keys from `~/Library/Rime/paretly.yaml` overlaid.
 
@@ -234,10 +258,10 @@ Paretly's own frontend files are:
 3. Delete the app. For the package install:
 
 ```sh
-sudo rm -rf "/Library/Input Methods/Paretly.app"
+sudo rm -rf "/Library/Input Methods/Paretly.app" "/Applications/Paretly.app"
 ```
 
-If you copied the app yourself, delete `~/Library/Input Methods/Paretly.app`.
+If you copied the input method yourself, delete `~/Library/Input Methods/Paretly.app` as well. Also remove the Launchpad app with `sudo rm -rf "/Applications/Paretly.app"` if it is still there.
 
 4. Optionally forget the package receipt:
 
@@ -266,6 +290,28 @@ MARKETING_VERSION=0.1.0 make dmg
 ```
 
 Without it, the Xcode project version `0.1.0` is used.
+
+### Icons
+
+Menu-bar and app icons are generated from the SVGs in `resources/icons/src/`. The current art is a placeholder: a black bold P inside a rounded-square outline for the menu bar, and a white bold P on a rounded square for the app icon. Replace the SVGs, rerun the script, and commit the generated files:
+
+```sh
+python3 resources/icons/generate.py
+```
+
+The script uses only the Python 3 standard library. It rewrites:
+
+- `resources/paretly.tiff` — a 16 pt template with @1x (16×16 at 72 dpi) and @2x (32×32 at 144 dpi). `TISIconIsTemplate` is true, and `tsInputMethodIconFileKey` plus each mode's `tsInputModeMenuIconFileKey` (and the alternate and palette keys) name this file. macOS tints the template for light and dark menu bars.
+- `resources/paretly.pdf` — the same drawing as a 16×16 pt vector, the role `rime.pdf` has in Squirrel. It is copied into the app.
+- `resources/AppIcon.icns` and every size in `Assets.xcassets/AppIcon.appiconset/`. `CFBundleIconFile` is `AppIcon.icns`.
+
+### Launchpad
+
+The input method lives in `/Library/Input Methods` with `LSUIElement` set, so Launchpad does not list it. `make` compiles `launcher/main.swift` into `Paretly.app/Contents/Resources/ParetlyLauncher.tar`. `scripts/postinstall` unpacks that to `/Applications/Paretly.app`.
+
+That app is a normal foreground bundle with the same icon and the name Paretly. If the input method is already running, the launcher asks it to open the existing settings window. If it is not running, the launcher starts it and that process opens settings. **Deploy** in the settings window calls the existing `deploy()`.
+
+An alias to the input method would not show up in Launchpad: the target is outside the folders Launchpad scans, and opening the `LSUIElement` bundle does not present settings. The package also does not nest a second `.app` inside the input method, because `pkgbuild` would treat that as another relocatable bundle.
 
 ### Release
 
