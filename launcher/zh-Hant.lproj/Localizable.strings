@@ -1,0 +1,3 @@
+"Paretly is not installed" = "沒有找到 Paretly";
+"Install Paretly from the package, then open this app again. The input method has to be in /Library/Input Methods or ~/Library/Input Methods." = "請先用安裝包裝好 Paretly，再打開這個應用。輸入法需要在 /Library/Input Methods 或個人資源庫的 Input Methods 裡。";
+"Could not open Paretly Settings." = "無法打開 Paretly 設定。";

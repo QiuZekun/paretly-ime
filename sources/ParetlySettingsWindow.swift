@@ -168,6 +168,13 @@ final class ParetlySettingsModel: ObservableObject {
     applyInFlight = false
   }
 
+  func redeploy() {
+    if applyInFlight { return }
+    NSApp.squirrelAppDelegate.deploy()
+    statusText = NSLocalizedString("Redeployed.", comment: "Settings")
+    statusKind = .ok
+  }
+
   private func editedSettings() -> ThemeSettings {
     ThemeSettings(
       colorScheme: colorScheme,

@@ -407,6 +407,23 @@
         }
       }
     },
+    "Redeployed." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已重新部署。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已重新部署。"
+          }
+        }
+      }
+    },
     "Saved and redeployed." : {
       "comment" : "Settings",
       "localizations" : {

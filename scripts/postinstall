@@ -6,7 +6,43 @@ app_root="${DSTROOT}/Paretly.app"
 executable="${app_root}/Contents/MacOS/Paretly"
 shared_data="${app_root}/Contents/SharedSupport"
 
+install_applications_launcher() {
+    local archive="${app_root}/Contents/Resources/ParetlyLauncher.tar"
+    local dest="/Applications/Paretly.app"
+    local stage
+    local reg="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+    if [ ! -f "${archive}" ]; then
+        echo "Paretly launcher archive is missing; Launchpad app was not installed." >&2
+        return 0
+    fi
+    stage="$(mktemp -d)"
+    tar -xf "${archive}" -C "${stage}"
+    if [ ! -d "${stage}/Paretly.app" ]; then
+        rm -rf "${stage}"
+        echo "Paretly launcher archive has no Paretly.app" >&2
+        exit 1
+    fi
+    if [ "$(id -u)" -eq 0 ]; then
+        rm -rf "${dest}"
+        /usr/bin/ditto "${stage}/Paretly.app" "${dest}"
+        chown -R root:wheel "${dest}"
+        chmod -R a+rX "${dest}"
+    elif [ -w /Applications ]; then
+        rm -rf "${dest}"
+        /usr/bin/ditto "${stage}/Paretly.app" "${dest}"
+    else
+        /usr/bin/sudo /bin/rm -rf "${dest}"
+        /usr/bin/sudo /usr/bin/ditto "${stage}/Paretly.app" "${dest}"
+    fi
+    rm -rf "${stage}"
+    if [ -x "${reg}" ]; then
+        /usr/bin/sudo -u "${login_user}" "${reg}" -f "${dest}" || true
+    fi
+}
+
 /usr/bin/sudo -u "${login_user}" /usr/bin/killall Paretly > /dev/null || true
+
+install_applications_launcher
 
 "${executable}" --register-input-source
 

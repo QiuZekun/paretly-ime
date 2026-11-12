@@ -111,12 +111,14 @@ release: $(DEPS_CHECK) rime-ice
 	bash package/add_data_files
 	xcodebuild -project Squirrel.xcodeproj -configuration Release -scheme Squirrel -derivedDataPath $(DERIVED_DATA_PATH) $(BUILD_SETTINGS) build
 	bash tools/bundle-rime-ice.sh "$(DERIVED_DATA_PATH)/Build/Products/Release/Paretly.app"
+	bash tools/build-launcher.sh "$(DERIVED_DATA_PATH)/Build/Products/Release/Paretly.app"
 
 debug: $(DEPS_CHECK) rime-ice
 	mkdir -p $(DERIVED_DATA_PATH)
 	bash package/add_data_files
 	xcodebuild -project Squirrel.xcodeproj -configuration Debug -scheme Squirrel -derivedDataPath $(DERIVED_DATA_PATH)  $(BUILD_SETTINGS) build
 	bash tools/bundle-rime-ice.sh "$(DERIVED_DATA_PATH)/Build/Products/Debug/Paretly.app"
+	bash tools/build-launcher.sh "$(DERIVED_DATA_PATH)/Build/Products/Debug/Paretly.app"
 
 .PHONY: rime-ice
 

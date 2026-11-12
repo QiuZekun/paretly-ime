@@ -229,6 +229,7 @@ final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUSta
     let notifCenter = DistributedNotificationCenter.default()
     notifCenter.addObserver(forName: .init("ParetlyReloadNotification"), object: nil, queue: nil, using: rimeNeedsReload)
     notifCenter.addObserver(forName: .init("ParetlySyncNotification"), object: nil, queue: nil, using: rimeNeedsSync)
+    notifCenter.addObserver(forName: .init("ParetlyShowSettingsNotification"), object: nil, queue: .main, using: rimeNeedsSettings)
   }
 
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -309,6 +310,11 @@ private extension SquirrelApplicationDelegate {
   func rimeNeedsSync(_: Notification) {
     print("Sync rime on demand.")
     self.syncUserData()
+  }
+
+  func rimeNeedsSettings(_: Notification) {
+    print("Showing settings on demand.")
+    self.openSettings()
   }
 
   func createDirIfNotExist(path: URL) {
