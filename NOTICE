@@ -1,0 +1,29 @@
+Paretly
+Copyright (C) 2026 Paretly contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+The license text is LICENSE.txt in the root of this repository.
+
+Paretly is a modified version of Squirrel (鼠须管 / 鼠鬚管), the macOS
+frontend of the Rime input method engine, published by the Rime
+developers (式恕堂). The base is Squirrel 1.1.2, commit
+876adebaf2f612951dcdca8a591de65401222b9a. Modifications in this
+repository, dated 2026, include the product name Paretly, the default
+schema Rime ICE (雾凇拼音), an unsigned disk image, and a native
+settings window. Copyright notices that came with the upstream source
+are kept.
+
+Squirrel and these modifications are released under GPL-3.0.
+Rime ICE is included under GPL-3.0 only. Other bundled components and
+the license texts that have to travel with them are listed in
+THIRD-PARTY-NOTICES.md.
