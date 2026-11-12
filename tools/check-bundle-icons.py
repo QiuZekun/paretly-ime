@@ -13,8 +13,11 @@ def main() -> None:
     path = sys.argv[1]
     with open(path, "rb") as handle:
         plist = plistlib.load(handle)
-    if plist.get("CFBundleIconFile") != "AppIcon.icns":
-        sys.exit(f"CFBundleIconFile is {plist.get('CFBundleIconFile')!r}")
+    # Xcode rewrites CFBundleIconFile to the asset-catalog name without ".icns".
+    # Either form resolves to Contents/Resources/AppIcon.icns.
+    icon_file = plist.get("CFBundleIconFile")
+    if icon_file not in ("AppIcon", "AppIcon.icns"):
+        sys.exit(f"CFBundleIconFile is {icon_file!r}")
     if plist.get("TISIconIsTemplate") is not True:
         sys.exit(f"TISIconIsTemplate is {plist.get('TISIconIsTemplate')!r}")
     if plist.get("tsInputMethodIconFileKey") != "paretly.tiff":
