@@ -15,4 +15,6 @@ Paretly starts from [Squirrel](https://github.com/rime/squirrel) (鼠须管 / �
 
 The Squirrel git history is preserved in this repository. Tag `1.1.2` points at the upstream commit.
 
+Squirrel 1.1.2 registers the input method from `/Library/Input Library/Squirrel.app`. That path is a typo (upstream `master` later uses `/Library/Input Methods`). Paretly registers `/Library/Input Methods/Paretly.app`, and also `~/Library/Input Methods/Paretly.app` when that copy is the one on disk.
+
 Upstream's GitHub workflows are not kept on this fork. They build and publish Squirrel installers (including a nightly release job aimed at `rime/squirrel`). Paretly's own build is added separately.

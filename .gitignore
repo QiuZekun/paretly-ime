@@ -9,8 +9,12 @@ bin/*
 lib/*
 data/opencc/
 data/plum/
+data/rime-ice/
+dist/
 download/
 package/Squirrel*.pkg
+package/Paretly*.pkg
+package/*.dmg
 package/sign/*.pem
 package/test-*
 package/generate_keys

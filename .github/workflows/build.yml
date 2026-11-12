@@ -1,0 +1,41 @@
+name: Build unsigned disk image
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dmg:
+    name: macOS unsigned pkg and dmg
+    # macos-latest is the arm64 pool, which is currently cancelling jobs
+    # before a runner is assigned. macos-15-intel is a separate pool.
+    # ARCHS makes the app universal from that Intel machine.
+    runs-on: macos-15-intel
+    env:
+      ARCHS: arm64 x86_64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build package and disk image
+        run: ./action-build.sh dmg
+
+      - name: Check the disk image
+        run: |
+          test -f dist/Paretly-unsigned.dmg
+          ls -lh dist/Paretly-unsigned.dmg package/Paretly.pkg
+
+      - name: Upload unsigned disk image
+        uses: actions/upload-artifact@v4
+        with:
+          name: Paretly-unsigned.dmg
+          path: dist/Paretly-unsigned.dmg
+          if-no-files-found: error
+          retention-days: 14

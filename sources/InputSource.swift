@@ -11,8 +11,8 @@ import InputMethodKit
 final class SquirrelInstaller {
   enum InputMode: String, CaseIterable {
     static let primary = Self.hans
-    case hans = "im.rime.inputmethod.Squirrel.Hans"
-    case hant = "im.rime.inputmethod.Squirrel.Hant"
+    case hans = "com.qiuzekun.inputmethod.Paretly.Hans"
+    case hant = "com.qiuzekun.inputmethod.Paretly.Hant"
   }
   private lazy var inputSources: [String: TISInputSource] = {
     var inputSources = [String: TISInputSource]()
@@ -43,7 +43,7 @@ final class SquirrelInstaller {
   func register() {
     let enabledInputModes = enabledModes()
     if !enabledInputModes.isEmpty {
-      print("User already registered Squirrel method(s): \(enabledInputModes.map { $0.rawValue })")
+      print("User already registered Paretly method(s): \(enabledInputModes.map { $0.rawValue })")
       // Already registered.
       return
     }
@@ -54,7 +54,7 @@ final class SquirrelInstaller {
   func enable(modes: [InputMode] = []) {
     let enabledInputModes = enabledModes()
     if !enabledInputModes.isEmpty && modes.isEmpty {
-      print("User already enabled Squirrel method(s): \(enabledInputModes.map { $0.rawValue })")
+      print("User already enabled Paretly method(s): \(enabledInputModes.map { $0.rawValue })")
       // keep user's manually enabled input modes.
       return
     }

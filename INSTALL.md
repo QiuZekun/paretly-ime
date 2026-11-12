@@ -1,3 +1,14 @@
+# How to build Paretly
+
+Paretly is this tree with the product name, input source, and icon changed,
+and with [rime-ice](https://github.com/iDvel/rime-ice) copied into SharedSupport
+at build time. `make` downloads the pin in `versions/rime-ice.env` and the
+prebuilt librime that Squirrel's `action-install.sh` already uses. The
+unsigned disk image is `make dmg` (or the GitHub Actions workflow).
+
+The rest of this document is the upstream Squirrel build guide. The built
+app is `Paretly.app`, installed to `/Library/Input Methods`.
+
 # How to Rime with Squirrel
 
 > Instructions to build Squirrel - the Rime frontend for macOS

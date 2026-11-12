@@ -22,7 +22,7 @@ OPENCC_DATA = data/opencc/TSCharacters.ocd2 \
 	data/opencc/TSPhrases.ocd2 \
 	data/opencc/t2s.json
 SPARKLE_FRAMEWORK = Frameworks/Sparkle.framework
-PACKAGE = package/Squirrel.pkg
+PACKAGE = package/Paretly.pkg
 DEPS_CHECK = $(RIME_LIBRARY) $(PLUM_DATA) $(OPENCC_DATA) $(SPARKLE_FRAMEWORK)
 
 OPENCC_DATA_OUTPUT = librime/share/opencc/*.*
@@ -99,15 +99,22 @@ endif
 
 BUILD_SETTINGS += COMPILER_INDEX_STORE_ENABLE=YES
 
-release: $(DEPS_CHECK)
+release: $(DEPS_CHECK) rime-ice
 	mkdir -p $(DERIVED_DATA_PATH)
 	bash package/add_data_files
 	xcodebuild -project Squirrel.xcodeproj -configuration Release -scheme Squirrel -derivedDataPath $(DERIVED_DATA_PATH) $(BUILD_SETTINGS) build
+	bash tools/bundle-rime-ice.sh "$(DERIVED_DATA_PATH)/Build/Products/Release/Paretly.app"
 
-debug: $(DEPS_CHECK)
+debug: $(DEPS_CHECK) rime-ice
 	mkdir -p $(DERIVED_DATA_PATH)
 	bash package/add_data_files
 	xcodebuild -project Squirrel.xcodeproj -configuration Debug -scheme Squirrel -derivedDataPath $(DERIVED_DATA_PATH)  $(BUILD_SETTINGS) build
+	bash tools/bundle-rime-ice.sh "$(DERIVED_DATA_PATH)/Build/Products/Debug/Paretly.app"
+
+.PHONY: rime-ice
+
+rime-ice:
+	bash tools/update-rime-ice.sh
 
 .PHONY: sparkle copy-sparkle-framework
 
@@ -135,7 +142,7 @@ clean-sparkle:
 	rm -rf Frameworks/* > /dev/null 2>&1 || true
 	rm -rf Sparkle/build > /dev/null 2>&1 || true
 
-.PHONY: package archive
+.PHONY: package archive dmg
 
 $(PACKAGE):
 ifdef DEV_ID
@@ -143,20 +150,23 @@ ifdef DEV_ID
 endif
 	bash package/make_package "$(DERIVED_DATA_PATH)"
 ifdef DEV_ID
-	productsign --sign "Developer ID Installer: $(DEV_ID)" package/Squirrel.pkg package/Squirrel-signed.pkg
-	rm package/Squirrel.pkg
-	mv package/Squirrel-signed.pkg package/Squirrel.pkg
-	xcrun notarytool submit package/Squirrel.pkg --keychain-profile "$(DEV_ID)" --wait
-	xcrun stapler staple package/Squirrel.pkg
+	productsign --sign "Developer ID Installer: $(DEV_ID)" package/Paretly.pkg package/Paretly-signed.pkg
+	rm package/Paretly.pkg
+	mv package/Paretly-signed.pkg package/Paretly.pkg
+	xcrun notarytool submit package/Paretly.pkg --keychain-profile "$(DEV_ID)" --wait
+	xcrun stapler staple package/Paretly.pkg
 endif
 
 package: release $(PACKAGE)
+
+dmg: package
+	bash package/make-dmg.sh
 
 archive: package package/sign_update
 	bash package/make_archive
 
 DSTROOT = /Library/Input Methods
-SQUIRREL_APP_ROOT = $(DSTROOT)/Squirrel.app
+SQUIRREL_APP_ROOT = $(DSTROOT)/Paretly.app
 
 .PHONY: permission-check install-debug install-release
 
@@ -165,12 +175,12 @@ permission-check:
 
 install-debug: debug permission-check
 	rm -rf "$(SQUIRREL_APP_ROOT)"
-	cp -R $(DERIVED_DATA_PATH)/Build/Products/Debug/Squirrel.app "$(DSTROOT)"
+	cp -R $(DERIVED_DATA_PATH)/Build/Products/Debug/Paretly.app "$(DSTROOT)"
 	DSTROOT="$(DSTROOT)" RIME_NO_PREBUILD=1 bash scripts/postinstall
 
 install-release: release permission-check
 	rm -rf "$(SQUIRREL_APP_ROOT)"
-	cp -R $(DERIVED_DATA_PATH)/Build/Products/Release/Squirrel.app "$(DSTROOT)"
+	cp -R $(DERIVED_DATA_PATH)/Build/Products/Release/Paretly.app "$(DSTROOT)"
 	DSTROOT="$(DSTROOT)" bash scripts/postinstall
 
 .PHONY: clean clean-deps
