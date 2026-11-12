@@ -21,38 +21,8 @@ if [[ ! -d "${app}/Contents/MacOS" ]]; then
   exit 1
 fi
 
-version="$(python3 - "${plist}" << 'PY'
-import plistlib, sys
-with open(sys.argv[1], "rb") as handle:
-    plist = plistlib.load(handle)
-if plist.get("CFBundleIconFile") != "AppIcon.icns":
-    sys.exit(f"CFBundleIconFile is {plist.get('CFBundleIconFile')!r}")
-if plist.get("TISIconIsTemplate") is not True:
-    sys.exit(f"TISIconIsTemplate is {plist.get('TISIconIsTemplate')!r}")
-if plist.get("tsInputMethodIconFileKey") != "paretly.tiff":
-    sys.exit(f"tsInputMethodIconFileKey is {plist.get('tsInputMethodIconFileKey')!r}")
-modes = plist["ComponentInputModeDict"]["tsInputModeListKey"]
-icon_fields = (
-    "tsInputModeMenuIconFileKey",
-    "tsInputModeAlternateMenuIconFileKey",
-    "tsInputModePaletteIconFileKey",
-)
-for key in (
-    "com.qiuzekun.inputmethod.Paretly.Hans",
-    "com.qiuzekun.inputmethod.Paretly.Hant",
-):
-    mode = modes[key]
-    if mode.get("TISIconIsTemplate") is not True:
-        sys.exit(f"{key} TISIconIsTemplate is {mode.get('TISIconIsTemplate')!r}")
-    for field in icon_fields:
-        if mode.get(field) != "paretly.tiff":
-            sys.exit(f"{key} {field} is {mode.get(field)!r}")
-version = plist.get("CFBundleShortVersionString") or plist.get("CFBundleVersion")
-if not version or version.startswith("$("):
-    sys.exit(f"CFBundleShortVersionString is {version!r}")
-print(version)
-PY
-)"
+# A heredoc inside $(...) breaks on the bash 3.2 that ships with macOS.
+version="$(python3 "${root}/tools/check-bundle-icons.py" "${plist}")"
 test -f "${app}/Contents/Resources/AppIcon.icns"
 test -f "${app}/Contents/Resources/paretly.tiff"
 test -f "${app}/Contents/Resources/paretly.pdf"
