@@ -76,7 +76,6 @@ final class ParetlyTryFieldBox: NSView {
     cell.backgroundColor = .textBackgroundColor
     cell.controlView = self
     textView.drawsBackground = false
-    textView.isOpaque = false
     textView.isEditable = true
     textView.isSelectable = true
     textView.isRichText = false
@@ -171,6 +170,9 @@ final class ParetlyTryTextView: NSTextView {
   var placeholderText = "" {
     didSet { needsDisplay = true }
   }
+
+  /// `NSView.isOpaque` is read-only. A clear background lets the field bezel show through.
+  override var isOpaque: Bool { false }
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
