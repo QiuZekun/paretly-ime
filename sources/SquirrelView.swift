@@ -7,6 +7,7 @@
 
 import AppKit
 
+@objc(ParetlyTextLayoutDelegate)
 private class SquirrelLayoutDelegate: NSObject, NSTextLayoutManagerDelegate {
   func textLayoutManager(_ textLayoutManager: NSTextLayoutManager, shouldBreakLineBefore location: any NSTextLocation, hyphenating: Bool) -> Bool {
     let index = textLayoutManager.offset(from: textLayoutManager.documentRange.location, to: location)
@@ -22,6 +23,7 @@ extension NSAttributedString.Key {
   static let noBreak = NSAttributedString.Key("noBreak")
 }
 
+@objc(ParetlyCandidateView)
 final class SquirrelView: NSView {
   let textView: NSTextView
 

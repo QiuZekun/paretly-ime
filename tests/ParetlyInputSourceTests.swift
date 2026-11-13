@@ -21,6 +21,11 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertEqual(plist["LSBackgroundOnly"] as? Bool, false)
     XCTAssertEqual(plist["LSUIElement"] as? Bool, true)
     XCTAssertFalse(serialized(plist).contains("im.rime.inputmethod.Squirrel"))
+    try assertNoSquirrelIdentifier(plist["InputMethodConnectionName"] as? String, label: "InputMethodConnectionName")
+    try assertNoSquirrelIdentifier(plist["InputMethodServerControllerClass"] as? String, label: "InputMethodServerControllerClass")
+    try assertNoSquirrelIdentifier(plist["InputMethodServerDelegateClass"] as? String, label: "InputMethodServerDelegateClass")
+    try assertNoSquirrelIdentifier(plist["TISInputSourceID"] as? String, label: "TISInputSourceID")
+    try assertNoSquirrelIdentifier(plist["tsInputMethodIconFileKey"] as? String, label: "tsInputMethodIconFileKey")
 
     let component = try XCTUnwrap(plist["ComponentInputModeDict"] as? [String: Any])
     let modes = try XCTUnwrap(component["tsInputModeListKey"] as? [String: Any])
@@ -80,6 +85,65 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertTrue(installer.contains("TISRegisterInputSource"))
     XCTAssertTrue(installer.contains("TISEnableInputSource"))
     XCTAssertFalse(installer.contains("im.rime.inputmethod.Squirrel"))
+    XCTAssertFalse(postinstall.localizedCaseInsensitiveContains("squirrel"))
+    XCTAssertFalse(preinstall.localizedCaseInsensitiveContains("squirrel"))
+    XCTAssertFalse(postinstall.contains("Squirrel.app"))
+    XCTAssertFalse(postinstall.contains("im.rime"))
+  }
+
+  func testInfoPlistKeysDoNotReuseSquirrelIdentifiers() throws {
+    let plist = try propertyList("resources/Info.plist")
+    XCTAssertEqual(plist["InputMethodConnectionName"] as? String, "Paretly_Connection")
+    XCTAssertNotEqual(plist["InputMethodConnectionName"] as? String, "Squirrel_Connection")
+    XCTAssertNotEqual(plist["InputMethodConnectionName"] as? String, "Squirrel_1_Connection")
+    XCTAssertEqual(plist["InputMethodServerControllerClass"] as? String, "ParetlyInputController")
+    XCTAssertEqual(plist["InputMethodServerDelegateClass"] as? String, "ParetlyInputController")
+
+    let controller = try text("sources/SquirrelInputController.swift")
+    XCTAssertTrue(controller.contains("@objc(ParetlyInputController)"))
+    let delegate = try text("sources/SquirrelApplicationDelegate.swift")
+    XCTAssertTrue(delegate.contains("@objc(ParetlyApplicationDelegate)"))
+    let panel = try text("sources/SquirrelPanel.swift")
+    XCTAssertTrue(panel.contains("@objc(ParetlyCandidatePanel)"))
+    let view = try text("sources/SquirrelView.swift")
+    XCTAssertTrue(view.contains("@objc(ParetlyCandidateView)"))
+    XCTAssertTrue(view.contains("@objc(ParetlyTextLayoutDelegate)"))
+
+    let component = try XCTUnwrap(plist["ComponentInputModeDict"] as? [String: Any])
+    let modes = try XCTUnwrap(component["tsInputModeListKey"] as? [String: Any])
+    let iconKeys = [
+      "tsInputModeMenuIconFileKey",
+      "tsInputModePaletteIconFileKey",
+      "tsInputModeAlternateMenuIconFileKey"
+    ]
+    for (modeID, raw) in modes {
+      try assertNoSquirrelIdentifier(modeID, label: "mode id")
+      let mode = try XCTUnwrap(raw as? [String: Any])
+      try assertNoSquirrelIdentifier(mode["TISInputSourceID"] as? String, label: "\(modeID) TISInputSourceID")
+      for key in iconKeys {
+        let icon = try XCTUnwrap(mode[key] as? String, "\(modeID) \(key)")
+        try assertNoSquirrelIdentifier(icon, label: "\(modeID) \(key)")
+        XCTAssertNotEqual(icon, "rime.pdf")
+        XCTAssertNotEqual(icon, "squirrel.tiff")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: repoFile("resources/\(icon)").path), icon)
+      }
+    }
+    let methodIcon = try XCTUnwrap(plist["tsInputMethodIconFileKey"] as? String)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: repoFile("resources/\(methodIcon)").path))
+
+    let main = try text("sources/Main.swift")
+    XCTAssertTrue(main.contains("\"Library\", \"Rime\""))
+    XCTAssertTrue(main.contains("rime.paretly"))
+    XCTAssertFalse(main.contains("rime.squirrel"))
+    XCTAssertFalse(main.contains("Squirrel_Connection"))
+    XCTAssertFalse(main.contains("SquirrelReloadNotification"))
+    XCTAssertTrue(main.contains("ParetlyReloadNotification"))
+    XCTAssertTrue(delegate.contains("ParetlyReloadNotification"))
+    XCTAssertTrue(delegate.contains("\"rime.paretly\""))
+    XCTAssertTrue(delegate.contains("paretly.yaml"))
+    XCTAssertFalse(delegate.contains("SquirrelReloadNotification"))
+    XCTAssertFalse(delegate.contains("SquirrelSyncNotification"))
+    XCTAssertFalse(delegate.contains("squirrel.yaml"))
   }
 
   func testInputMethodStartsHiddenAndPromotesOnce() throws {
@@ -138,6 +202,15 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertTrue(builder[key.upperBound...].contains("<true/>"))
     XCTAssertTrue(builder.contains("Launcher must set LSUIElement"))
     XCTAssertFalse(builder.contains("Launcher must not set LSUIElement"))
+  }
+
+  private func assertNoSquirrelIdentifier(_ value: String?, label: String) throws {
+    let text = try XCTUnwrap(value, label)
+    XCTAssertNil(
+      text.range(of: "squirrel", options: .caseInsensitive),
+      "\(label) still uses a Squirrel identifier: \(text)"
+    )
+    XCTAssertFalse(text.contains("im.rime"), label)
   }
 
   private func assertMode(_ mode: [String: Any], id: String, language: String, isDefault: Bool) {

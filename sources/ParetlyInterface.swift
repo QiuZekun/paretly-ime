@@ -20,7 +20,9 @@ import Foundation
 enum ParetlyInputSource {
   static let bundleIdentifier = "com.qiuzekun.inputmethod.Paretly"
   static let connectionName = "Paretly_Connection"
-  static let serverControllerClass = "Paretly.SquirrelInputController"
+  /// IMK resolves this with NSClassFromString. It matches `@objc(ParetlyInputController)`
+  /// and must not be `SquirrelInputController` or `Paretly.SquirrelInputController`.
+  static let serverControllerClass = "ParetlyInputController"
   static let installedAppPath = "/Library/Input Methods/Paretly.app"
   static let modeHans = "com.qiuzekun.inputmethod.Paretly.Hans"
   static let modeHant = "com.qiuzekun.inputmethod.Paretly.Hant"
