@@ -188,6 +188,8 @@ final class ParetlyInputSourceTests: XCTestCase {
     let done = try XCTUnwrap(source.range(of: "exit(EXIT_SUCCESS)"))
     XCTAssertLessThan(posted.lowerBound, done.lowerBound)
     XCTAssertTrue(source.contains("ParetlyShowSettingsNotification"))
+    XCTAssertTrue(source.contains("activate(from:"))
+    XCTAssertTrue(source.contains("activateIgnoringOtherApps"))
     XCTAssertFalse(source.contains("setActivationPolicy(.accessory)"))
     XCTAssertFalse(source.contains("NSWorkspace"))
     XCTAssertFalse(source.contains("/usr/bin/open"))

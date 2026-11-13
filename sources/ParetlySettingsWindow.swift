@@ -148,51 +148,59 @@ final class ParetlySettingsModel: ObservableObject {
     }
   }
 
-  func apply() {
+  /// Writes paretly.custom.yaml when this window has changes, then deploys.
+  /// With no changes, only deploys, so hand-edited Rime files are picked up.
+  /// A validation error blocks the write and does not deploy.
+  func applyAndDeploy() {
     if applyInFlight { return }
     let edited = editedSettings()
+    let edits = ParetlyThemeDocument.changedPatchEdits(baseline: baseline, loaded: loaded, edited: edited)
     var known = Set(schemes.map(\.id))
     known.insert(loaded.colorScheme)
     known.insert(loaded.colorSchemeDark)
-    if let problem = ParetlyThemeDocument.validate(edited, knownSchemeIDs: known) {
-      statusText = NSLocalizedString(problem, comment: "Settings")
+    let problem = edits.isEmpty ? nil : ParetlyThemeDocument.validate(edited, knownSchemeIDs: known)
+    switch ParetlyApplyDeploy.plan(validationProblem: problem, hasEdits: !edits.isEmpty) {
+    case .rejected(let key):
+      statusText = NSLocalizedString(key, comment: "Settings")
       statusKind = .err
-      return
-    }
-    let edits = ParetlyThemeDocument.changedPatchEdits(baseline: baseline, loaded: loaded, edited: edited)
-    if edits.isEmpty {
-      statusText = NSLocalizedString("No changes to write.", comment: "Settings")
+    case .deployOnly:
+      beginApply()
+      NSApp.squirrelAppDelegate.deploy()
+      statusText = NSLocalizedString("Redeployed.", comment: "Settings")
+      statusKind = .ok
+      endApply()
+    case .saveThenDeploy:
+      beginApply()
+      statusText = NSLocalizedString("Writing…", comment: "Settings")
       statusKind = .neutral
-      return
-    }
-    applyInFlight = true
-    applying = true
-    statusText = NSLocalizedString("Writing…", comment: "Settings")
-    statusKind = .neutral
-    do {
-      let wrote = try ParetlyThemeDocument.writeCustomFile(edits: edits, userDirectory: SquirrelApp.userDir)
-      if wrote {
-        NSApp.squirrelAppDelegate.deploy()
-        loaded = edited
-        statusText = NSLocalizedString("Saved and redeployed.", comment: "Settings")
-        statusKind = .ok
-      } else {
-        statusText = NSLocalizedString("No changes to write.", comment: "Settings")
-        statusKind = .neutral
+      do {
+        let wrote = try ParetlyThemeDocument.writeCustomFile(edits: edits, userDirectory: SquirrelApp.userDir)
+        if wrote {
+          loaded = edited
+          NSApp.squirrelAppDelegate.deploy()
+          statusText = NSLocalizedString("Saved and redeployed.", comment: "Settings")
+          statusKind = .ok
+        } else {
+          NSApp.squirrelAppDelegate.deploy()
+          statusText = NSLocalizedString("Redeployed.", comment: "Settings")
+          statusKind = .ok
+        }
+      } catch {
+        statusText = NSLocalizedString("Could not write paretly.custom.yaml.", comment: "Settings")
+        statusKind = .err
       }
-    } catch {
-      statusText = NSLocalizedString("Could not write paretly.custom.yaml.", comment: "Settings")
-      statusKind = .err
+      endApply()
     }
-    applying = false
-    applyInFlight = false
   }
 
-  func redeploy() {
-    if applyInFlight { return }
-    NSApp.squirrelAppDelegate.deploy()
-    statusText = NSLocalizedString("Redeployed.", comment: "Settings")
-    statusKind = .ok
+  private func beginApply() {
+    applyInFlight = true
+    applying = true
+  }
+
+  private func endApply() {
+    applying = false
+    applyInFlight = false
   }
 
   private func editedSettings() -> ThemeSettings {
@@ -245,8 +253,27 @@ enum ParetlyWindowActivation {
 
   static func show(_ window: NSWindow?) {
     promote()
-    window?.makeKeyAndOrderFront(nil)
-    activate()
+    // TransformProcessType is applied by the window server after this turn.
+    // A single makeKeyAndOrderFront before that lands behind the app that
+    // opened the launcher. Repeat once the type has changed, and once more
+    // after the launcher has exited and yielded the activation.
+    let generation = nextShow()
+    bringToFront(window, requireVisible: false)
+    DispatchQueue.main.async {
+      guard generation == showGeneration else { return }
+      bringToFront(window, requireVisible: true)
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+      guard generation == showGeneration else { return }
+      bringToFront(window, requireVisible: true)
+    }
+  }
+
+  private static var showGeneration = 0
+
+  private static func nextShow() -> Int {
+    showGeneration += 1
+    return showGeneration
   }
 
   /// One Dock tile while a window or update panel is on screen.
@@ -285,16 +312,42 @@ enum ParetlyWindowActivation {
     foreground = showDock
   }
 
-  private static func activate() {
-    if #available(macOS 14.0, *) {
-      NSApp.activate()
-    } else {
-      NSApp.activate(ignoringOtherApps: true)
+  private static func bringToFront(_ window: NSWindow?, requireVisible: Bool) {
+    guard let window else { return }
+    // A follow-up pass must not reopen a window the user already closed.
+    // Miniaturized windows are not visible; only the first pass restores them.
+    if requireVisible && !window.isVisible {
+      return
     }
+    activateIgnoringOtherApps()
+    if window.isMiniaturized {
+      window.deminiaturize(nil)
+    }
+    window.makeKeyAndOrderFront(nil)
+  }
+
+  /// `NSApp.activate()` on macOS 14+ does not come forward while another app
+  /// is active (`activate(options:)` is not the replacement; the no-argument
+  /// method only requests activation). `ignoringOtherApps` still raises the
+  /// process. The launcher also calls `activate(from:)` so the request is
+  /// allowed.
+  static func activateIgnoringOtherApps() {
+    _ = NSRunningApplication.current.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+    NSApp.activate(ignoringOtherApps: true)
   }
 }
 
 final class ParetlyAuxiliaryWindow: NSWindow {
+  override func fieldEditor(_ createFlag: Bool, for object: Any?) -> NSText? {
+    // The try field is the NSTextView itself (ParetlyTryField.identifier), not
+    // a field editor attached to an NSTextField. Returning that view keeps
+    // AppKit from inserting a second editor that would commit raw letters.
+    if let view = object as? NSView, view.identifier == ParetlyTryField.identifier {
+      return nil
+    }
+    return super.fieldEditor(createFlag, for: object)
+  }
+
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     let flags = event.modifierFlags.intersection([.shift, .control, .option, .command])
     if flags == .command, event.charactersIgnoringModifiers?.lowercased() == "w" {
@@ -303,17 +356,17 @@ final class ParetlyAuxiliaryWindow: NSWindow {
     }
     // Escape while trying a phrase stays in the field (cancel composition or
     // end editing). The settings shortcuts must not close the window first.
-    if flags.isEmpty, event.keyCode == 53,
-       let editor = fieldEditor(false, for: nil), firstResponder === editor {
-      editor.keyDown(with: event)
+    if flags.isEmpty, event.keyCode == 53, paretlyTryFieldIsEditing,
+       let view = firstResponder as? NSTextView {
+      view.keyDown(with: event)
       return true
     }
     return super.performKeyEquivalent(with: event)
   }
 
   override func cancelOperation(_ sender: Any?) {
-    if let editor = fieldEditor(false, for: nil), firstResponder === editor {
-      endEditing(for: nil)
+    if paretlyTryFieldIsEditing {
+      makeFirstResponder(nil)
       return
     }
     performClose(nil)
@@ -345,13 +398,6 @@ final class ParetlySettingsController: NSWindowController, NSWindowDelegate {
     DispatchQueue.main.async {
       ParetlyWindowActivation.sync(ignoring: closing)
     }
-  }
-
-  func windowWillReturnFieldEditor(_ sender: NSWindow, to client: Any?) -> Any? {
-    guard let field = client as? NSTextField, field.identifier == ParetlyTryField.identifier else {
-      return nil
-    }
-    return ParetlyTryFieldEditor.shared
   }
 
   private func installWindow() {

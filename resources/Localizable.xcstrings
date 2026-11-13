@@ -1391,6 +1391,40 @@
         }
       }
     },
+    "Apply & Deploy" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用并部署"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套用並部署"
+          }
+        }
+      }
+    },
+    "Saves changes in this window to paretly.custom.yaml and redeploys Rime. Also picks up hand-edited Rime files." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把这个窗口里的更改写入 paretly.custom.yaml 并重新部署 Rime，同时载入手动修改的 Rime 文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把這個視窗裡的變更寫入 paretly.custom.yaml 並重新部署 Rime，同時載入手動修改的 Rime 檔案。"
+          }
+        }
+      }
+    },
     "Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime." : {
       "comment" : "Settings",
       "localizations" : {

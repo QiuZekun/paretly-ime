@@ -607,6 +607,7 @@ private extension SquirrelInputController {
     var inputPos = NSRect()
     client.attributes(forCharacterIndex: 0, lineHeightRectangle: &inputPos)
     if let panel = NSApp.squirrelAppDelegate.panel {
+      panel.releaseAnchor()
       panel.position = inputPos
       panel.inputController = self
       panel.update(preedit: preedit, selRange: selRange, caretPos: caretPos, candidates: candidates, comments: comments, labels: labels,
