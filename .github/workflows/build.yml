@@ -125,6 +125,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    # No checkout. gh otherwise runs git to discover the repository.
+    env:
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Download unsigned package
         uses: actions/download-artifact@v4
@@ -157,6 +160,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    # No checkout. gh otherwise runs git to discover the repository.
+    env:
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Download unsigned package
         uses: actions/download-artifact@v4
