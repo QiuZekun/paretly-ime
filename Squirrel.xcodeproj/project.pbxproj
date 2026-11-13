@@ -107,6 +107,15 @@
 		A7E1A0642C0A000100000034 /* ParetlyInterfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0612C0A000100000031 /* ParetlyInterfaceTests.swift */; };
 		A7E1A0662C0A000100000036 /* ParetlyInputSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0652C0A000100000035 /* ParetlyInputSourceTests.swift */; };
 		A7E1A0172C0A000100000001 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A7E1A0062C0A000100000001 /* XCTest.framework */; };
+		A7E1B0022C0A0001000000B2 /* AppKitSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1B0012C0A0001000000B1 /* AppKitSupport.swift */; };
+		A7E1B0032C0A0001000000B3 /* AppKitSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1B0012C0A0001000000B1 /* AppKitSupport.swift */; };
+		A7E1B0052C0A0001000000B5 /* ParetlyTryTyping.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1B0042C0A0001000000B4 /* ParetlyTryTyping.swift */; };
+		A7E1B0072C0A0001000000B7 /* ParetlyPanelAndTryFieldTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1B0062C0A0001000000B6 /* ParetlyPanelAndTryFieldTests.swift */; };
+		A7E1B0092C0A0001000000B9 /* ParetlyTryTypingStub.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1B0082C0A0001000000B8 /* ParetlyTryTypingStub.swift */; };
+		A7E1B00A2C0A0001000000BA /* SquirrelPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B397712A2BEE4C160093A49B /* SquirrelPanel.swift */; };
+		A7E1B00B2C0A0001000000BB /* SquirrelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39771282BEDAF4A0093A49B /* SquirrelView.swift */; };
+		A7E1B00C2C0A0001000000BC /* SquirrelTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39771262BED9B250093A49B /* SquirrelTheme.swift */; };
+		A7E1B00D2C0A0001000000BD /* ParetlyTryField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0802C0A000100000050 /* ParetlyTryField.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -319,6 +328,10 @@
 		A7E1A0022C0A000100000001 /* ParetlyCandidatePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyCandidatePreview.swift; path = sources/ParetlyCandidatePreview.swift; sourceTree = "<group>"; };
 		A7E1A0032C0A000100000001 /* ParetlySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlySettingsView.swift; path = sources/ParetlySettingsView.swift; sourceTree = "<group>"; };
 		A7E1A0802C0A000100000050 /* ParetlyTryField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyTryField.swift; path = sources/ParetlyTryField.swift; sourceTree = "<group>"; };
+		A7E1B0012C0A0001000000B1 /* AppKitSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppKitSupport.swift; path = sources/AppKitSupport.swift; sourceTree = "<group>"; };
+		A7E1B0042C0A0001000000B4 /* ParetlyTryTyping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyTryTyping.swift; path = sources/ParetlyTryTyping.swift; sourceTree = "<group>"; };
+		A7E1B0062C0A0001000000B6 /* ParetlyPanelAndTryFieldTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyPanelAndTryFieldTests.swift; path = tests/ParetlyPanelAndTryFieldTests.swift; sourceTree = "<group>"; };
+		A7E1B0082C0A0001000000B8 /* ParetlyTryTypingStub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyTryTypingStub.swift; path = tests/ParetlyTryTypingStub.swift; sourceTree = "<group>"; };
 		A7E1A0042C0A000100000001 /* ParetlySettingsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlySettingsWindow.swift; path = sources/ParetlySettingsWindow.swift; sourceTree = "<group>"; };
 		A7E1A0052C0A000100000001 /* ParetlyThemeSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyThemeSettingsTests.swift; path = tests/ParetlyThemeSettingsTests.swift; sourceTree = "<group>"; };
 		A7E1A0412C0A000100000021 /* ParetlyRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyRelease.swift; path = sources/ParetlyRelease.swift; sourceTree = "<group>"; };
@@ -372,6 +385,8 @@
 				A7E1A0022C0A000100000001 /* ParetlyCandidatePreview.swift */,
 				A7E1A0032C0A000100000001 /* ParetlySettingsView.swift */,
 				A7E1A0802C0A000100000050 /* ParetlyTryField.swift */,
+				A7E1B0042C0A0001000000B4 /* ParetlyTryTyping.swift */,
+				A7E1B0012C0A0001000000B1 /* AppKitSupport.swift */,
 				A7E1A0042C0A000100000001 /* ParetlySettingsWindow.swift */,
 				A7E1A0412C0A000100000021 /* ParetlyRelease.swift */,
 				A7E1A0432C0A000100000023 /* ParetlyUpdateController.swift */,
@@ -552,6 +567,8 @@
 				A7E1A0462C0A000100000026 /* ParetlyReleaseTests.swift */,
 				A7E1A0612C0A000100000031 /* ParetlyInterfaceTests.swift */,
 				A7E1A0652C0A000100000035 /* ParetlyInputSourceTests.swift */,
+				A7E1B0062C0A0001000000B6 /* ParetlyPanelAndTryFieldTests.swift */,
+				A7E1B0082C0A0001000000B8 /* ParetlyTryTypingStub.swift */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -673,6 +690,8 @@
 				A7E1A0122C0A000100000001 /* ParetlyCandidatePreview.swift in Sources */,
 				A7E1A0132C0A000100000001 /* ParetlySettingsView.swift in Sources */,
 				A7E1A0812C0A000100000051 /* ParetlyTryField.swift in Sources */,
+				A7E1B0052C0A0001000000B5 /* ParetlyTryTyping.swift in Sources */,
+				A7E1B0022C0A0001000000B2 /* AppKitSupport.swift in Sources */,
 				A7E1A0142C0A000100000001 /* ParetlySettingsWindow.swift in Sources */,
 				A7E1A0402C0A000100000020 /* ParetlyRelease.swift in Sources */,
 				A7E1A0422C0A000100000022 /* ParetlyUpdateController.swift in Sources */,
@@ -691,6 +710,13 @@
 				A7E1A0632C0A000100000033 /* ParetlyInterface.swift in Sources */,
 				A7E1A0642C0A000100000034 /* ParetlyInterfaceTests.swift in Sources */,
 				A7E1A0662C0A000100000036 /* ParetlyInputSourceTests.swift in Sources */,
+				A7E1B0032C0A0001000000B3 /* AppKitSupport.swift in Sources */,
+				A7E1B0072C0A0001000000B7 /* ParetlyPanelAndTryFieldTests.swift in Sources */,
+				A7E1B0092C0A0001000000B9 /* ParetlyTryTypingStub.swift in Sources */,
+				A7E1B00A2C0A0001000000BA /* SquirrelPanel.swift in Sources */,
+				A7E1B00B2C0A0001000000BB /* SquirrelView.swift in Sources */,
+				A7E1B00C2C0A0001000000BC /* SquirrelTheme.swift in Sources */,
+				A7E1B00D2C0A0001000000BD /* ParetlyTryField.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

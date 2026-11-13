@@ -191,7 +191,7 @@ final class SquirrelTheme {
     }
   }
 
-  func load(config: SquirrelConfig, dark: Bool) {
+  func load(config: SquirrelThemeConfig, dark: Bool) {
     linear ?= config.getString("style/candidate_list_layout").map { $0 == "linear" }
     vertical ?= config.getString("style/text_orientation").map { $0 == "vertical" }
     inlinePreedit ?= config.getBool("style/inline_preedit")
@@ -284,6 +284,15 @@ final class SquirrelTheme {
     commentFonts = decodeFonts(from: commentFontName ?? fontName)
     self.commentFontSize = commentFontSize
   }
+}
+
+/// What `SquirrelTheme.load` reads. `SquirrelConfig` conforms; tests can
+/// build the theme without librime.
+protocol SquirrelThemeConfig {
+  func getBool(_ option: String) -> Bool?
+  func getDouble(_ option: String) -> CGFloat?
+  func getString(_ option: String) -> String?
+  func getColor(_ option: String, inSpace colorSpace: SquirrelTheme.RimeColorSpace) -> NSColor?
 }
 
 private extension SquirrelTheme {
