@@ -19,7 +19,7 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertEqual(plist["CFBundleIdentifier"] as? String, "$(PRODUCT_BUNDLE_IDENTIFIER)")
     XCTAssertEqual(plist["tsInputMethodIconFileKey"] as? String, ParetlyInputSource.menuIconFile)
     XCTAssertEqual(plist["LSBackgroundOnly"] as? Bool, false)
-    XCTAssertEqual(plist["LSUIElement"] as? Bool, true)
+    XCTAssertNil(plist["LSUIElement"])
     XCTAssertFalse(serialized(plist).contains("im.rime.inputmethod.Squirrel"))
 
     let component = try XCTUnwrap(plist["ComponentInputModeDict"] as? [String: Any])
@@ -76,6 +76,46 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertTrue(installer.contains("TISRegisterInputSource"))
     XCTAssertTrue(installer.contains("TISEnableInputSource"))
     XCTAssertFalse(installer.contains("im.rime.inputmethod.Squirrel"))
+  }
+
+  func testInputMethodStartsHiddenAndPromotesOnce() throws {
+    let plist = try propertyList("resources/Info.plist")
+    XCTAssertNil(plist["LSUIElement"])
+    XCTAssertEqual(plist["LSBackgroundOnly"] as? Bool, false)
+
+    let main = try text("sources/Main.swift")
+    let accessory = try XCTUnwrap(main.range(of: "setActivationPolicy(.accessory)"))
+    let run = try XCTUnwrap(main.range(of: "app.run()"))
+    XCTAssertLessThan(accessory.lowerBound, run.lowerBound)
+    XCTAssertFalse(main.contains("setActivationPolicy(.regular)"))
+
+    let window = try text("sources/ParetlySettingsWindow.swift")
+    XCTAssertTrue(window.contains("guard NSApp.activationPolicy() != policy else { return }"))
+    XCTAssertTrue(window.contains("NSApp.setActivationPolicy(policy)"))
+    XCTAssertTrue(window.contains("ParetlyDockIcon.visibility"))
+    XCTAssertFalse(window.contains("setActivationPolicy(.regular)"))
+    XCTAssertFalse(window.contains("setActivationPolicy(.accessory)"))
+
+    for path in [
+      "sources/ParetlyUpdateController.swift",
+      "sources/SquirrelApplicationDelegate.swift",
+      "sources/ParetlySettingsView.swift"
+    ] {
+      let source = try text(path)
+      XCTAssertFalse(source.contains("setActivationPolicy("), path)
+    }
+  }
+
+  func testLauncherHidesItsDockIconAndExits() throws {
+    let source = try text("launcher/main.swift")
+    let accessory = try XCTUnwrap(source.range(of: "setActivationPolicy(.accessory)"))
+    let run = try XCTUnwrap(source.range(of: "process.run()"))
+    let done = try XCTUnwrap(source.range(of: "exit(EXIT_SUCCESS)"))
+    XCTAssertLessThan(accessory.lowerBound, run.lowerBound)
+    XCTAssertLessThan(run.lowerBound, done.lowerBound)
+    XCTAssertFalse(source.contains("app.run("))
+    XCTAssertFalse(source.contains("NSApp.run("))
+    XCTAssertTrue(source.contains("setActivationPolicy(.regular)"))
   }
 
   private func assertMode(_ mode: [String: Any], id: String, language: String, isDefault: Bool) {

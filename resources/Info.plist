@@ -109,8 +109,12 @@
 	<string>Paretly.SquirrelInputController</string>
 	<key>LSBackgroundOnly</key>
 	<false/>
-	<key>LSUIElement</key>
-	<true/>
+	<!--
+	  Leave LSUIElement unset. The Dock draws two icons when that key is set
+	  and the process later becomes a regular app to show Settings or About.
+	  Main.swift uses the accessory activation policy instead, which keeps
+	  the input method out of the Dock until one of those windows is open.
+	-->
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SUEnableAutomaticChecks</key>

@@ -7,9 +7,11 @@
 //  This file is part of Paretly, a GPL-3.0 fork of Squirrel (鼠须管).
 //  See LICENSE.txt.
 //
-//  Launchpad only indexes ordinary apps. The input method is an LSUIElement
-//  bundle in /Library/Input Methods, so this process asks that bundle to
-//  present Paretly Settings and then exits.
+//  Launchpad only indexes ordinary apps in /Applications. The input method
+//  lives in /Library/Input Methods and stays an accessory (no Dock icon)
+//  until Settings is open. This process asks that bundle to present
+//  Settings, drops its own Dock tile, and exits so only one Paretly icon
+//  remains.
 
 import AppKit
 
@@ -54,6 +56,10 @@ guard FileManager.default.isExecutableFile(atPath: executable.path) else {
   fail(title, missing)
 }
 
+// This bundle is a normal app so Launchpad lists it. Hide its Dock tile
+// before the input method shows the one tile for Settings.
+NSApplication.shared.setActivationPolicy(.accessory)
+
 let alreadyRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: inputMethodBundleID).isEmpty
 let process = Process()
 if alreadyRunning {
@@ -83,3 +89,6 @@ do {
 if process.terminationStatus != 0 {
   fail(failed, "")
 }
+// NSApplication.shared keeps a Swift app alive after main returns, which
+// leaves a second Paretly tile in the Dock. Exit once the handoff returns.
+exit(EXIT_SUCCESS)
