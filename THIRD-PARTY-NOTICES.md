@@ -10,7 +10,7 @@ Paretly is **GPL-3.0**. The license text is `LICENSE.txt`. `NOTICE` states that 
 
 | 组件 | 作者 | 许可 | 说明 |
 | --- | --- | --- | --- |
-| Paretly | Paretly contributors, 2026 | GPL-3.0（`LICENSE.txt`） | 鼠须管的修改版。改动包括产品名、默认方案、未签名磁盘镜像、原生设置窗口 |
+| Paretly | Paretly contributors, 2026 | GPL-3.0（`LICENSE.txt`） | 鼠须管的修改版。改动包括产品名、默认方案、未签名安装包、原生设置窗口 |
 | [Squirrel / 鼠须管 / 鼠鬚管](https://github.com/rime/squirrel) | Rime 开发者（式恕堂）。程序：佛振、Linghua Zhang、Chongyu Zhu、雪齋、faberii、Chun-wei Kuo、Junlu Cheng、Jak Wings、xiehuc。图标：佛振、梁海、雨过之后。配色：Aben、Chongyu Zhu、skoj、Superoutman、佛振、梁海 | GPL-3.0 | 上游稳定版 tag `1.1.2`，提交 `876adebaf2f612951dcdca8a591de65401222b9a`。源文件里的版权声明保留 |
 | [Rime / 中州韵](https://rime.im) | Rime 开发者 | 见各组件 | 输入法引擎 |
 | [Rime ICE / 雾凇拼音](https://github.com/iDvel/rime-ice) | Dvel | **GPL-3.0 only** | 随包默认方案。tag `2026.06.30`，提交 `6810e8916d160498620a16fef2135956fecbd485`。词典、Lua 脚本和它自带的 OpenCC 数据一起放在 `Contents/SharedSupport`，文件里的版权声明保留。上游写明是 GPL-3.0 only，不是“或更新版本” |

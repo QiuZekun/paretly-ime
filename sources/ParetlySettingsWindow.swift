@@ -47,6 +47,11 @@ final class ParetlySettingsModel: ObservableObject {
       ParetlyUpdatePreferences.shared.automatic = automaticUpdateChecks
     }
   }
+  @Published var includeBetaUpdates = ParetlyUpdatePreferences.shared.includeBetas {
+    didSet {
+      ParetlyUpdatePreferences.shared.includeBetas = includeBetaUpdates
+    }
+  }
 
   var onPreviewDarkChange: ((Bool) -> Void)?
 

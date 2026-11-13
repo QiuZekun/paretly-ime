@@ -41,14 +41,10 @@ final class SquirrelInstaller {
   }
 
   func register() {
-    let enabledInputModes = enabledModes()
-    if !enabledInputModes.isEmpty {
-      print("User already registered Paretly method(s): \(enabledInputModes.map { $0.rawValue })")
-      // Already registered.
-      return
-    }
-    TISRegisterInputSource(SquirrelApp.appDir as CFURL)
-    print("Registered input source from \(SquirrelApp.appDir)")
+    // Always register. An upgrade keeps the same path, and skipping this when the
+    // source is already enabled would leave macOS running the previous bundle.
+    let status = TISRegisterInputSource(SquirrelApp.appDir as CFURL)
+    print("Register \(status == noErr ? "succeeds" : "fails") for \(SquirrelApp.appDir)")
   }
 
   func enable(modes: [InputMode] = []) {

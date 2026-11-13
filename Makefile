@@ -97,11 +97,23 @@ ifdef MACOSX_DEPLOYMENT_TARGET
 BUILD_SETTINGS += MACOSX_DEPLOYMENT_TARGET="$(MACOSX_DEPLOYMENT_TARGET)"
 endif
 
-# Set from a release tag (v0.1.0 -> 0.1.0). Info.plist maps this to
-# CFBundleShortVersionString. CURRENT_PROJECT_VERSION is CFBundleVersion.
+# CI sets CURRENT_PROJECT_VERSION to github.run_number (CFBundleVersion and the
+# package version). A tag still sets MARKETING_VERSION for CFBundleShortVersionString.
+# Local `MARKETING_VERSION=0.1.0 make package` uses that string for both when
+# CURRENT_PROJECT_VERSION is unset.
+ifdef CURRENT_PROJECT_VERSION
+BUILD_SETTINGS += CURRENT_PROJECT_VERSION="$(CURRENT_PROJECT_VERSION)"
+endif
+
 ifdef MARKETING_VERSION
 BUILD_SETTINGS += MARKETING_VERSION="$(MARKETING_VERSION)"
+ifndef CURRENT_PROJECT_VERSION
 BUILD_SETTINGS += CURRENT_PROJECT_VERSION="$(MARKETING_VERSION)"
+endif
+endif
+
+ifdef PARETLY_UPDATE_CHANNEL
+BUILD_SETTINGS += PARETLY_UPDATE_CHANNEL="$(PARETLY_UPDATE_CHANNEL)"
 endif
 
 BUILD_SETTINGS += COMPILER_INDEX_STORE_ENABLE=YES
@@ -151,7 +163,7 @@ clean-sparkle:
 	rm -rf Frameworks/* > /dev/null 2>&1 || true
 	rm -rf Sparkle/build > /dev/null 2>&1 || true
 
-.PHONY: package archive dmg
+.PHONY: package archive
 
 $(PACKAGE):
 ifdef DEV_ID
@@ -167,9 +179,6 @@ ifdef DEV_ID
 endif
 
 package: release $(PACKAGE)
-
-dmg: package
-	bash package/make-dmg.sh
 
 archive: package package/sign_update
 	bash package/make_archive

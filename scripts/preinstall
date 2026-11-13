@@ -1,0 +1,19 @@
+#!/bin/bash
+# Stop the running input method before the payload replaces it.
+# Installer runs this as root. A busy bundle cannot be overwritten.
+
+login_user="$(/usr/bin/stat -f%Su /dev/console 2>/dev/null || true)"
+
+stop_named() {
+  /usr/bin/killall "$1" >/dev/null 2>&1 || true
+  /bin/sleep 0.2
+  /usr/bin/killall -KILL "$1" >/dev/null 2>&1 || true
+  if [ -n "${login_user}" ] && [ "${login_user}" != "root" ] && [ "${login_user}" != "loginwindow" ]; then
+    /usr/bin/sudo -u "${login_user}" /usr/bin/killall "$1" >/dev/null 2>&1 || true
+    /usr/bin/sudo -u "${login_user}" /usr/bin/killall -KILL "$1" >/dev/null 2>&1 || true
+  fi
+}
+
+stop_named Paretly
+stop_named ParetlyLauncher
+exit 0

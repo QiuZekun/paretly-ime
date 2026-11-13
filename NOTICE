@@ -19,7 +19,7 @@ frontend of the Rime input method engine, published by the Rime
 developers (式恕堂). The base is Squirrel 1.1.2, commit
 876adebaf2f612951dcdca8a591de65401222b9a. Modifications in this
 repository, dated 2026, include the product name Paretly, the default
-schema Rime ICE (雾凇拼音), an unsigned disk image, and a native
+schema Rime ICE (雾凇拼音), an unsigned installer package, and a native
 settings window. Copyright notices that came with the upstream source
 are kept.
 

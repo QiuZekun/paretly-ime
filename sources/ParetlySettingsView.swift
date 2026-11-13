@@ -121,12 +121,19 @@ struct ParetlySettingsView: View {
   }
 
   private func updateRow(_ palette: SettingsChrome) -> some View {
-    HStack(spacing: 12) {
-      Toggle(isOn: $model.automaticUpdateChecks) {
-        Text(settingsText("Check for updates automatically"))
-          .font(.system(size: 13))
+    HStack(alignment: .center, spacing: 12) {
+      VStack(alignment: .leading, spacing: 6) {
+        Toggle(isOn: $model.automaticUpdateChecks) {
+          Text(settingsText("Check for updates automatically"))
+            .font(.system(size: 13))
+        }
+        .toggleStyle(.checkbox)
+        Toggle(isOn: $model.includeBetaUpdates) {
+          Text(settingsText("Receive beta updates"))
+            .font(.system(size: 13))
+        }
+        .toggleStyle(.checkbox)
       }
-      .toggleStyle(.checkbox)
       Spacer(minLength: 8)
       Button(action: { ParetlyUpdatePresenter.shared.checkManually() }) {
         Text(settingsText("Check for Updates…"))

@@ -7,7 +7,11 @@ INSTALL_LOCATION='/Library/Input Methods'
 cd "$(dirname $0)"
 source common.sh
 
-if [ -n "${MARKETING_VERSION:-}" ]; then
+# CI sets CURRENT_PROJECT_VERSION to github.run_number so each package is newer
+# than the last one. A local MARKETING_VERSION build still uses that string.
+if [ -n "${CURRENT_PROJECT_VERSION:-}" ]; then
+    version="${CURRENT_PROJECT_VERSION}"
+elif [ -n "${MARKETING_VERSION:-}" ]; then
     version="${MARKETING_VERSION}"
 else
     version="$(get_app_version)"
