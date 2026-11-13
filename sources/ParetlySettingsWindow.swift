@@ -32,13 +32,6 @@ final class ParetlySettingsModel: ObservableObject {
   @Published var cornerRadius = ThemeSettings.fallback.cornerRadius
   @Published var activeSlot: ThemeSlot = .light
   @Published var previewDark = false
-  @Published var selectedTab: ParetlySettingsTab = .general {
-    didSet {
-      if selectedTab != oldValue {
-        onTabChange?(selectedTab)
-      }
-    }
-  }
   @Published var statusText = ""
   @Published var statusKind: ThemeStatusKind = .neutral
   @Published var banner: String?
@@ -53,8 +46,6 @@ final class ParetlySettingsModel: ObservableObject {
       ParetlyUpdatePreferences.shared.includeBetas = includeBetaUpdates
     }
   }
-
-  var onTabChange: ((ParetlySettingsTab) -> Void)?
 
   private var baseline = ThemeSettings.fallback
   private var loaded = ThemeSettings.fallback
@@ -267,7 +258,7 @@ final class ParetlyAuxiliaryWindow: NSWindow {
   }
 }
 
-final class ParetlySettingsController: NSWindowController, NSWindowDelegate, NSToolbarDelegate {
+final class ParetlySettingsController: NSWindowController, NSWindowDelegate {
   static let shared = ParetlySettingsController()
   private let model = ParetlySettingsModel()
 
@@ -280,7 +271,6 @@ final class ParetlySettingsController: NSWindowController, NSWindowDelegate, NST
       let dark = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
       model.setPreview(dark: dark)
     }
-    show(model.selectedTab)
     ParetlyWindowActivation.show(window)
   }
 
@@ -290,85 +280,30 @@ final class ParetlySettingsController: NSWindowController, NSWindowDelegate, NST
     }
   }
 
-  func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-    ParetlySettingsTab.allCases.map(\.toolbarIdentifier)
-  }
-
-  func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-    toolbarDefaultItemIdentifiers(toolbar)
-  }
-
-  func toolbarSelectableItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-    toolbarDefaultItemIdentifiers(toolbar)
-  }
-
-  func toolbar(
-    _ toolbar: NSToolbar,
-    itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
-    willBeInsertedIntoToolbar flag: Bool
-  ) -> NSToolbarItem? {
-    guard let tab = ParetlySettingsTab.allCases.first(where: { $0.toolbarIdentifier == itemIdentifier }) else {
-      return nil
-    }
-    let label = tab.toolbarLabel
-    let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-    item.label = label
-    item.paletteLabel = label
-    item.toolTip = label
-    item.target = self
-    item.action = #selector(selectTab(_:))
-    let image = NSImage(systemSymbolName: tab.symbolName, accessibilityDescription: label)
-    image?.isTemplate = true
-    item.image = image
-    return item
-  }
-
-  @objc private func selectTab(_ sender: NSToolbarItem) {
-    guard let tab = ParetlySettingsTab.allCases.first(where: { $0.toolbarIdentifier == sender.itemIdentifier }) else {
-      return
-    }
-    model.selectedTab = tab
-  }
-
   private func installWindow() {
     let host = NSHostingController(rootView: ParetlySettingsView(model: model))
     host.sizingOptions = [.standardBounds]
     let window = ParetlyAuxiliaryWindow(
-      contentRect: NSRect(x: 0, y: 0, width: 860, height: 680),
+      contentRect: NSRect(x: 0, y: 0, width: 1120, height: 800),
       styleMask: [.titled, .closable, .miniaturizable, .resizable],
       backing: .buffered,
       defer: false
     )
+    window.title = NSLocalizedString(ParetlySettingsWindowCopy.titleKey, comment: "Window title")
     window.titleVisibility = .visible
     window.titlebarAppearsTransparent = false
     window.titlebarSeparatorStyle = .automatic
-    window.toolbarStyle = .preference
     window.isReleasedWhenClosed = false
     window.isRestorable = false
     window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    window.minSize = NSSize(width: 760, height: 580)
+    window.minSize = NSSize(width: 960, height: 680)
     window.delegate = self
     window.contentViewController = host
-    let toolbar = NSToolbar(identifier: "ParetlySettings")
-    toolbar.displayMode = .iconAndLabel
-    toolbar.allowsUserCustomization = false
-    toolbar.autosavesConfiguration = false
-    toolbar.delegate = self
-    window.toolbar = toolbar
     self.window = window
-    model.onTabChange = { [weak self] tab in
-      self?.show(tab)
-    }
     let restored = window.setFrameAutosaveName(ParetlyInputMenu.settingsFrameAutosaveName)
     if !restored {
       window.center()
     }
-    show(model.selectedTab)
-  }
-
-  private func show(_ tab: ParetlySettingsTab) {
-    window?.title = tab.windowTitle
-    window?.toolbar?.selectedItemIdentifier = tab.toolbarIdentifier
   }
 }
 
@@ -411,22 +346,5 @@ final class ParetlyAboutController: NSWindowController, NSWindowDelegate {
     window.delegate = self
     window.contentViewController = host
     self.window = window
-  }
-}
-
-extension ParetlySettingsTab {
-  var toolbarIdentifier: NSToolbarItem.Identifier {
-    NSToolbarItem.Identifier("ParetlySettingsTab.\(rawValue)")
-  }
-
-  var toolbarLabel: String {
-    NSLocalizedString(titleKey, comment: "Settings")
-  }
-
-  var windowTitle: String {
-    String(
-      format: NSLocalizedString("Paretly — %@", comment: "Window title"),
-      toolbarLabel
-    )
   }
 }

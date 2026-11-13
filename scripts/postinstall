@@ -1,10 +1,59 @@
 #!/bin/bash
 set -e
 
-login_user=`/usr/bin/stat -f%Su /dev/console`
-app_root="${DSTROOT}/Paretly.app"
+login_user=$(/usr/bin/stat -f%Su /dev/console)
+script_install_location="${2:-}"
+
+# Mode ids must match ParetlyInputSource and Info.plist tsInputModeListKey.
+hans_mode="com.qiuzekun.inputmethod.Paretly.Hans"
+hant_mode="com.qiuzekun.inputmethod.Paretly.Hant"
+
+resolve_app_root() {
+  local candidate
+  for candidate in \
+    "${DSTROOT:-}/Paretly.app" \
+    "${script_install_location}/Paretly.app" \
+    "/Library/Input Methods/Paretly.app"
+  do
+    if [ -x "${candidate}/Contents/MacOS/Paretly" ]; then
+      printf '%s\n' "${candidate}"
+      return 0
+    fi
+  done
+  printf '%s\n' "/Library/Input Methods/Paretly.app"
+}
+
+app_root="$(resolve_app_root)"
 executable="${app_root}/Contents/MacOS/Paretly"
 shared_data="${app_root}/Contents/SharedSupport"
+
+# Run a command as the console user inside that user's GUI bootstrap.
+# TISRegisterInputSource and TISEnableInputSource update the current user and
+# talk to the menu bar in the Aqua session. The installer is root and is not
+# in that session. -H sets HOME to the console user so Text Input Sources
+# writes that user's preferences.
+run_as_console_user() {
+  if [ -z "${login_user}" ] || [ "${login_user}" = "root" ] || [ "${login_user}" = "loginwindow" ]; then
+    echo "No logged-in console user; skipped: $*" >&2
+    return 0
+  fi
+  local uid finder_pid
+  uid="$(/usr/bin/id -u "${login_user}" 2>/dev/null || true)"
+  if [ -z "${uid}" ]; then
+    echo "Could not resolve a uid for ${login_user}" >&2
+    return 0
+  fi
+  if /bin/launchctl asuser "${uid}" /usr/bin/sudo -H -u "${login_user}" -- "$@"; then
+    return 0
+  fi
+  finder_pid="$(/usr/bin/pgrep -u "${login_user}" -x Finder 2>/dev/null | /usr/bin/head -n 1 || true)"
+  if [ -n "${finder_pid}" ]; then
+    echo "launchctl asuser failed; retrying in the Finder bootstrap." >&2
+    /bin/launchctl bsexec "${finder_pid}" /usr/bin/sudo -H -u "${login_user}" -- "$@" || return 1
+    return 0
+  fi
+  return 1
+}
 
 install_applications_launcher() {
     local archive="${app_root}/Contents/Resources/ParetlyLauncher.tar"
@@ -35,46 +84,45 @@ install_applications_launcher() {
         /usr/bin/sudo /usr/bin/ditto "${stage}/Paretly.app" "${dest}"
     fi
     rm -rf "${stage}"
-    if [ -x "${reg}" ]; then
-        /usr/bin/sudo -u "${login_user}" "${reg}" -f "${dest}" || true
+    if [ -x "${reg}" ] && [ -n "${login_user}" ] && [ "${login_user}" != "root" ] && [ "${login_user}" != "loginwindow" ]; then
+        run_as_console_user "${reg}" -f "${dest}" || true
     fi
-}
-
-stop_paretly() {
-    /usr/bin/killall Paretly >/dev/null 2>&1 || true
-    /usr/bin/killall ParetlyLauncher >/dev/null 2>&1 || true
-    /bin/sleep 0.2
-    /usr/bin/killall -KILL Paretly >/dev/null 2>&1 || true
-    /usr/bin/killall -KILL ParetlyLauncher >/dev/null 2>&1 || true
 }
 
 relaunch_paretly() {
     if [ -z "${login_user}" ] || [ "${login_user}" = "root" ] || [ "${login_user}" = "loginwindow" ]; then
         return 0
     fi
-    local uid
-    uid="$(/usr/bin/id -u "${login_user}" 2>/dev/null || true)"
-    if [ -z "${uid}" ]; then
-        return 0
-    fi
-    # Detach from the installer. `open` returns immediately; the input method keeps running.
-    /bin/launchctl asuser "${uid}" /usr/bin/sudo -u "${login_user}" /usr/bin/open -g "${app_root}" >/dev/null 2>&1 || \
-        /usr/bin/sudo -u "${login_user}" /usr/bin/open -g "${app_root}" >/dev/null 2>&1 || true
+    # Open after registration. Do not signal Paretly again: killing it here
+    # drops the source out of the input menu.
+    run_as_console_user /usr/bin/open -g "${app_root}" || true
 }
 
 trap relaunch_paretly EXIT
 
-stop_paretly
-
 install_applications_launcher
 
-"${executable}" --register-input-source
+if [ ! -x "${executable}" ]; then
+    echo "Paretly executable is missing at ${executable}" >&2
+    exit 1
+fi
 
-if [ -z "${RIME_NO_PREBUILD}" ]; then
-    pushd "${shared_data}" > /dev/null
-    "${executable}" --build
-    popd > /dev/null
-fi && (
-    /usr/bin/sudo -u "${login_user}" "${executable}" --enable-input-source
-    /usr/bin/sudo -u "${login_user}" "${executable}" --select-input-source
-)
+# Register and enable in the logged-in user's GUI session. Both modes, so
+# Hans and Hant show up in the input menu without a logout.
+run_as_console_user "${executable}" --register-input-source || \
+    echo "Could not register the input source for ${login_user}." >&2
+
+if [ -z "${RIME_NO_PREBUILD}" ] && [ -d "${shared_data}" ]; then
+    (cd "${shared_data}" && "${executable}" --build) || \
+        echo "Rime data build failed; input-source registration continues." >&2
+fi
+
+# The menu-bar agent may need a moment to publish modes that were just registered.
+/bin/sleep 0.4
+if ! run_as_console_user "${executable}" --enable-input-source "${hans_mode}" "${hant_mode}"; then
+    /bin/sleep 1
+    run_as_console_user "${executable}" --enable-input-source "${hans_mode}" "${hant_mode}" || \
+        echo "Could not enable ${hans_mode} and ${hant_mode}." >&2
+fi
+run_as_console_user "${executable}" --select-input-source "${hans_mode}" || \
+    echo "Could not select ${hans_mode}." >&2

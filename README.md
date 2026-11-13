@@ -16,7 +16,7 @@ Paretly 是 macOS 上的开源输入法，基于 [Rime / 中州韵](https://rime
 
 1. 下载 `Paretly-unsigned.pkg`。第一个版本的标签是 `v0.1.0`。
 2. 双击这个安装包。
-3. 安装位置是 `/Library/Input Methods/Paretly.app`。再装一次会原地替换输入法和 `/Applications` 里的 Paretly。安装脚本会结束正在运行的 Paretly，重新注册并启用输入法，然后重新打开，一般不用注销。如果菜单栏里还没有，注销再登录，或在 **系统设置 > 键盘 > 输入法** 里添加 Paretly。
+3. 安装位置是 `/Library/Input Methods/Paretly.app`。再装一次会原地替换输入法和 `/Applications` 里的 Paretly。安装脚本会先让正在运行的 Paretly 退出，再在当前登录用户的图形会话里注册并启用简体和繁体两种输入模式，然后重新打开，不用注销。如果菜单栏里还是不能切换，按下面的「菜单栏里无法切换到 Paretly」处理，不必重装。
 4. 启动台里会有 **Paretly**。点它打开设置窗口。输入法本体仍在「输入法」目录里，启动台不显示那个目录。
 
 也可以把 `Paretly.app` 放到 `~/Library/Input Methods/`，然后执行：
@@ -50,19 +50,38 @@ xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.pkg
 
 第一次部署会选用雾凇拼音，方案 id 是 `rime_ice`。切换方案用 Control+` 或 F4。
 
+## 菜单栏里无法切换到 Paretly
+
+原地升级时，如果安装脚本用 root 调用 `TISRegisterInputSource`，或者用 `killall -KILL` 结束正在运行的输入法，macOS 会把输入源关掉或标成不能选。菜单栏输入法菜单里就切换不到 Paretly。0.1.0-beta.27 就是这种情况。不必重装，也不必注销。
+
+在「终端」里用当前登录的用户执行下面的命令。不要加 `sudo`。`sudo` 会再把输入源注册到 root，菜单栏还是看不到。
+
+```sh
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --quit
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --register-input-source
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --disable-input-source
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --enable-input-source com.qiuzekun.inputmethod.Paretly.Hans com.qiuzekun.inputmethod.Paretly.Hant
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --select-input-source com.qiuzekun.inputmethod.Paretly.Hans
+```
+
+`--disable-input-source` 用来清掉「系统里显示已启用、但菜单里不能选」的状态。beta.27 里的 `--enable-input-source` 只有在输入源当前未启用时才会再次启用；已经启用时它会直接返回。先禁用再启用，这条路径在已经装上的 beta.27 上就能修好。然后打开菜单栏输入法菜单，选择 Paretly。
+
+模式 id 是 `com.qiuzekun.inputmethod.Paretly.Hans`（简体）和 `com.qiuzekun.inputmethod.Paretly.Hant`（繁体），和 `Info.plist` 里的一致。
+
 ## 打开设置
 
 菜单栏点 Paretly 的输入法图标，选 **设置…**。英文界面这一项是 **Settings…**，繁体中文是 **設定…**。启动台里的 **Paretly** 打开同一个窗口。窗口会记住大小和位置。Command-W 或 Esc 关闭窗口。
 
-工具栏分成五页：
+窗口是一页，顺序和五页工具栏之前的配色窗口一样：
 
-- **常规**：设置文件的位置，以及当前浅色、深色配色。
-- **外观**：浅色和深色配色、候选窗预览、配色卡片和圆角。
-- **输入**：横排或竖排、候选字号、序号字号。
-- **更新**：自动检查更新、**接收测试版（Beta）**，以及 **检查更新…**。有新版本时 **一键更新** 会要求管理员密码并原地安装；失败则打开安装器。
-- **关于**：图标、版本、GPL-3.0，以及 Squirrel、librime、雾凇拼音和本仓库的链接。
+1. 顶部：浅色/深色预览、状态、**重新部署**、**应用**。
+2. **软件更新**：自动检查更新、**接收测试版（Beta）**、**检查更新…**。有新版本时，对话框里的 **一键更新** 会要求管理员密码并原地安装；失败则打开安装器。
+3. 浅色和深色配色选择，并排。
+4. 横排或竖排、候选字号、序号字号、圆角。
+5. 候选窗实时预览。
+6. 配色卡片。点卡片填入当前选中的外观。
 
-窗口底部的 **重新部署** 不改这些选择，只重新部署。**应用** 写入并重新部署。
+**重新部署** 不改这些选择，只重新部署。**应用** 写入并重新部署。
 
 可以给浅色和深色各选一套配色。配色卡片来自随包 `paretly.yaml` 的 `preset_color_schemes`，再叠上 `~/Library/Rime/paretly.yaml` 里的同名覆盖。点卡片会填入当前选中的外观。
 
@@ -70,7 +89,7 @@ xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.pkg
 
 深色默认是「简约黑」（`clean_black`）。浅色默认仍是 `native`。
 
-输入法菜单里的 **关于 Paretly** 会打开关于面板，内容和「关于」页相同。
+输入法菜单里的 **关于 Paretly** 会打开关于面板（图标、版本、GPL-3.0，以及 Squirrel、librime、雾凇拼音和本仓库的链接）。关于面板不在设置窗口里。
 
 重新部署也可以在终端执行：
 
@@ -216,7 +235,7 @@ Download the installer from the GitHub Releases page: <https://github.com/QiuZek
 
 1. Download `Paretly-unsigned.pkg`. The first release tag is `v0.1.0`.
 2. Double-click the package.
-3. The package installs to `/Library/Input Methods/Paretly.app`. Installing it again replaces that bundle and the Paretly app in `/Applications`. The scripts stop the running input method, register and enable it again, and open it, so a logout is not required. If it is still missing from the menu bar, log out and back in, or add Paretly in **System Settings > Keyboard > Input Sources**.
+3. The package installs to `/Library/Input Methods/Paretly.app`. Installing it again replaces that bundle and the Paretly app in `/Applications`. The scripts quit the running input method, then register and enable both the Simplified and Traditional modes in the logged-in user's GUI session, and open Paretly again. A logout is not required. If the input menu still cannot switch to it, use [The input menu cannot switch to Paretly](#the-input-menu-cannot-switch-to-paretly) below instead of reinstalling.
 4. Launchpad gains a **Paretly** app. Open it to show the settings window. The input method itself stays in Input Methods, which Launchpad does not list.
 
 A copy in `~/Library/Input Methods/` also works. Run `Paretly --register-input-source` and `--enable-input-source` from that bundle.
@@ -245,19 +264,38 @@ The installer tries to enable Paretly. If it is missing from the menu bar:
 
 The first deploy selects schema `rime_ice`. Switch schemas with Control+` or F4.
 
+### The input menu cannot switch to Paretly
+
+An in-place upgrade can leave Paretly out of the menu-bar input menu when the installer calls `TISRegisterInputSource` as root, or when it `killall -KILL`s the running input method. macOS then disables the source or leaves it enabled but not selectable. Beta 0.1.0-beta.27 does this. You do not need to reinstall or log out.
+
+Run the following in Terminal as the logged-in user. Do not prefix the commands with `sudo`. `sudo` registers the source for root, and the menu bar still will not list it.
+
+```sh
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --quit
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --register-input-source
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --disable-input-source
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --enable-input-source com.qiuzekun.inputmethod.Paretly.Hans com.qiuzekun.inputmethod.Paretly.Hant
+"/Library/Input Methods/Paretly.app/Contents/MacOS/Paretly" --select-input-source com.qiuzekun.inputmethod.Paretly.Hans
+```
+
+`--disable-input-source` clears the stuck state where the source looks enabled but the menu will not offer it. On beta.27, `--enable-input-source` calls `TISEnableInputSource` only when the mode is currently disabled; if any mode already looks enabled, the command returns without changing it. Disabling first, then enabling both mode ids, is what repairs the copy that is already installed. Then choose Paretly in the input menu.
+
+The mode ids are `com.qiuzekun.inputmethod.Paretly.Hans` and `com.qiuzekun.inputmethod.Paretly.Hant`, the same strings as in `Info.plist`.
+
 ### Open settings
 
 From the input menu, choose **Settings…**. Simplified Chinese shows **设置…**. Traditional Chinese shows **設定…**. The **Paretly** app in Launchpad opens the same window. The window remembers its size and position. Command-W or Esc closes it.
 
-The toolbar has five tabs:
+The window is one page, in the same order as the color window from before the five-tab toolbar:
 
-- **General**: where settings are saved, and the current light and dark schemes.
-- **Appearance**: light and dark schemes, the candidate preview, scheme cards, and corner radius.
-- **Input**: horizontal or vertical candidates, candidate size, and label size.
-- **Updates**: automatic checks, **Receive beta updates**, and **Check for Updates…**. **Update Now** asks for an administrator password and installs in place; if that fails, the package opens in Installer.
-- **About**: the icon, version, GPL-3.0, and links to Squirrel, librime, Rime ICE, and this repository.
+1. Top bar: light/dark preview, status, **Deploy**, and **Apply**.
+2. **Software Update**: automatic checks, **Receive beta updates** (接收测试版（Beta）), and **Check for Updates…**. When a newer release exists, **Update Now** in that dialog asks for an administrator password and installs in place; if that fails, the package opens in Installer.
+3. Light and dark scheme pickers, side by side.
+4. Horizontal or vertical candidates, candidate size, label size, and corner radius.
+5. The live candidate preview.
+6. Scheme cards. A card fills the appearance selected above the grid.
 
-**Deploy** at the bottom reloads Rime without changing these choices. **Apply** writes them and redeploys.
+**Deploy** reloads Rime without changing these choices. **Apply** writes them and redeploys.
 
 Pick a light scheme and a dark scheme. Cards come from `preset_color_schemes` in the bundled `paretly.yaml`, with the same keys from `~/Library/Rime/paretly.yaml` overlaid. A card fills the appearance selected above the grid.
 
@@ -265,7 +303,7 @@ Pick a light scheme and a dark scheme. Cards come from `preset_color_schemes` in
 
 Dark mode defaults to **简约黑 / Clean Black** (`clean_black`). Light mode stays on `native`.
 
-**About Paretly** in the input menu opens an About panel with the same credits as the About tab.
+**About Paretly** in the input menu opens an About panel (icon, version, GPL-3.0, and links to Squirrel, librime, Rime ICE, and this repository). The About panel is not a page of the settings window.
 
 Reload from the terminal:
 

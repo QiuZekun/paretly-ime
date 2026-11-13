@@ -34,6 +34,16 @@ struct SquirrelApp {
     }
     return candidates[0]
   }()
+  /// The bundle `TISRegisterInputSource` should record. Prefer the running
+  /// app so an upgrade registers the copy that was just installed, not a
+  /// different Paretly.app that happens to exist on disk.
+  static var registrationBundleURL: URL {
+    let bundleURL = Bundle.main.bundleURL
+    if bundleURL.lastPathComponent == "Paretly.app" {
+      return bundleURL
+    }
+    return appDir
+  }
   static let logDir = FileManager.default.temporaryDirectory.appending(component: "rime.paretly", directoryHint: .isDirectory)
   // Set by `--show-settings` when this process is the one that will become the server.
   static var presentSettingsOnLaunch = false
@@ -56,33 +66,47 @@ struct SquirrelApp {
           DistributedNotificationCenter.default().postNotificationName(.init("ParetlyReloadNotification"), object: nil)
           return true
         case "--register-input-source", "--install":
-          installer.register()
+          if !installer.register() {
+            exit(EXIT_FAILURE)
+          }
           return true
         case "--enable-input-source":
           if args.count > 2 {
             let modes = args[2...].map { SquirrelInstaller.InputMode(rawValue: $0) }.compactMap { $0 }
             if !modes.isEmpty {
-              installer.enable(modes: modes)
+              if !installer.enable(modes: modes) {
+                exit(EXIT_FAILURE)
+              }
               return true
             }
           }
-          installer.enable()
+          if !installer.enable() {
+            exit(EXIT_FAILURE)
+          }
           return true
         case "--disable-input-source":
           if args.count > 2 {
             let modes = args[2...].map { SquirrelInstaller.InputMode(rawValue: $0) }.compactMap { $0 }
             if !modes.isEmpty {
-              installer.disable(modes: modes)
+              if !installer.disable(modes: modes) {
+                exit(EXIT_FAILURE)
+              }
               return true
             }
           }
-          installer.disable()
+          if !installer.disable() {
+            exit(EXIT_FAILURE)
+          }
           return true
         case "--select-input-source":
+          let selected: Bool
           if args.count > 2, let mode = SquirrelInstaller.InputMode(rawValue: args[2]) {
-            installer.select(mode: mode)
+            selected = installer.select(mode: mode)
           } else {
-            installer.select()
+            selected = installer.select()
+          }
+          if !selected {
+            exit(EXIT_FAILURE)
           }
           return true
         case "--build":
@@ -177,10 +201,13 @@ Perform actions:
   --show-settings            open Paretly Settings
   --sync                     sync user data
   --build                    build all schemas in current directory
-Install Paretly:
-  --install, --register-input-source    register input source
-  --enable-input-source [source id...]  input source list optional
+Install Paretly (run as the logged-in user, not sudo):
+  --install, --register-input-source    register this app bundle
+  --enable-input-source [source id...]  Hans and Hant when omitted and none are on
   --disable-input-source [source id...] input source list optional
-  --select-input-source [source id]     input source optional
+  --select-input-source [source id]     defaults to Hans
+Mode ids:
+  com.qiuzekun.inputmethod.Paretly.Hans
+  com.qiuzekun.inputmethod.Paretly.Hant
 """
 }
