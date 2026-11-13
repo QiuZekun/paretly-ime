@@ -178,7 +178,7 @@ final class SquirrelPanel: NSPanel {
   /// `orderFront` does not raise that panel over the settings key window
   /// (the shielding level is not honored for this process's own windows).
   /// Parenting it is what keeps it above that window. A child cannot use a
-  /// level above its parent, so the anchored panel drops to `.floating`.
+  /// level above its parent, so the anchored panel uses the parent's level.
   /// `hidesOnDeactivate` stays false: an activation flicker while Settings
   /// opens would otherwise hide candidates before they are drawn.
   func anchorAbove(_ window: NSWindow) {
@@ -191,12 +191,16 @@ final class SquirrelPanel: NSPanel {
     behavior.remove(.moveToActiveSpace)
     collectionBehavior = behavior
     aboveParent = true
-    guard parent !== window else { return }
+    guard parent !== window else {
+      level = window.level
+      return
+    }
     parent?.removeChildWindow(self)
-    level = .floating
+    level = window.level
     window.addChildWindow(self, ordered: .above)
-    // Parenting can mark the panel to hide with the app. The try-field
-    // still needs it on screen if Paretly briefly deactivates.
+    // addChildWindow clamps a higher level down to the parent. Reapply that
+    // level, and keep the panel from hiding if Paretly briefly deactivates.
+    level = window.level
     remainVisibleWhenInactive()
   }
 
@@ -412,8 +416,9 @@ private extension SquirrelPanel {
     hidesOnDeactivate = false
   }
 
-  /// Shielding level for other apps; floating while parented to Settings.
-  /// Either way the panel joins fullscreen Spaces and does not hide on deactivate.
+  /// Shielding level for other apps. While parented to Settings, the level
+  /// matches that window: a child cannot sit above its parent. Either way
+  /// the panel joins fullscreen Spaces and does not hide on deactivate.
   func placeForCurrentClient() {
     remainVisibleWhenInactive()
     var behavior = collectionBehavior
@@ -423,7 +428,7 @@ private extension SquirrelPanel {
       collectionBehavior = behavior
     }
     let shielding = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()))
-    let target: NSWindow.Level = aboveParent ? .floating : shielding
+    let target = aboveParent ? (parent?.level ?? .normal) : shielding
     if level != target {
       level = target
     }
@@ -568,7 +573,9 @@ private extension SquirrelPanel {
     // process back to a UI element.
     placeForCurrentClient()
     orderFrontRegardless()
-    remainVisibleWhenInactive()
+    // Ordering front can clear the level. Put the shielding (or parent)
+    // level back, and keep hidesOnDeactivate off after the order.
+    placeForCurrentClient()
   }
 
   func convert(range: Range<String.Index>, in string: String) -> NSRange {

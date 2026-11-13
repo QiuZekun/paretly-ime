@@ -34,7 +34,9 @@ final class ParetlyCandidatePanelTests: XCTestCase {
     ))
     panel.anchorAbove(parent)
     XCTAssertIdentical(panel.parent, parent)
-    XCTAssertEqual(panel.level, .floating)
+    // A child window cannot use a level above its parent. AppKit clamps it
+    // to the settings window's level; ordering above is what keeps it on top.
+    XCTAssertEqual(panel.level, parent.level)
     XCTAssertFalse(panel.hidesOnDeactivate)
     XCTAssertFalse(panel.isFloatingPanel)
     XCTAssertTrue(panel.collectionBehavior.contains(.canJoinAllSpaces))
@@ -69,21 +71,29 @@ final class ParetlyCandidatePanelTests: XCTestCase {
       lastPage: true,
       update: true
     )
-    assertReadyForAnotherApp(panel)
+    assertShownForAnotherApp(panel)
     XCTAssertNil(panel.parent)
     XCTAssertTrue(panel.isVisible)
 
     panel.show(status: "Paretly")
-    assertReadyForAnotherApp(panel)
+    assertShownForAnotherApp(panel)
     panel.hide()
     assertReadyForAnotherApp(panel)
     XCTAssertFalse(panel.isVisible)
   }
 
+  /// Level while the panel is not ordered in. A normal test host can drop
+  /// `CGShieldingWindowLevel` once the window is on screen; the input method
+  /// process does not. Hide-on-deactivate is checked either way.
   private func assertReadyForAnotherApp(_ panel: SquirrelPanel, file: StaticString = #filePath, line: UInt = #line) {
+    assertShownForAnotherApp(panel, file: file, line: line)
+    XCTAssertEqual(panel.level.rawValue, Int(CGShieldingWindowLevel()), file: file, line: line)
+  }
+
+  private func assertShownForAnotherApp(_ panel: SquirrelPanel, file: StaticString = #filePath, line: UInt = #line) {
     XCTAssertFalse(panel.hidesOnDeactivate, "candidates hide whenever Paretly is not the active app", file: file, line: line)
     XCTAssertFalse(panel.isFloatingPanel, file: file, line: line)
-    XCTAssertEqual(panel.level.rawValue, Int(CGShieldingWindowLevel()), file: file, line: line)
+    XCTAssertNil(panel.parent, file: file, line: line)
     XCTAssertTrue(panel.collectionBehavior.contains(.canJoinAllSpaces), file: file, line: line)
     XCTAssertTrue(panel.collectionBehavior.contains(.fullScreenAuxiliary), file: file, line: line)
     XCTAssertFalse(panel.collectionBehavior.contains(.moveToActiveSpace), file: file, line: line)
