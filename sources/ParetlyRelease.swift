@@ -35,7 +35,7 @@ struct ParetlyVersion: Equatable, Comparable {
       text.removeFirst()
     }
     let beta = splitBeta(&text)
-    if beta == .rejected {
+    if case .rejected = beta {
       return nil
     }
     let parts = text.split(separator: ".", omittingEmptySubsequences: false)
