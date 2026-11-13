@@ -153,9 +153,11 @@ struct SquirrelApp {
       // load the bundle explicitly because in this case the input method is a
       // background only application
       let app = NSApplication.shared
+      // Accessory is the LSUIElement behavior (no Dock icon, no menu bar).
+      // The plist key stays unset so a later switch to .regular shows one tile.
+      app.setActivationPolicy(.accessory)
       let delegate = SquirrelApplicationDelegate()
       app.delegate = delegate
-      app.setActivationPolicy(.accessory)
 
       // opencc will be configured with relative dictionary paths
       FileManager.default.changeCurrentDirectoryPath(main.sharedSupportPath!)

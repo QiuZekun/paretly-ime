@@ -21,10 +21,10 @@ struct ParetlySettingsView: View {
       SettingsHeader(model: model)
       Divider()
       ScrollView {
-        VStack(alignment: .leading, spacing: 8) {
-          settingsForm
-          previewStage
-          schemeLibrary
+        VStack(alignment: .leading, spacing: 0) {
+          ForEach(ParetlySettingsSection.allCases, id: \.self) { section in
+            sectionBody(section)
+          }
         }
         .padding(.bottom, 24)
       }
@@ -37,63 +37,86 @@ struct ParetlySettingsView: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
-  private var settingsForm: some View {
-    Form {
-      Section {
-        Toggle(settingsText("Check for updates automatically"), isOn: $model.automaticUpdateChecks)
-          .toggleStyle(.checkbox)
-        Toggle(settingsText("Receive beta updates"), isOn: $model.includeBetaUpdates)
-          .toggleStyle(.checkbox)
-        Button(settingsText("Check for Updates…")) {
-          ParetlyUpdatePresenter.shared.checkManually()
-        }
-      } header: {
-        sectionHeader(.update)
-      } footer: {
-        Text(settingsText("Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer."))
-      }
+  @ViewBuilder
+  private func sectionBody(_ section: ParetlySettingsSection) -> some View {
+    switch section {
+    case .appearance:
+      appearanceSection
+    case .schemes:
+      schemesSection
+    case .schemesGrid:
+      schemeLibrary
+    case .layout:
+      candidateSection
+    case .update:
+      updateSection
+    }
+  }
 
+  private var appearanceSection: some View {
+    settingsGroup {
       Section {
-        HStack(alignment: .top, spacing: 16) {
-          SchemeSlot(model: model, slot: .light)
-          SchemeSlot(model: model, slot: .dark)
+        Picker(settingsText("Appearance"), selection: appearanceSelection) {
+          Text(settingsText("Light")).tag(false)
+          Text(settingsText("Dark")).tag(true)
         }
-        .padding(.vertical, 4)
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .frame(maxWidth: 280)
+        .accessibilityLabel(Text(settingsText("Appearance")))
+        .accessibilityHint(Text(appearanceExplanation))
+      } header: {
+        sectionHeader(.appearance)
+      } footer: {
+        Text(appearanceExplanation)
+      }
+    }
+  }
+
+  private var appearanceExplanation: String {
+    settingsText("Scheme cards and the candidate preview use this appearance. A card fills this appearance's scheme.")
+  }
+
+  private var appearanceSelection: Binding<Bool> {
+    Binding(get: { model.previewDark }, set: { model.setPreview(dark: $0) })
+  }
+
+  private var schemesSection: some View {
+    settingsGroup {
+      Section {
+        SchemeMenu(model: model, slot: .light)
+        SchemeMenu(model: model, slot: .dark)
       } header: {
         sectionHeader(.schemes)
       } footer: {
         Text(settingsText("The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black)."))
       }
-
-      Section {
-        Picker(settingsText("Layout"), selection: $model.candidateListLayout) {
-          Text(settingsText("Horizontal")).tag("linear")
-          Text(settingsText("Vertical")).tag("stacked")
-        }
-        .pickerStyle(.segmented)
-        .accessibilityHint(Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked.")))
-        SettingsSlider(title: settingsText("Candidate size"), value: $model.fontPoint, range: 12...28)
-        SettingsSlider(title: settingsText("Label size"), value: $model.labelFontPoint, range: 10...24)
-        SettingsSlider(title: settingsText("Corner radius"), value: $model.cornerRadius, range: 0...20)
-      } header: {
-        sectionHeader(.layout)
-      } footer: {
-        VStack(alignment: .leading, spacing: 4) {
-          Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked."))
-          Text(settingsText("Candidate size is 12 to 28 points. Label size is 10 to 24 points."))
-          Text(settingsText("Corner radius is 0 to 20 points."))
-        }
-      }
     }
-    .formStyle(.grouped)
-    .controlSize(.regular)
-    .fixedSize(horizontal: false, vertical: true)
   }
 
-  private var previewStage: some View {
+  private var candidateSection: some View {
     VStack(alignment: .leading, spacing: 8) {
-      sectionHeader(.preview)
-        .padding(.horizontal, 20)
+      settingsGroup {
+        Section {
+          Picker(settingsText("Layout"), selection: $model.candidateListLayout) {
+            Text(settingsText("Horizontal")).tag("linear")
+            Text(settingsText("Vertical")).tag("stacked")
+          }
+          .pickerStyle(.segmented)
+          .accessibilityHint(Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked.")))
+          SettingsSlider(title: settingsText("Candidate size"), value: $model.fontPoint, range: 12...28)
+          SettingsSlider(title: settingsText("Label size"), value: $model.labelFontPoint, range: 10...24)
+          SettingsSlider(title: settingsText("Corner radius"), value: $model.cornerRadius, range: 0...20)
+        } header: {
+          sectionHeader(.layout)
+        } footer: {
+          VStack(alignment: .leading, spacing: 4) {
+            Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked."))
+            Text(settingsText("Candidate size is 12 to 28 points. Label size is 10 to 24 points."))
+            Text(settingsText("Corner radius is 0 to 20 points."))
+          }
+        }
+      }
       CandidatePreview(
         palette: model.paletteForPreview(),
         layout: model.candidateListLayout,
@@ -116,6 +139,33 @@ struct ParetlySettingsView: View {
         .accessibilityHidden(true)
     }
     .padding(.top, 4)
+  }
+
+  private var updateSection: some View {
+    settingsGroup {
+      Section {
+        Toggle(settingsText("Check for updates automatically"), isOn: $model.automaticUpdateChecks)
+          .toggleStyle(.checkbox)
+        Toggle(settingsText("Receive beta updates"), isOn: $model.includeBetaUpdates)
+          .toggleStyle(.checkbox)
+        Button(settingsText("Check for Updates…")) {
+          ParetlyUpdatePresenter.shared.checkManually()
+        }
+      } header: {
+        sectionHeader(.update)
+      } footer: {
+        Text(settingsText("Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer."))
+      }
+    }
+  }
+
+  private func settingsGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    Form {
+      content()
+    }
+    .formStyle(.grouped)
+    .controlSize(.regular)
+    .fixedSize(horizontal: false, vertical: true)
   }
 
   private var schemeLibrary: some View {
@@ -148,13 +198,6 @@ private struct SettingsHeader: View {
   var body: some View {
     HStack(alignment: .center, spacing: 12) {
       headerIcon
-      Picker(settingsText("Preview"), selection: previewSelection) {
-        Text(settingsText("Light Preview")).tag(false)
-        Text(settingsText("Dark Preview")).tag(true)
-      }
-      .pickerStyle(.segmented)
-      .frame(maxWidth: 280)
-      .accessibilityHint(Text(settingsText("Sample candidate window for the selected appearance.")))
       Text(model.statusText)
         .font(.callout)
         .foregroundStyle(statusColor)
@@ -197,10 +240,6 @@ private struct SettingsHeader: View {
     }
   }
 
-  private var previewSelection: Binding<Bool> {
-    Binding(get: { model.previewDark }, set: { model.setPreview(dark: $0) })
-  }
-
   private var statusColor: Color {
     switch model.statusKind {
     case .neutral:
@@ -215,46 +254,19 @@ private struct SettingsHeader: View {
   }
 }
 
-private struct SchemeSlot: View {
+private struct SchemeMenu: View {
   @ObservedObject var model: ParetlySettingsModel
   var slot: ThemeSlot
 
   private var schemeID: String { slot == .light ? model.colorScheme : model.colorSchemeDark }
-  private var active: Bool { model.activeSlot == slot }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Label(settingsText(slot == .light ? "Light" : "Dark"), systemImage: slot == .light ? "sun.max" : "moon")
-        .font(.headline)
-        .foregroundStyle(active ? Color.accentColor : Color.primary)
-        .contentShape(Rectangle())
-        .onTapGesture { model.activate(slot) }
-      Picker(settingsText(slot == .light ? "Light Scheme" : "Dark Scheme"), selection: selection) {
-        ForEach(options) { scheme in
-          Text(optionTitle(scheme)).tag(scheme.id)
-        }
+    Picker(settingsText(slot == .light ? "Light Scheme" : "Dark Scheme"), selection: selection) {
+      ForEach(options) { scheme in
+        Text(optionTitle(scheme)).tag(scheme.id)
       }
-      .labelsHidden()
-      .accessibilityLabel(Text(settingsText(slot == .light ? "Light Scheme" : "Dark Scheme")))
-      Text(settingsText(slot == .light ? "Used when the system appearance is light" : "Used when the system appearance is dark"))
-        .font(.callout)
-        .foregroundStyle(.secondary)
-        .fixedSize(horizontal: false, vertical: true)
-        .contentShape(Rectangle())
-        .onTapGesture { model.activate(slot) }
     }
-    .padding(12)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(
-      RoundedRectangle(cornerRadius: 10, style: .continuous)
-        .fill(Color(nsColor: .controlBackgroundColor))
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: 10, style: .continuous)
-        .stroke(active ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: active ? 2 : 1)
-    )
-    .accessibilityElement(children: .contain)
-    .accessibilityAddTraits(active ? .isSelected : [])
+    .accessibilityHint(Text(settingsText(slot == .light ? "Used when the system appearance is light" : "Used when the system appearance is dark")))
   }
 
   private var selection: Binding<String> {

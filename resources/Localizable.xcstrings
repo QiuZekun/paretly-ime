@@ -1238,6 +1238,23 @@
         }
       }
     },
+    "Scheme cards and the candidate preview use this appearance. A card fills this appearance's scheme." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配色卡片和候选窗预览跟随这个外观。点击卡片会填入这个外观的配色。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配色卡片和候選窗預覽跟隨這個外觀。點一下卡片會填入這個外觀的配色。"
+          }
+        }
+      }
+    },
     "Input" : {
       "comment" : "Settings",
       "localizations" : {

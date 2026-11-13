@@ -68,6 +68,12 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
   private var checksumAsset: ParetlyReleaseAsset?
   private var finishedDownload = false
   private var progressPanel: NSPanel?
+
+  /// True while the download panel is on screen. Modal alerts cover this
+  /// themselves for the length of `runModal`.
+  var hasVisibleUI: Bool {
+    progressPanel != nil
+  }
   private var progressIndicator: NSProgressIndicator?
   private var progressLabel: NSTextField?
 
@@ -459,10 +465,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
   }
 
   private func activateForAlert() {
-    let settingsVisible = ParetlySettingsController.shared.window?.isVisible == true
-    if !settingsVisible {
-      NSApp.setActivationPolicy(.regular)
-    }
+    ParetlyWindowActivation.promote()
     if #available(macOS 14.0, *) {
       NSApp.activate()
     } else {
@@ -471,11 +474,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
   }
 
   private func restoreIfIdle() {
-    let settingsVisible = ParetlySettingsController.shared.window?.isVisible == true
-    let aboutVisible = ParetlyAboutController.shared.window?.isVisible == true
-    if progressPanel == nil && !settingsVisible && !aboutVisible {
-      NSApp.setActivationPolicy(.accessory)
-    }
+    ParetlyWindowActivation.sync()
   }
 }
 

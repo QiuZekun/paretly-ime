@@ -72,14 +72,13 @@ xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.pkg
 
 菜单栏点 Paretly 的输入法图标，选 **设置…**。英文界面这一项是 **Settings…**，繁体中文是 **設定…**。启动台里的 **Paretly** 打开同一个窗口。窗口会记住大小和位置。Command-W 或 Esc 关闭窗口。
 
-窗口是一页，顺序和五页工具栏之前的配色窗口一样：
+窗口是一页。顶部是状态、**重新部署**、**应用**。下面按这个顺序：
 
-1. 顶部：浅色/深色预览、状态、**重新部署**、**应用**。
-2. **软件更新**：自动检查更新、**接收测试版（Beta）**、**检查更新…**。有新版本时，对话框里的 **一键更新** 会要求管理员密码并原地安装；失败则打开安装器。
-3. 浅色和深色配色选择，并排。
-4. 横排或竖排、候选字号、序号字号、圆角。
-5. 候选窗实时预览。
-6. 配色卡片。点卡片填入当前选中的外观。
+1. **外观**：一个浅色/深色分段控件。它决定候选窗预览和配色卡片用哪一套外观，卡片填入的也是这个外观的配色。
+2. **配色**：浅色配色、深色配色两个弹出菜单，分别记在系统浅色和系统深色下面。
+3. **全部配色**：配色卡片。点卡片填入当前外观。
+4. **候选窗**：横排或竖排、候选字号、序号字号、圆角，以及实时预览。
+5. **软件更新**：自动检查更新、**接收测试版（Beta）**、**检查更新…**。有新版本时，对话框里的 **一键更新** 会要求管理员密码并原地安装；失败则打开安装器。
 
 **重新部署** 不改这些选择，只重新部署。**应用** 写入并重新部署。
 
@@ -169,11 +168,13 @@ python3 resources/icons/generate.py
 
 ### 启动台
 
-输入法在 `/Library/Input Methods`，`LSUIElement` 为真，启动台不会列出它。`make` 编译 `launcher/main.swift`，放进 `Paretly.app/Contents/Resources/ParetlyLauncher.tar`。`scripts/postinstall` 再解到 `/Applications/Paretly.app`。
+输入法在 `/Library/Input Methods`，启动台不会列出它。进程启动时是辅助应用（accessory）：没有 Dock 图标，也没有自己的菜单栏，和平时藏在后台的输入法一样。Info.plist 不设 `LSUIElement`。那个键再叠加「打开设置时改成普通应用」，Dock 会为同一个进程画两个图标。设置或关于打开时，输入法改成普通应用，Dock 里只有一个图标；这两个窗口都关掉之后回到辅助应用，图标消失。
 
-这是一个普通前台 App，图标和输入法相同，名字也是 Paretly。点开后如果输入法已在运行，就通知它打开现有的设置窗口；没在运行就先把输入法拉起来再打开。设置窗口里的「重新部署」调用原来的 `deploy()`。
+`make` 编译 `launcher/main.swift`，放进 `Paretly.app/Contents/Resources/ParetlyLauncher.tar`。`scripts/postinstall` 再解到 `/Applications/Paretly.app`。
 
-不用指向输入法的替身。替身的目标不在启动台扫描的目录里，而且打开 `LSUIElement` 的输入法不会出现设置窗口。安装包里也不把第二个 `.app` 嵌进输入法目录，避免 `pkgbuild` 把它当成另一个可重定位的 bundle。
+这是一个普通前台 App，图标和输入法相同，名字也是 Paretly，所以启动台能列出它。点开后它先把自己的 Dock 图标收起来，再通知已经在运行的输入法打开设置，或者拉起输入法。交接完成这个进程就退出，不留下第二个图标。设置窗口里的「重新部署」调用原来的 `deploy()`。
+
+不用指向输入法的替身。替身的目标不在启动台扫描的目录里。安装包里也不把第二个 `.app` 嵌进输入法目录，避免 `pkgbuild` 把它当成另一个可重定位的 bundle。
 
 ## 发布
 
@@ -286,14 +287,13 @@ The mode ids are `com.qiuzekun.inputmethod.Paretly.Hans` and `com.qiuzekun.input
 
 From the input menu, choose **Settings…**. Simplified Chinese shows **设置…**. Traditional Chinese shows **設定…**. The **Paretly** app in Launchpad opens the same window. The window remembers its size and position. Command-W or Esc closes it.
 
-The window is one page, in the same order as the color window from before the five-tab toolbar:
+The window is one page. The top bar is status, **Deploy**, and **Apply**. The page below is:
 
-1. Top bar: light/dark preview, status, **Deploy**, and **Apply**.
-2. **Software Update**: automatic checks, **Receive beta updates** (接收测试版（Beta）), and **Check for Updates…**. When a newer release exists, **Update Now** in that dialog asks for an administrator password and installs in place; if that fails, the package opens in Installer.
-3. Light and dark scheme pickers, side by side.
-4. Horizontal or vertical candidates, candidate size, label size, and corner radius.
-5. The live candidate preview.
-6. Scheme cards. A card fills the appearance selected above the grid.
+1. **Appearance**: one Light / Dark segmented control. It chooses the appearance used by the candidate preview and the scheme cards, and a card fills that appearance's scheme.
+2. **Color Schemes**: Light Scheme and Dark Scheme pop-up menus. Each value is what the candidate window uses for that system appearance.
+3. **All Schemes**: the scheme cards. A card fills the appearance selected above.
+4. **Candidate Window**: horizontal or vertical candidates, candidate size, label size, corner radius, and the live preview.
+5. **Software Update**: automatic checks, **Receive beta updates** (接收测试版（Beta）), and **Check for Updates…**. When a newer release exists, **Update Now** in that dialog asks for an administrator password and installs in place; if that fails, the package opens in Installer.
 
 **Deploy** reloads Rime without changing these choices. **Apply** writes them and redeploys.
 
@@ -375,11 +375,13 @@ The script uses only the Python 3 standard library. It rewrites:
 
 ### Launchpad
 
-The input method lives in `/Library/Input Methods` with `LSUIElement` set, so Launchpad does not list it. `make` compiles `launcher/main.swift` into `Paretly.app/Contents/Resources/ParetlyLauncher.tar`. `scripts/postinstall` unpacks that to `/Applications/Paretly.app`.
+The input method lives in `/Library/Input Methods`, so Launchpad does not list it. It starts as an accessory app: no Dock icon and no menu bar, the same background behavior an input method had with `LSUIElement`. Info.plist leaves that key unset. Setting the key and later switching the process to a regular app makes the Dock draw two icons for one process. While Settings or About is open the input method becomes a regular app and shows one Dock icon. When both windows close it returns to accessory and the icon goes away.
 
-That app is a normal foreground bundle with the same icon and the name Paretly. If the input method is already running, the launcher asks it to open the existing settings window. If it is not running, the launcher starts it and that process opens settings. **Deploy** in the settings window calls the existing `deploy()`.
+`make` compiles `launcher/main.swift` into `Paretly.app/Contents/Resources/ParetlyLauncher.tar`. `scripts/postinstall` unpacks that to `/Applications/Paretly.app`.
 
-An alias to the input method would not show up in Launchpad: the target is outside the folders Launchpad scans, and opening the `LSUIElement` bundle does not present settings. The package also does not nest a second `.app` inside the input method, because `pkgbuild` would treat that as another relocatable bundle.
+That app is a normal foreground bundle with the same icon and the name Paretly, which is why Launchpad lists it. On launch it hides its own Dock tile, asks a running input method to open Settings, or starts the input method when none is running. The launcher then exits, so it does not keep a second tile. **Deploy** in the settings window calls the existing `deploy()`.
+
+An alias to the input method would not show up in Launchpad: the target is outside the folders Launchpad scans. The package also does not nest a second `.app` inside the input method, because `pkgbuild` would treat that as another relocatable bundle.
 
 ### Release
 

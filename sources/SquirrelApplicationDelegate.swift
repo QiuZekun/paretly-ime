@@ -27,7 +27,7 @@ final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUSta
   }
 
   func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {
-    NSApp.setActivationPolicy(.regular)
+    ParetlyWindowActivation.promote()
     if !state.userInitiated {
       NSApp.dockTile.badgeLabel = "1"
       let content = UNMutableNotificationContent()
@@ -44,7 +44,7 @@ final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUSta
   }
 
   func standardUserDriverWillFinishUpdateSession() {
-    NSApp.setActivationPolicy(.accessory)
+    ParetlyWindowActivation.sync()
   }
 
   func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {

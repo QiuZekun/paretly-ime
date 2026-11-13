@@ -10,21 +10,50 @@
 import XCTest
 
 final class ParetlyInterfaceTests: XCTestCase {
-  func testSettingsSectionsFollowTheSingleWindowOrder() {
+  func testSettingsSectionsFollowTheSingleWindowOrder() throws {
     XCTAssertEqual(
       ParetlySettingsSection.allCases.map(\.rawValue),
-      ["update", "schemes", "layout", "preview", "schemesGrid"]
+      ["appearance", "schemes", "schemesGrid", "layout", "update"]
     )
     XCTAssertEqual(
       ParetlySettingsSection.allCases.map(\.titleKey),
-      ["Software Update", "Color Schemes", "Candidate Window", "Preview", "All Schemes"]
+      ["Appearance", "Color Schemes", "All Schemes", "Candidate Window", "Software Update"]
     )
     XCTAssertEqual(
       ParetlySettingsSection.allCases.map(\.symbolName),
-      ["arrow.triangle.2.circlepath", "paintbrush", "slider.horizontal.3", "eye", "square.grid.2x2"]
+      ["circle.lefthalf.filled", "paintbrush", "square.grid.2x2", "slider.horizontal.3", "arrow.triangle.2.circlepath"]
     )
     XCTAssertEqual(Set(ParetlySettingsSection.allCases.map(\.symbolName)).count, ParetlySettingsSection.allCases.count)
     XCTAssertEqual(ParetlySettingsWindowCopy.titleKey, "Paretly Settings")
+    let view = try settingsViewSource()
+    XCTAssertTrue(view.contains("ForEach(ParetlySettingsSection.allCases, id: \\.self)"))
+    XCTAssertTrue(view.contains("settingsText(\"Appearance\")"))
+    XCTAssertFalse(view.contains("Light Preview"))
+    XCTAssertFalse(view.contains("Dark Preview"))
+    XCTAssertTrue(view.contains("sectionBody(section)"))
+  }
+
+  func testDockIconShowsForSettingsAboutOrUpdateUIOnly() {
+    XCTAssertEqual(
+      ParetlyDockIcon.visibility(settingsVisible: false, aboutVisible: false, updateUIVisible: false),
+      .hidden
+    )
+    XCTAssertEqual(
+      ParetlyDockIcon.visibility(settingsVisible: true, aboutVisible: false, updateUIVisible: false),
+      .shown
+    )
+    XCTAssertEqual(
+      ParetlyDockIcon.visibility(settingsVisible: false, aboutVisible: true, updateUIVisible: false),
+      .shown
+    )
+    XCTAssertEqual(
+      ParetlyDockIcon.visibility(settingsVisible: false, aboutVisible: false, updateUIVisible: true),
+      .shown
+    )
+    XCTAssertEqual(
+      ParetlyDockIcon.visibility(settingsVisible: true, aboutVisible: true, updateUIVisible: true),
+      .shown
+    )
   }
 
   func testInputMenuOrderWordingAndShortcut() {
@@ -122,6 +151,10 @@ final class ParetlyInterfaceTests: XCTestCase {
     XCTAssertEqual(translated("Paretly Settings", language: "zh-Hant", catalog: catalog), "Paretly 設定")
     XCTAssertEqual(translated("Software Update", language: "zh-Hans", catalog: catalog), "软件更新")
     XCTAssertEqual(translated("Color Schemes", language: "zh-Hans", catalog: catalog), "配色")
+    XCTAssertEqual(translated("Appearance", language: "zh-Hans", catalog: catalog), "外观")
+    XCTAssertEqual(translated("Appearance", language: "zh-Hant", catalog: catalog), "外觀")
+    XCTAssertEqual(translated("All Schemes", language: "zh-Hans", catalog: catalog), "全部配色")
+    XCTAssertEqual(translated("Candidate Window", language: "zh-Hans", catalog: catalog), "候选窗")
     XCTAssertEqual(translated("Skip This Version", language: "zh-Hans", catalog: catalog), "跳过此版本")
     XCTAssertEqual(translated("Update Now", language: "zh-Hans", catalog: catalog), "一键更新")
     XCTAssertEqual(translated("Update Now", language: "zh-Hant", catalog: catalog), "一鍵更新")
@@ -147,6 +180,14 @@ final class ParetlyInterfaceTests: XCTestCase {
       if first.isLetter && !first.isUppercase { return false }
     }
     return true
+  }
+
+  private func settingsViewSource() throws -> String {
+    let url = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .appendingPathComponent("sources/ParetlySettingsView.swift")
+    return try String(contentsOf: url, encoding: .utf8)
   }
 
   private func stringCatalog() throws -> [String: Any] {

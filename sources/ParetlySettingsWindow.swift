@@ -115,18 +115,18 @@ final class ParetlySettingsModel: ObservableObject {
   }
 
   func setPreview(dark: Bool) {
-    previewDark = dark
-    activeSlot = dark ? .dark : .light
+    activate(dark ? .dark : .light)
   }
 
+  /// Stores the scheme used when the system appearance is light.
+  /// The Appearance control is what changes the preview and the card target.
   func chooseLight(_ schemeID: String) {
     colorScheme = schemeID
-    activate(.light)
   }
 
+  /// Stores the scheme used when the system appearance is dark.
   func chooseDark(_ schemeID: String) {
     colorSchemeDark = schemeID
-    activate(.dark)
   }
 
   func assign(_ schemeID: String) {
@@ -228,9 +228,40 @@ enum ParetlyAppIcon {
 
 enum ParetlyWindowActivation {
   static func show(_ window: NSWindow?) {
-    NSApp.setActivationPolicy(.regular)
+    promote()
     window?.makeKeyAndOrderFront(nil)
     window?.orderFrontRegardless()
+    activate()
+  }
+
+  /// One Dock tile while a window or update panel is on screen.
+  static func promote() {
+    apply(.shown)
+  }
+
+  /// `windowWillClose` still reports the closing window as visible, so the
+  /// caller passes that window and it is left out of the count.
+  static func sync(ignoring closing: NSWindow? = nil) {
+    apply(ParetlyDockIcon.visibility(
+      settingsVisible: occupiesDock(ParetlySettingsController.shared.window, ignoring: closing),
+      aboutVisible: occupiesDock(ParetlyAboutController.shared.window, ignoring: closing),
+      updateUIVisible: ParetlyUpdatePresenter.shared.hasVisibleUI
+    ))
+  }
+
+  private static func occupiesDock(_ window: NSWindow?, ignoring: NSWindow?) -> Bool {
+    guard let window, window !== ignoring else { return false }
+    return window.isVisible || window.isMiniaturized
+  }
+
+  private static func apply(_ icon: ParetlyDockIcon) {
+    let policy: NSApplication.ActivationPolicy = icon == .shown ? .regular : .accessory
+    // A second call with the same policy leaves an extra Dock tile.
+    guard NSApp.activationPolicy() != policy else { return }
+    NSApp.setActivationPolicy(policy)
+  }
+
+  private static func activate() {
     if #available(macOS 14.0, *) {
       NSApp.activate()
     } else {
@@ -275,9 +306,7 @@ final class ParetlySettingsController: NSWindowController, NSWindowDelegate {
   }
 
   func windowWillClose(_ notification: Notification) {
-    if ParetlyAboutController.shared.window?.isVisible != true {
-      NSApp.setActivationPolicy(.accessory)
-    }
+    ParetlyWindowActivation.sync(ignoring: notification.object as? NSWindow)
   }
 
   private func installWindow() {
@@ -319,9 +348,7 @@ final class ParetlyAboutController: NSWindowController, NSWindowDelegate {
   }
 
   func windowWillClose(_ notification: Notification) {
-    if ParetlySettingsController.shared.window?.isVisible != true {
-      NSApp.setActivationPolicy(.accessory)
-    }
+    ParetlyWindowActivation.sync(ignoring: notification.object as? NSWindow)
   }
 
   private func installWindow() {

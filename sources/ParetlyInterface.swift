@@ -29,35 +29,53 @@ enum ParetlyInputSource {
   static let menuIconFile = "paretly.tiff"
 }
 
-/// Top-to-bottom sections of the single settings window. This is the layout
-/// from before the five-tab toolbar: update, scheme pickers, candidate
-/// metrics, live preview, then the scheme cards.
+/// Top-to-bottom sections of the single settings window.
+/// `ParetlySettingsView` iterates `allCases`, so this order is the layout.
 enum ParetlySettingsSection: String, CaseIterable, Equatable {
-  case update
+  case appearance
   case schemes
-  case layout
-  case preview
   case schemesGrid
+  case layout
+  case update
 
   var titleKey: String {
     switch self {
-    case .update: return "Software Update"
+    case .appearance: return "Appearance"
     case .schemes: return "Color Schemes"
-    case .layout: return "Candidate Window"
-    case .preview: return "Preview"
     case .schemesGrid: return "All Schemes"
+    case .layout: return "Candidate Window"
+    case .update: return "Software Update"
     }
   }
 
   /// SF Symbols available on macOS 13.
   var symbolName: String {
     switch self {
-    case .update: return "arrow.triangle.2.circlepath"
+    case .appearance: return "circle.lefthalf.filled"
     case .schemes: return "paintbrush"
-    case .layout: return "slider.horizontal.3"
-    case .preview: return "eye"
     case .schemesGrid: return "square.grid.2x2"
+    case .layout: return "slider.horizontal.3"
+    case .update: return "arrow.triangle.2.circlepath"
     }
+  }
+}
+
+/// Whether the input method shows a Dock icon.
+///
+/// Info.plist does not set `LSUIElement`. Launch Services would then register
+/// the process as an agent, and switching to a regular app for Settings adds
+/// a second Dock tile next to that agent tile. `Main` starts the process as
+/// an accessory (no tile, same behavior as `LSUIElement`). A visible Settings
+/// window, About window, or update panel promotes it to one regular tile.
+enum ParetlyDockIcon: Equatable {
+  case hidden
+  case shown
+
+  static func visibility(settingsVisible: Bool, aboutVisible: Bool, updateUIVisible: Bool) -> ParetlyDockIcon {
+    if settingsVisible || aboutVisible || updateUIVisible {
+      return .shown
+    }
+    return .hidden
   }
 }
 
@@ -174,6 +192,7 @@ enum ParetlyInterfaceStrings {
     "Settings File",
     "Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime.",
     "Current Appearance",
+    "Scheme cards and the candidate preview use this appearance. A card fills this appearance's scheme.",
     "The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black).",
     "Color Schemes",
     "Light Scheme",
