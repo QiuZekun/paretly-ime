@@ -256,19 +256,19 @@
         }
       }
     },
-    "Paretly is not signed or notarized, so it will not replace itself. The disk image opens in Finder for you to install. If macOS blocks the installer, open System Settings > Privacy & Security and choose Open Anyway, or Control-click Paretly.pkg and choose Open." : {
+    "Paretly is not signed or notarized, so it will not replace itself. The installer opens for you to finish. If macOS blocks the package, right-click it and choose Open, or open System Settings > Privacy & Security and choose Open Anyway." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paretly 没有签名，也没有公证，所以不会替换正在运行的程序。磁盘镜像会在访达里打开，由你来安装。如果系统拦截安装包，请到系统设置 > 隐私与安全性点「仍要打开」，或按住 Control 点按 Paretly.pkg 再选「打开」。"
+            "value" : "Paretly 没有签名，也没有公证，所以不会替换正在运行的程序。安装包会用「安装器」打开，由你来完成安装。如果系统拦截，请在安装包上右键选择「打开」，或到系统设置 > 隐私与安全性点「仍要打开」。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paretly 沒有簽名，也沒有公證，所以不會替換正在執行的程式。磁碟映像會在 Finder 裡打開，由你來安裝。如果系統攔截安裝包，請到系統設定 > 隱私權與安全性點「仍要打開」，或按住 Control 點按 Paretly.pkg 再選「打開」。"
+            "value" : "Paretly 沒有簽名，也沒有公證，所以不會替換正在執行的程式。安裝包會用「安裝程式」打開，由你來完成安裝。如果系統攔截，請在安裝包上按右鍵選擇「打開」，或到系統設定 > 隱私權與安全性點「仍要打開」。"
           }
         }
       }
@@ -358,19 +358,19 @@
         }
       }
     },
-    "The disk image size does not match the GitHub release." : {
+    "The package size does not match the GitHub release." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "磁盘镜像的大小和 GitHub Release 不一致。"
+            "value" : "安装包的大小和 GitHub Release 不一致。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "磁碟映像的大小和 GitHub Release 不一致。"
+            "value" : "安裝包的大小和 GitHub Release 不一致。"
           }
         }
       }
@@ -392,53 +392,53 @@
         }
       }
     },
-    "The disk image does not match the published SHA-256 checksum." : {
+    "The package does not match the published SHA-256 checksum." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "磁盘镜像和公布的 SHA-256 校验值不一致。"
+            "value" : "安装包和公布的 SHA-256 校验值不一致。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "磁碟映像和公布的 SHA-256 校驗值不一致。"
+            "value" : "安裝包和公布的 SHA-256 校驗值不一致。"
           }
         }
       }
     },
-    "The disk image is open." : {
+    "The installer is open." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "磁盘镜像已打开。"
+            "value" : "安装器已打开。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "磁碟映像已打開。"
+            "value" : "安裝程式已打開。"
           }
         }
       }
     },
-    "Finish installing from Finder. Paretly does not replace the running copy." : {
+    "Finish installing in Installer. Paretly does not replace the running copy." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请在访达里完成安装。Paretly 不会替换正在运行的副本。"
+            "value" : "请在安装器里完成安装。Paretly 不会替换正在运行的副本。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請在 Finder 裡完成安裝。Paretly 不會替換正在執行的副本。"
+            "value" : "請在安裝程式裡完成安裝。Paretly 不會替換正在執行的副本。"
           }
         }
       }

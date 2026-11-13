@@ -4,7 +4,7 @@ Paretly 是 macOS 上的开源输入法，基于 [Rime / 中州韵](https://rime
 
 系统要求 macOS 13 或更新版本。本程序以 **GPL-3.0** 发布，全文在 `LICENSE.txt`。这是修改过的鼠须管，修改说明在 `NOTICE`，第三方组件和许可证原文在 `THIRD-PARTY-NOTICES.md`。
 
-这个 App **没有公证**。公证需要付费的 Apple Developer 账号，Paretly 没有做这一步，安装包也没有签名。从网上载下来的磁盘镜像会被 Gatekeeper 拦截，按下面的步骤才能打开。
+这个 App **没有公证**。公证需要付费的 Apple Developer 账号，Paretly 没有做这一步，安装包也没有签名。从网上载下来的安装包会被 Gatekeeper 拦截，按下面的步骤才能打开。
 
 ## 截图
 
@@ -12,11 +12,11 @@ Paretly 是 macOS 上的开源输入法，基于 [Rime / 中州韵](https://rime
 
 ## 安装
 
-到 GitHub Release 下载磁盘镜像：<https://github.com/QiuZekun/paretly-ime/releases>
+到 GitHub Release 下载安装包：<https://github.com/QiuZekun/paretly-ime/releases>
 
-1. 下载 `Paretly-unsigned.dmg`。第一个版本的标签是 `v0.1.0`。
-2. 打开磁盘镜像，双击里面的 `Paretly.pkg`。
-3. 安装位置是 `/Library/Input Methods/Paretly.app`。安装包会注册并尝试启用输入法，完成后可能会要求注销再登录。
+1. 下载 `Paretly-unsigned.pkg`。第一个版本的标签是 `v0.1.0`。
+2. 双击这个安装包。
+3. 安装位置是 `/Library/Input Methods/Paretly.app`。安装包会注册并尝试启用输入法。装好后注销再登录，或在 **系统设置 > 键盘 > 输入法** 里添加 Paretly。
 4. 启动台里会有 **Paretly**。点它打开设置窗口。输入法本体仍在「输入法」目录里，启动台不显示那个目录。
 
 也可以把 `Paretly.app` 放到 `~/Library/Input Methods/`，然后执行：
@@ -30,17 +30,15 @@ Paretly 是 macOS 上的开源输入法，基于 [Rime / 中州韵](https://rime
 
 安装包没有签名，也没有公证，所以第一次打开会被拦截。
 
-到 **系统设置 > 隐私与安全性**，找到被拦截的 Paretly，点 **仍要打开**（Open Anyway）。
+在 `Paretly-unsigned.pkg` 上右键（或按住 Control 点按），选择 **打开**，再确认打开。
+
+也可以到 **系统设置 > 隐私与安全性**，找到被拦截的安装包，点 **仍要打开**（Open Anyway）。
 
 也可以先去掉隔离属性。把路径换成你下载的文件：
 
 ```sh
-xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.dmg
+xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.pkg
 ```
-
-磁盘镜像里的 `Paretly.pkg` 如果还是打不开，对它再执行一次同一条命令（镜像挂载后一般在 `/Volumes/Paretly/Paretly.pkg`）。
-
-也可以在 `Paretly.pkg` 上按住 Control 点按（或右键），选 **打开**，再确认打开。
 
 ## 添加输入法
 
@@ -106,7 +104,6 @@ sudo pkgutil --forget com.qiuzekun.inputmethod.Paretly
 git clone --recursive https://github.com/QiuZekun/paretly-ime.git
 cd paretly-ime
 make package          # 生成未签名的 package/Paretly.pkg
-make dmg              # 再包成 dist/Paretly-unsigned.dmg
 ```
 
 `make` 会按 `versions/rime-ice.env` 下载雾凇拼音，放进 `data/rime-ice/`（这个目录不入库），编完再拷进 App 的 `Contents/SharedSupport`，并覆盖 `default.yaml`，让 `schema_list` 的第一项是 `rime_ice`。
@@ -114,7 +111,7 @@ make dmg              # 再包成 dist/Paretly-unsigned.dmg
 本地想指定和某个标签一样的版本号时，设置 `MARKETING_VERSION`（不要带 `v`）。它会写入 `CFBundleShortVersionString` 和 `CFBundleVersion`，安装包版本也用这个值：
 
 ```sh
-MARKETING_VERSION=0.1.0 make dmg
+MARKETING_VERSION=0.1.0 make package
 ```
 
 不设置时，Xcode 工程里的版本是 `0.1.0`。
@@ -151,17 +148,17 @@ python3 resources/icons/generate.py
 
 在要发布的提交上推送标签 `v*`。标签必须是 `v` 加上由点分开的两到四段数字，例如 `v0.1.0`。`v0.1.0-rc1` 这种不会通过版本检查。
 
-GitHub Actions 会沿用原来的 macOS 任务打未签名的 `Paretly-unsigned.dmg`。构建前把标签去掉前缀 `v`，设成 `CFBundleShortVersionString`（同时写入 `CFBundleVersion` 和 pkg 版本）。然后用 `GITHUB_TOKEN`（`contents: write`）建一个 GitHub Release，附上这个 dmg 和 `Paretly-unsigned.dmg.sha256`（`sha256sum` 的结果），说明由 GitHub 自动生成。
+GitHub Actions 会在原来的 macOS 任务里打未签名的 `package/Paretly.pkg`，再拷成 `dist/Paretly-unsigned.pkg`。构建前把标签去掉前缀 `v`，设成 `CFBundleShortVersionString`（同时写入 `CFBundleVersion` 和 pkg 版本）。然后用 `GITHUB_TOKEN`（`contents: write`）建一个 GitHub Release，附上这个 pkg 和 `Paretly-unsigned.pkg.sha256`（`sha256sum` 的结果），说明由 GitHub 自动生成。安装包的 postinstall 仍会注册输入法，并把启动台用的 Paretly 解到 `/Applications`。
 
 第一个发布用的标签是 `v0.1.0`，对应 `CHANGELOG.md` 里的同名条目。推送这个标签才会真正发出 Release。不要用 `package/bump_version`：那是鼠须管留下的本地脚本，会自己提交并打标签。
 
-`main` 和 pull request 上的构建不发布，版本号保持工程里的 `0.1.0`。
+`main` 和 pull request 上的构建不发布，版本号保持工程里的 `0.1.0`。构件名是 `Paretly-unsigned.pkg`。
 
 ## 检查更新
 
 输入法菜单和设置窗口（启动台里的 Paretly 打开的就是这个窗口）都有 **检查更新…**。Paretly 读取 GitHub Releases 里 `QiuZekun/paretly-ime` 的最新正式版本（跳过草稿和预发布），用标签 `vX.Y.Z` 和本机的 `CFBundleShortVersionString` 比较。
 
-有新版本时弹出说明，可以选择 **下载并安装**、**以后再说** 或 **跳过此版本**。下载写到 `~/Downloads/Paretly-unsigned.dmg`，核对文件大小；Release 里如果有 `.sha256` 文件，再核对 SHA-256。然后在访达里打开磁盘镜像。安装包没有签名，所以不会悄悄替换正在运行的程序。如果系统拦截，按对话框里的说明到隐私与安全性里打开。
+有新版本时弹出说明，可以选择 **下载并安装**、**以后再说** 或 **跳过此版本**。下载写到 `~/Downloads/Paretly-unsigned.pkg`，核对文件大小；Release 里如果有 `.sha256` 文件，再核对 SHA-256。然后用安装器打开这个安装包。安装包没有签名，所以不会悄悄替换正在运行的程序。如果系统拦截，按对话框里的说明在安装包上右键选择「打开」，或到隐私与安全性里点「仍要打开」。
 
 已经是最新版本时会说明。仓库还没有正式 Release，或者 GitHub 对最新 Release 返回 404 时，手动检查显示「当前已是最新版本」，并写明目前还没有发布新版本和当前版本号；这不是错误。只有网络或 HTTP 失败才会报错，并带上原因。输入法菜单和设置窗口里的按钮都会触发同一次检查，提示会把输入法调到前台。输入法启动时最多每天自动检查一次，设置里的开关默认是开的。这里不用 Sparkle：未签名的安装包没法走 Sparkle 的 EdDSA 签名安装。
 
@@ -191,7 +188,7 @@ Paretly is an open-source macOS input method built on [Rime](https://rime.im). I
 
 macOS 13 or later. Paretly is **GPL-3.0**. The license is `LICENSE.txt`. `NOTICE` records the changes from Squirrel. Bundled components and their license texts are in `THIRD-PARTY-NOTICES.md`.
 
-The app is **not notarized**. Notarization requires a paid Apple Developer account, and Paretly does not have one. The disk image is also unsigned, so Gatekeeper blocks a download until you use the steps below.
+The app is **not notarized**. Notarization requires a paid Apple Developer account, and Paretly does not have one. The installer package is also unsigned, so Gatekeeper blocks a download until you use the steps below.
 
 ### Screenshots
 
@@ -199,11 +196,11 @@ Screenshots are not in the tree yet. This section will show the candidate window
 
 ### Install
 
-Download the disk image from the GitHub Releases page: <https://github.com/QiuZekun/paretly-ime/releases>
+Download the installer from the GitHub Releases page: <https://github.com/QiuZekun/paretly-ime/releases>
 
-1. Download `Paretly-unsigned.dmg`. The first release tag is `v0.1.0`.
-2. Open the disk image and run `Paretly.pkg`.
-3. The package installs to `/Library/Input Methods/Paretly.app`. It registers the input source and tries to enable it. You may need to log out and back in.
+1. Download `Paretly-unsigned.pkg`. The first release tag is `v0.1.0`.
+2. Double-click the package.
+3. The package installs to `/Library/Input Methods/Paretly.app`. It registers the input source and tries to enable it. Afterwards, log out and back in, or add Paretly in **System Settings > Keyboard > Input Sources**.
 4. Launchpad gains a **Paretly** app. Open it to show the settings window. The input method itself stays in Input Methods, which Launchpad does not list.
 
 A copy in `~/Library/Input Methods/` also works. Run `Paretly --register-input-source` and `--enable-input-source` from that bundle.
@@ -212,17 +209,15 @@ A copy in `~/Library/Input Methods/` also works. Run `Paretly --register-input-s
 
 The package is unsigned and not notarized, so macOS blocks it the first time.
 
-Open **System Settings > Privacy & Security** and choose **Open Anyway** (仍要打开) for Paretly.
+Right-click `Paretly-unsigned.pkg` and choose **Open**, then confirm.
+
+Or open **System Settings > Privacy & Security** and choose **Open Anyway** (仍要打开).
 
 Or clear the quarantine attribute. Use the path of the file you downloaded:
 
 ```sh
-xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.dmg
+xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.pkg
 ```
-
-If `Paretly.pkg` inside the image is still blocked, run the same command on it (after mounting, that is usually `/Volumes/Paretly/Paretly.pkg`).
-
-You can also Control-click `Paretly.pkg` and choose **Open**.
 
 ### Add the input source
 
@@ -286,7 +281,6 @@ Same dependencies as Squirrel. `action-install.sh` downloads the prebuilt librim
 
 ```sh
 make package    # unsigned package/Paretly.pkg
-make dmg        # dist/Paretly-unsigned.dmg
 ```
 
 `versions/rime-ice.env` pins rime-ice. `bash tools/update-rime-ice.sh` refreshes `data/rime-ice/` after you change the pin. The build copies that tree into SharedSupport and keeps `rime_ice` as the first entry in `default.yaml`.
@@ -294,7 +288,7 @@ make dmg        # dist/Paretly-unsigned.dmg
 Set `MARKETING_VERSION` without the leading `v` to match a tag. It becomes `CFBundleShortVersionString`, `CFBundleVersion`, and the package version:
 
 ```sh
-MARKETING_VERSION=0.1.0 make dmg
+MARKETING_VERSION=0.1.0 make package
 ```
 
 Without it, the Xcode project version `0.1.0` is used.
@@ -325,17 +319,17 @@ An alias to the input method would not show up in Launchpad: the target is outsi
 
 Push a `v*` tag on the commit you want to ship. The tag must be `v` plus two to four numeric components, such as `v0.1.0`. A tag like `v0.1.0-rc1` fails the version check.
 
-GitHub Actions reuses the existing macOS job to build `Paretly-unsigned.dmg`. Before the build it strips the leading `v` and sets `CFBundleShortVersionString` (and `CFBundleVersion`, and the package version) from that number. It then publishes a GitHub Release with `GITHUB_TOKEN` (`contents: write`), attaches the dmg and `Paretly-unsigned.dmg.sha256` (from `sha256sum`), and uses GitHub's auto-generated notes.
+GitHub Actions reuses the existing macOS job to build `package/Paretly.pkg` and copies it to `dist/Paretly-unsigned.pkg`. Before the build it strips the leading `v` and sets `CFBundleShortVersionString` (and `CFBundleVersion`, and the package version) from that number. It then publishes a GitHub Release with `GITHUB_TOKEN` (`contents: write`), attaches the pkg and `Paretly-unsigned.pkg.sha256` (from `sha256sum`), and uses GitHub's auto-generated notes. The package postinstall still registers the input source and unpacks the Launchpad app to `/Applications`.
 
-The tag for the first release is `v0.1.0`, the entry at the top of `CHANGELOG.md`. Pushing that tag is what creates the Release. Do not use `package/bump_version`; that leftover Squirrel script commits and creates a tag locally.
+The tag for the first release is `v0.1.0`, the matching entry in `CHANGELOG.md`. Pushing that tag is what creates the Release. Do not use `package/bump_version`; that leftover Squirrel script commits and creates a tag locally.
 
-Pushes to `main` and pull requests only build the disk image. They keep the project version `0.1.0` and do not publish a Release.
+Pushes to `main` and pull requests only build the package. They keep the project version `0.1.0`, upload an artifact named `Paretly-unsigned.pkg`, and do not publish a Release.
 
 ### Updates
 
 The input menu and the settings window (the Paretly app in Launchpad opens that window) both have **Check for Updates…**. Paretly reads the latest stable GitHub Release of `QiuZekun/paretly-ime` (drafts and prereleases are skipped) and compares the `vX.Y.Z` tag with `CFBundleShortVersionString`.
 
-A newer release shows its notes and three buttons: **Download & Install**, **Later**, and **Skip this version**. The disk image is saved to `~/Downloads/Paretly-unsigned.dmg`. Paretly checks the file size and, when the release includes a `.sha256` file, the SHA-256 digest, then opens the image in Finder. The package is unsigned, so Paretly does not replace the running copy. The dialog explains Gatekeeper. If you are already up to date, it says so. When the repo has no published release, or GitHub returns 404 for the latest release, a manual check says you're up to date and that no newer version has been published yet (with the current version). That is not an error. Only a network or HTTP failure is reported, and the alert includes the reason. The input menu and the Settings button both run this check, and the alert is brought forward. An automatic check runs at most once a day on launch. The Settings switch defaults to on. Sparkle is not used for this: an unsigned disk image cannot go through Sparkle's EdDSA install path.
+A newer release shows its notes and three buttons: **Download & Install**, **Later**, and **Skip this version**. The package is saved to `~/Downloads/Paretly-unsigned.pkg`. Paretly checks the file size and, when the release includes a `.sha256` file, the SHA-256 digest, then opens the package with Installer. The package is unsigned, so Paretly does not replace the running copy. The dialog explains Gatekeeper: right-click the package and choose Open, or choose Open Anyway in System Settings > Privacy & Security. If you are already up to date, it says so. When the repo has no published release, or GitHub returns 404 for the latest release, a manual check says you're up to date and that no newer version has been published yet (with the current version). That is not an error. Only a network or HTTP failure is reported, and the alert includes the reason. The input menu and the Settings button both run this check, and the alert is brought forward. An automatic check runs at most once a day on launch. The Settings switch defaults to on. Sparkle is not used for this: an unsigned package cannot go through Sparkle's EdDSA install path.
 
 ### Credits and licenses
 

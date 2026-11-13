@@ -68,11 +68,11 @@ struct ParetlyRelease: Equatable {
   var tag: String
   var version: ParetlyVersion
   var notes: String
-  var diskImage: ParetlyReleaseAsset
+  var installer: ParetlyReleaseAsset
   var checksum: ParetlyReleaseAsset?
 
-  static let diskImageName = "Paretly-unsigned.dmg"
-  static let checksumName = "Paretly-unsigned.dmg.sha256"
+  static let packageName = "Paretly-unsigned.pkg"
+  static let checksumName = "Paretly-unsigned.pkg.sha256"
   static let releasesURL = URL(string: "https://api.github.com/repos/QiuZekun/paretly-ime/releases?per_page=20")!
 }
 
@@ -88,7 +88,7 @@ enum ParetlyReleaseError: Error, Equatable {
 
 /// What a manual or automatic check should do with one GitHub response.
 enum ParetlyManualResult: Equatable {
-  /// A newer stable release with a disk image.
+  /// A newer stable release with an installer package.
   case offer(ParetlyRelease)
   /// A stable release exists and it is not newer than this copy.
   case upToDate(version: String)
@@ -216,7 +216,7 @@ enum ParetlyReleaseCatalog {
       return nil
     }
     let assets = (row["assets"] as? [[String: Any]]) ?? []
-    guard let disk = asset(named: ParetlyRelease.diskImageName, in: assets) else {
+    guard let installer = asset(named: ParetlyRelease.packageName, in: assets) else {
       return nil
     }
     let notes = (row["body"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -224,7 +224,7 @@ enum ParetlyReleaseCatalog {
       tag: tag,
       version: version,
       notes: notes,
-      diskImage: disk,
+      installer: installer,
       checksum: asset(named: ParetlyRelease.checksumName, in: assets)
     )
   }

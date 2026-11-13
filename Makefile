@@ -151,7 +151,7 @@ clean-sparkle:
 	rm -rf Frameworks/* > /dev/null 2>&1 || true
 	rm -rf Sparkle/build > /dev/null 2>&1 || true
 
-.PHONY: package archive dmg
+.PHONY: package archive
 
 $(PACKAGE):
 ifdef DEV_ID
@@ -167,9 +167,6 @@ ifdef DEV_ID
 endif
 
 package: release $(PACKAGE)
-
-dmg: package
-	bash package/make-dmg.sh
 
 archive: package package/sign_update
 	bash package/make_archive

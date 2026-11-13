@@ -7,8 +7,9 @@
 //  This file is part of Paretly, a GPL-3.0 fork of Squirrel (鼠须管).
 //  See LICENSE.txt.
 //
-//  Updates come from the public GitHub Releases API. The disk image is
-//  unsigned, so this downloads it and opens it. It does not replace the app.
+//  Updates come from the public GitHub Releases API. The package is
+//  unsigned, so this downloads it and opens it with Installer. It does not
+//  replace the app.
 
 import AppKit
 
@@ -173,7 +174,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
       release.version.display
     )
     let gatekeeper = NSLocalizedString(
-      "Paretly is not signed or notarized, so it will not replace itself. The disk image opens in Finder for you to install. If macOS blocks the installer, open System Settings > Privacy & Security and choose Open Anyway, or Control-click Paretly.pkg and choose Open.",
+      "Paretly is not signed or notarized, so it will not replace itself. The installer opens for you to finish. If macOS blocks the package, right-click it and choose Open, or open System Settings > Privacy & Security and choose Open Anyway.",
       comment: "Update"
     )
     let youHave = String(format: NSLocalizedString("You have version %@.", comment: "Update"), current.display)
@@ -212,7 +213,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
   }
 
   private func download(_ release: ParetlyRelease) {
-    expectedAsset = release.diskImage
+    expectedAsset = release.installer
     checksumAsset = release.checksum
     finishedDownload = false
     showProgress(title: String(
@@ -222,7 +223,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     let configuration = URLSessionConfiguration.ephemeral
     let session = URLSession(configuration: configuration, delegate: self, delegateQueue: .main)
     self.session = session
-    var request = URLRequest(url: release.diskImage.downloadURL)
+    var request = URLRequest(url: release.installer.downloadURL)
     request.setValue("Paretly", forHTTPHeaderField: "User-Agent")
     session.downloadTask(with: request).resume()
   }
@@ -284,7 +285,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
       if asset.byteCount > 0 && data.count != asset.byteCount {
         inform(
           title: NSLocalizedString("The download could not be verified.", comment: "Update"),
-          detail: NSLocalizedString("The disk image size does not match the GitHub release.", comment: "Update")
+          detail: NSLocalizedString("The package size does not match the GitHub release.", comment: "Update")
         )
         return
       }
@@ -294,8 +295,8 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
       let destination = try installDownload(data)
       NSWorkspace.shared.open(destination)
       inform(
-        title: NSLocalizedString("The disk image is open.", comment: "Update"),
-        detail: NSLocalizedString("Finish installing from Finder. Paretly does not replace the running copy.", comment: "Update")
+        title: NSLocalizedString("The installer is open.", comment: "Update"),
+        detail: NSLocalizedString("Finish installing in Installer. Paretly does not replace the running copy.", comment: "Update")
       )
     } catch let error as UpdateFailure {
       inform(title: error.title, detail: error.detail)
@@ -345,7 +346,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     if !ParetlyChecksum.matches(data: data, publishedDigest: text) {
       throw UpdateFailure(
         title: NSLocalizedString("The download could not be verified.", comment: "Update"),
-        detail: NSLocalizedString("The disk image does not match the published SHA-256 checksum.", comment: "Update")
+        detail: NSLocalizedString("The package does not match the published SHA-256 checksum.", comment: "Update")
       )
     }
   }
@@ -357,7 +358,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
       appropriateFor: nil,
       create: true
     )
-    let destination = downloads.appendingPathComponent(ParetlyRelease.diskImageName)
+    let destination = downloads.appendingPathComponent(ParetlyRelease.packageName)
     if FileManager.default.fileExists(atPath: destination.path) {
       try FileManager.default.removeItem(at: destination)
     }

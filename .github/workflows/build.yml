@@ -1,4 +1,4 @@
-name: Build unsigned disk image
+name: Build unsigned package
 
 on:
   push:
@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  dmg:
-    name: macOS unsigned pkg and dmg
+  pkg:
+    name: macOS unsigned pkg
     # macos-latest is the arm64 pool, which is currently cancelling jobs
     # before a runner is assigned. macos-15-intel is a separate pool.
     # ARCHS makes the app universal from that Intel machine.
@@ -41,14 +41,22 @@ jobs:
           fi
           echo "MARKETING_VERSION=${version}" >> "${GITHUB_ENV}"
 
-      - name: Build package and disk image
-        run: ./action-build.sh dmg
+      - name: Build package
+        run: ./action-build.sh package
 
-      - name: Check the disk image
+      - name: Stage unsigned package
         shell: bash
         run: |
-          test -f dist/Paretly-unsigned.dmg
-          ls -lh dist/Paretly-unsigned.dmg package/Paretly.pkg
+          test -f package/Paretly.pkg
+          mkdir -p dist
+          cp package/Paretly.pkg dist/Paretly-unsigned.pkg
+
+      - name: Check the package
+        shell: bash
+        run: |
+          test -f dist/Paretly-unsigned.pkg
+          ls -lh dist/Paretly-unsigned.pkg package/Paretly.pkg
+          stat -f 'bytes=%z' dist/Paretly-unsigned.pkg
           plist="build/Build/Products/Release/Paretly.app/Contents/Info.plist"
           test -f "${plist}"
           short="$(plutil -extract CFBundleShortVersionString raw -o - "${plist}")"
@@ -72,41 +80,41 @@ jobs:
         shell: bash
         run: python3 tools/inspect-icns.py "build/Build/Products/Release/Paretly.app"
 
-      - name: Upload unsigned disk image
+      - name: Upload unsigned package
         uses: actions/upload-artifact@v4
         with:
-          name: Paretly-unsigned.dmg
-          path: dist/Paretly-unsigned.dmg
+          name: Paretly-unsigned.pkg
+          path: dist/Paretly-unsigned.pkg
           if-no-files-found: error
           retention-days: 14
 
-  # Same dmg job as above. This job only runs for a v* tag push.
+  # Same package job as above. This job only runs for a v* tag push.
   release:
     name: Publish GitHub Release
-    needs: dmg
+    needs: pkg
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download unsigned disk image
+      - name: Download unsigned package
         uses: actions/download-artifact@v4
         with:
-          name: Paretly-unsigned.dmg
+          name: Paretly-unsigned.pkg
           path: dist
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          dmg="$(find dist -type f -name 'Paretly-unsigned.dmg' -print -quit)"
-          test -n "${dmg}"
-          ls -lh "${dmg}"
-          # Published next to the disk image so the app can verify the download.
-          sha256sum "${dmg}" > "${dmg}.sha256"
+          pkg="$(find dist -type f -name 'Paretly-unsigned.pkg' -print -quit)"
+          test -n "${pkg}"
+          ls -lh "${pkg}"
+          # Published next to the package so the app can verify the download.
+          sha256sum "${pkg}" > "${pkg}.sha256"
           gh release create "${GITHUB_REF_NAME}" \
-            "${dmg}" \
-            "${dmg}.sha256" \
+            "${pkg}" \
+            "${pkg}.sha256" \
             --title "${GITHUB_REF_NAME}" \
             --generate-notes \
             --verify-tag

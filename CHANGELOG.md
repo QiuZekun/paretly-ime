@@ -1,7 +1,15 @@
+## Unreleased
+
+安装改为双击未签名的 `Paretly-unsigned.pkg`，不再套一层磁盘镜像。如果 Gatekeeper 拦截：在安装包上右键选择「打开」，或到系统设置 > 隐私与安全性点「仍要打开」。装好后注销再登录，或在系统设置 > 键盘 > 输入法里添加 Paretly。
+
+### 构建 | Build
+- CI 构件和 GitHub Release 只发布 `Paretly-unsigned.pkg` 及其 `.sha256`。安装包的 postinstall 仍注册输入法，并把启动台用的 Paretly 解到 `/Applications`
+- 应用内更新下载这个 pkg 到「下载」文件夹，并用安装器打开
+
 <a name="v0.1.0"></a>
 ## v0.1.0 (2026-11-12)
 
-Paretly 的第一个版本。基于鼠须管（Squirrel）1.1.2，改名、换上雾凇拼音，并带上未签名、未公证的磁盘镜像。公证需要付费的 Apple Developer 账号。
+Paretly 的第一个版本。基于鼠须管（Squirrel）1.1.2，改名、换上雾凇拼音，并带上未签名、未公证的安装包。公证需要付费的 Apple Developer 账号。
 
 ### 主要功能更新 | Major Updates
 - 产品名为 Paretly，输入法标识 `com.qiuzekun.inputmethod.Paretly`，安装到 `/Library/Input Methods/Paretly.app`
@@ -10,8 +18,8 @@ Paretly 的第一个版本。基于鼠须管（Squirrel）1.1.2，改名、换�
 - 「应用」把改过的键写进 `~/Library/Rime/paretly.custom.yaml`
 
 ### 构建 | Build
-- 未签名磁盘镜像 `Paretly-unsigned.dmg`
-- 推送标签 `v*`（例如 `v0.1.0`）时，沿用原来的 dmg 任务构建，把 `CFBundleShortVersionString` 设成标签去掉 `v` 之后的版本号，再用 `GITHUB_TOKEN` 发布 GitHub Release，附上 dmg，说明由 GitHub 自动生成
+- 未签名安装包 `Paretly-unsigned.pkg`（双击安装；Gatekeeper 拦截时右键「打开」，或到系统设置 > 隐私与安全性点「仍要打开」；装好后注销再登录，或在键盘 > 输入法里添加 Paretly）
+- 推送标签 `v*`（例如 `v0.1.0`）时，沿用原来的 macOS 任务构建，把 `CFBundleShortVersionString` 设成标签去掉 `v` 之后的版本号，再用 `GITHUB_TOKEN` 发布 GitHub Release，附上 pkg 和 `.sha256`，说明由 GitHub 自动生成
 
 鼠须管 1.1.2 及更早的更新记录留在下面。
 

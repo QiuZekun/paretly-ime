@@ -4,7 +4,12 @@ Paretly is this tree with the product name, input source, and icon changed,
 and with [rime-ice](https://github.com/iDvel/rime-ice) copied into SharedSupport
 at build time. `make` downloads the pin in `versions/rime-ice.env` and the
 prebuilt librime that Squirrel's `action-install.sh` already uses. The
-unsigned disk image is `make dmg` (or the GitHub Actions workflow).
+unsigned installer is `make package` (or the GitHub Actions workflow), which
+writes `package/Paretly.pkg`. CI copies that file to `dist/Paretly-unsigned.pkg`
+and publishes the package. Double-click the package to install. If Gatekeeper
+blocks the unsigned package, right-click it and choose Open, or use System
+Settings > Privacy & Security > Open Anyway. Then log out and back in, or add
+Paretly in System Settings > Keyboard > Input Sources.
 
 The rest of this document is the upstream Squirrel build guide. The built
 app is `Paretly.app`, installed to `/Library/Input Methods`.
