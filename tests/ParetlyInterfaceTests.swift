@@ -31,6 +31,12 @@ final class ParetlyInterfaceTests: XCTestCase {
     XCTAssertFalse(view.contains("Light Preview"))
     XCTAssertFalse(view.contains("Dark Preview"))
     XCTAssertTrue(view.contains("sectionBody(section)"))
+    XCTAssertTrue(view.contains("ScrollView {"))
+    XCTAssertEqual(view.components(separatedBy: "Form {").count - 1, 1)
+    XCTAssertTrue(view.contains(".formStyle(.grouped)"))
+    XCTAssertFalse(view.contains("underPageBackgroundColor"))
+    XCTAssertFalse(view.contains("Material.bar"))
+    XCTAssertFalse(view.contains("func settingsGroup"))
   }
 
   func testDockIconShowsForSettingsAboutOrUpdateUIOnly() {

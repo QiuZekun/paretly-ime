@@ -8,6 +8,7 @@
 //  See LICENSE.txt.
 
 import AppKit
+import Carbon
 import SwiftUI
 
 enum ThemeSlot: Hashable {
@@ -227,20 +228,27 @@ enum ParetlyAppIcon {
 }
 
 enum ParetlyWindowActivation {
+  /// True after this process has been transformed to a foreground app.
+  /// `setActivationPolicy` is not used: on an `LSUIElement` process it keeps
+  /// the agent tile and adds a regular tile beside it.
+  private static var foreground = false
+
   static func show(_ window: NSWindow?) {
     promote()
     window?.makeKeyAndOrderFront(nil)
-    window?.orderFrontRegardless()
     activate()
   }
 
   /// One Dock tile while a window or update panel is on screen.
+  /// Call this before the window is created. A window created while the
+  /// process is still an agent registers a tile of its own.
   static func promote() {
     apply(.shown)
   }
 
-  /// `windowWillClose` still reports the closing window as visible, so the
-  /// caller passes that window and it is left out of the count.
+  /// The closing window is still visible from `windowWillClose`, so callers
+  /// pass it and it is left out of the count. Hide on the next turn so the
+  /// transform does not overlap the Dock's show animation.
   static func sync(ignoring closing: NSWindow? = nil) {
     apply(ParetlyDockIcon.visibility(
       settingsVisible: occupiesDock(ParetlySettingsController.shared.window, ignoring: closing),
@@ -255,10 +263,16 @@ enum ParetlyWindowActivation {
   }
 
   private static func apply(_ icon: ParetlyDockIcon) {
-    let policy: NSApplication.ActivationPolicy = icon == .shown ? .regular : .accessory
-    // A second call with the same policy leaves an extra Dock tile.
-    guard NSApp.activationPolicy() != policy else { return }
-    NSApp.setActivationPolicy(policy)
+    let showDock = icon == .shown
+    guard foreground != showDock else { return }
+    var psn = ProcessSerialNumber(highLongOfPSN: 0, lowLongOfPSN: UInt32(kCurrentProcess))
+    let state = ProcessApplicationTransformState(
+      showDock ? kProcessTransformToForegroundApplication : kProcessTransformToUIElementApplication
+    )
+    // Replaces the process type. A second call with the same type is skipped
+    // above; repeating a policy change is what leaves the extra tile.
+    guard TransformProcessType(&psn, state) == 0 else { return }
+    foreground = showDock
   }
 
   private static func activate() {
@@ -294,6 +308,9 @@ final class ParetlySettingsController: NSWindowController, NSWindowDelegate {
   private let model = ParetlySettingsModel()
 
   func present() {
+    // Foreground before the window exists, so AppKit does not also register
+    // an agent tile for a window created while this process is still an agent.
+    ParetlyWindowActivation.promote()
     if window == nil {
       installWindow()
     }
@@ -306,7 +323,10 @@ final class ParetlySettingsController: NSWindowController, NSWindowDelegate {
   }
 
   func windowWillClose(_ notification: Notification) {
-    ParetlyWindowActivation.sync(ignoring: notification.object as? NSWindow)
+    let closing = notification.object as? NSWindow
+    DispatchQueue.main.async {
+      ParetlyWindowActivation.sync(ignoring: closing)
+    }
   }
 
   private func installWindow() {
@@ -340,6 +360,7 @@ final class ParetlyAboutController: NSWindowController, NSWindowDelegate {
   static let shared = ParetlyAboutController()
 
   func present() {
+    ParetlyWindowActivation.promote()
     if window == nil {
       installWindow()
       window?.center()
@@ -348,7 +369,10 @@ final class ParetlyAboutController: NSWindowController, NSWindowDelegate {
   }
 
   func windowWillClose(_ notification: Notification) {
-    ParetlyWindowActivation.sync(ignoring: notification.object as? NSWindow)
+    let closing = notification.object as? NSWindow
+    DispatchQueue.main.async {
+      ParetlyWindowActivation.sync(ignoring: closing)
+    }
   }
 
   private func installWindow() {

@@ -62,11 +62,11 @@ enum ParetlySettingsSection: String, CaseIterable, Equatable {
 
 /// Whether the input method shows a Dock icon.
 ///
-/// Info.plist does not set `LSUIElement`. Launch Services would then register
-/// the process as an agent, and switching to a regular app for Settings adds
-/// a second Dock tile next to that agent tile. `Main` starts the process as
-/// an accessory (no tile, same behavior as `LSUIElement`). A visible Settings
-/// window, About window, or update panel promotes it to one regular tile.
+/// Info.plist sets `LSUIElement`, so the process is an agent and the Dock has
+/// no tile while Settings is closed. `TransformProcessType` changes that
+/// process into a foreground app for a visible Settings window, About window,
+/// or update panel, which is one tile. `setActivationPolicy(.regular)` is not
+/// used: on an agent it leaves the agent tile in place and adds another.
 enum ParetlyDockIcon: Equatable {
   case hidden
   case shown

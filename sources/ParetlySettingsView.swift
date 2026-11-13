@@ -18,15 +18,18 @@ struct ParetlySettingsView: View {
       if let banner = model.banner {
         SettingsBanner(text: banner)
       }
-      SettingsHeader(model: model)
-      Divider()
       ScrollView {
-        VStack(alignment: .leading, spacing: 0) {
+        Form {
+          Section {
+            SettingsHeader(model: model)
+          }
           ForEach(ParetlySettingsSection.allCases, id: \.self) { section in
             sectionBody(section)
           }
         }
-        .padding(.bottom, 24)
+        .formStyle(.grouped)
+        .scrollDisabled(true)
+        .fixedSize(horizontal: false, vertical: true)
       }
     }
     .background(Color(nsColor: .windowBackgroundColor))
@@ -54,22 +57,20 @@ struct ParetlySettingsView: View {
   }
 
   private var appearanceSection: some View {
-    settingsGroup {
-      Section {
-        Picker(settingsText("Appearance"), selection: appearanceSelection) {
-          Text(settingsText("Light")).tag(false)
-          Text(settingsText("Dark")).tag(true)
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .frame(maxWidth: 280)
-        .accessibilityLabel(Text(settingsText("Appearance")))
-        .accessibilityHint(Text(appearanceExplanation))
-      } header: {
-        sectionHeader(.appearance)
-      } footer: {
-        Text(appearanceExplanation)
+    Section {
+      Picker(settingsText("Appearance"), selection: appearanceSelection) {
+        Text(settingsText("Light")).tag(false)
+        Text(settingsText("Dark")).tag(true)
       }
+      .pickerStyle(.segmented)
+      .labelsHidden()
+      .frame(maxWidth: 280)
+      .accessibilityLabel(Text(settingsText("Appearance")))
+      .accessibilityHint(Text(appearanceExplanation))
+    } header: {
+      sectionHeader(.appearance)
+    } footer: {
+      Text(appearanceExplanation)
     }
   }
 
@@ -82,41 +83,27 @@ struct ParetlySettingsView: View {
   }
 
   private var schemesSection: some View {
-    settingsGroup {
-      Section {
-        SchemeMenu(model: model, slot: .light)
-        SchemeMenu(model: model, slot: .dark)
-      } header: {
-        sectionHeader(.schemes)
-      } footer: {
-        Text(settingsText("The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black)."))
-      }
+    Section {
+      SchemeMenu(model: model, slot: .light)
+      SchemeMenu(model: model, slot: .dark)
+    } header: {
+      sectionHeader(.schemes)
+    } footer: {
+      Text(settingsText("The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black)."))
     }
   }
 
   private var candidateSection: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      settingsGroup {
-        Section {
-          Picker(settingsText("Layout"), selection: $model.candidateListLayout) {
-            Text(settingsText("Horizontal")).tag("linear")
-            Text(settingsText("Vertical")).tag("stacked")
-          }
-          .pickerStyle(.segmented)
-          .accessibilityHint(Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked.")))
-          SettingsSlider(title: settingsText("Candidate size"), value: $model.fontPoint, range: 12...28)
-          SettingsSlider(title: settingsText("Label size"), value: $model.labelFontPoint, range: 10...24)
-          SettingsSlider(title: settingsText("Corner radius"), value: $model.cornerRadius, range: 0...20)
-        } header: {
-          sectionHeader(.layout)
-        } footer: {
-          VStack(alignment: .leading, spacing: 4) {
-            Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked."))
-            Text(settingsText("Candidate size is 12 to 28 points. Label size is 10 to 24 points."))
-            Text(settingsText("Corner radius is 0 to 20 points."))
-          }
-        }
+    Section {
+      Picker(settingsText("Layout"), selection: $model.candidateListLayout) {
+        Text(settingsText("Horizontal")).tag("linear")
+        Text(settingsText("Vertical")).tag("stacked")
       }
+      .pickerStyle(.segmented)
+      .accessibilityHint(Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked.")))
+      SettingsSlider(title: settingsText("Candidate size"), value: $model.fontPoint, range: 12...28)
+      SettingsSlider(title: settingsText("Label size"), value: $model.labelFontPoint, range: 10...24)
+      SettingsSlider(title: settingsText("Corner radius"), value: $model.cornerRadius, range: 0...20)
       CandidatePreview(
         palette: model.paletteForPreview(),
         layout: model.candidateListLayout,
@@ -125,64 +112,49 @@ struct ParetlySettingsView: View {
         cornerRadius: CGFloat(model.cornerRadius)
       )
       .frame(maxWidth: .infinity, minHeight: 120)
-      .padding(28)
-      .frame(maxWidth: .infinity, minHeight: 168)
-      .background(
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-          .fill(Color(nsColor: .underPageBackgroundColor))
-      )
-      .padding(.horizontal, 20)
-      Text(settingsText("Sample candidate window for the selected appearance."))
-        .font(.callout)
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 20)
-        .accessibilityHidden(true)
-    }
-    .padding(.top, 4)
-  }
-
-  private var updateSection: some View {
-    settingsGroup {
-      Section {
-        Toggle(settingsText("Check for updates automatically"), isOn: $model.automaticUpdateChecks)
-          .toggleStyle(.checkbox)
-        Toggle(settingsText("Receive beta updates"), isOn: $model.includeBetaUpdates)
-          .toggleStyle(.checkbox)
-        Button(settingsText("Check for Updates…")) {
-          ParetlyUpdatePresenter.shared.checkManually()
-        }
-      } header: {
-        sectionHeader(.update)
-      } footer: {
-        Text(settingsText("Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer."))
+      .padding(.vertical, 8)
+      .accessibilityLabel(Text(settingsText("Candidate preview")))
+    } header: {
+      sectionHeader(.layout)
+    } footer: {
+      VStack(alignment: .leading, spacing: 4) {
+        Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked."))
+        Text(settingsText("Candidate size is 12 to 28 points. Label size is 10 to 24 points."))
+        Text(settingsText("Corner radius is 0 to 20 points."))
+        Text(settingsText("Sample candidate window for the selected appearance."))
       }
     }
   }
 
-  private func settingsGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-    Form {
-      content()
+  private var updateSection: some View {
+    Section {
+      Toggle(settingsText("Check for updates automatically"), isOn: $model.automaticUpdateChecks)
+        .toggleStyle(.checkbox)
+      Toggle(settingsText("Receive beta updates"), isOn: $model.includeBetaUpdates)
+        .toggleStyle(.checkbox)
+      Button(settingsText("Check for Updates…")) {
+        ParetlyUpdatePresenter.shared.checkManually()
+      }
+    } header: {
+      sectionHeader(.update)
+    } footer: {
+      Text(settingsText("Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer."))
     }
-    .formStyle(.grouped)
-    .controlSize(.regular)
-    .fixedSize(horizontal: false, vertical: true)
   }
 
   private var schemeLibrary: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      sectionHeader(.schemesGrid)
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
+    Section {
       Text(settingsText("Click a card to fill the selected slot, then Apply to save and redeploy."))
         .font(.callout)
         .foregroundStyle(.secondary)
-        .padding(.horizontal, 20)
       LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
         ForEach(model.schemes) { scheme in
           SchemeCard(model: model, scheme: scheme)
         }
       }
-      .padding(.horizontal, 20)
+      .fixedSize(horizontal: false, vertical: true)
+    } header: {
+      sectionHeader(.schemesGrid)
     }
   }
 
@@ -220,9 +192,6 @@ private struct SettingsHeader: View {
       .accessibilityHint(Text(settingsText("Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime.")))
     }
     .controlSize(.regular)
-    .padding(.horizontal, 20)
-    .padding(.vertical, 12)
-    .background(Material.bar)
   }
 
   @ViewBuilder

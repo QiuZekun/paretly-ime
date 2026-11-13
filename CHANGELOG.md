@@ -3,8 +3,8 @@
 安装改为双击未签名的 `Paretly-unsigned.pkg`，不再套一层磁盘镜像。如果 Gatekeeper 拦截：在安装包上右键选择「打开」，或到系统设置 > 隐私与安全性点「仍要打开」。装好后注销再登录，或在系统设置 > 键盘 > 输入法里添加 Paretly。
 
 ### 设置 | Settings
-- 打开设置或关于时 Dock 里只有一个 Paretly 图标，关掉窗口后图标消失。输入法平时仍是没有 Dock 图标的辅助应用。启动台里的 Paretly 交接后退出
-- 设置页顺序改为：外观（一个浅色/深色分段控件）、配色、全部配色、候选窗（含实时预览）、软件更新在最底部
+- 打开设置时 Dock 里只有输入法一个图标。启动器设了 `LSUIElement`，不占 Dock；输入法已在运行时直接通知它打开设置，不再启动第二个进程。安装脚本用 `lsregister -f` 刷新输入法和启动器的 Launch Services 记录，避免旧缓存再画出第二个图标
+- 设置窗口是同一个滚动视图里的一组分组表单：外观、配色、全部配色、候选窗（含实时预览）、软件更新。配色卡片和预览与其他设置在同一层
 
 ### 构建 | Build
 - CI 构件和 GitHub Release 只发布 `Paretly-unsigned.pkg` 及其 `.sha256`。每次构建的 `CFBundleVersion` 和安装包版本是 `github.run_number`，新的 pkg 会原地替换 `/Library/Input Methods/Paretly.app` 和 `/Applications` 里的启动台 App。preinstall/postinstall 会结束正在运行的 Paretly，再注册、启用并重新打开输入法，不要求注销

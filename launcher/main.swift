@@ -7,15 +7,16 @@
 //  This file is part of Paretly, a GPL-3.0 fork of Squirrel (鼠须管).
 //  See LICENSE.txt.
 //
-//  Launchpad only indexes ordinary apps in /Applications. The input method
-//  lives in /Library/Input Methods and stays an accessory (no Dock icon)
-//  until Settings is open. This process asks that bundle to present
-//  Settings, drops its own Dock tile, and exits so only one Paretly icon
-//  remains.
+//  Launchpad indexes apps in /Applications. This process is an LSUIElement,
+//  so the Dock never gives it a tile. It asks the running input method to
+//  present Settings and exits. It does not launch a second copy of the
+//  input-method bundle, and it does not change its own activation policy
+//  on the way (that call waits on the Dock and leaves the tile in place).
 
 import AppKit
 
 private let inputMethodBundleID = "com.qiuzekun.inputmethod.Paretly"
+private let showSettingsNotification = Notification.Name("ParetlyShowSettingsNotification")
 
 private func inputMethodURL() -> URL? {
   let home = FileManager.default.homeDirectoryForCurrentUser
@@ -56,28 +57,31 @@ guard FileManager.default.isExecutableFile(atPath: executable.path) else {
   fail(title, missing)
 }
 
-// This bundle is a normal app so Launchpad lists it. Hide its Dock tile
-// before the input method shows the one tile for Settings.
-NSApplication.shared.setActivationPolicy(.accessory)
-
 let alreadyRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: inputMethodBundleID).isEmpty
-let process = Process()
 if alreadyRunning {
-  // The running input method observes ParetlyShowSettingsNotification and
-  // presents its settings window. This process exits as soon as it posts.
-  process.executableURL = executable
-  process.arguments = ["--show-settings"]
-} else {
-  // This invocation becomes the input method server. Detach it so quitting
-  // the launcher does not send SIGHUP to that server.
-  process.executableURL = URL(fileURLWithPath: "/bin/sh")
-  process.arguments = [
-    "-c",
-    "/usr/bin/nohup \"$1\" --show-settings >/dev/null 2>&1 &",
-    "sh",
-    executable.path
-  ]
+  // The running input method observes this name and presents Settings.
+  // deliverImmediately sends it before this process exits. Spawning the
+  // input-method binary here loads librime just to post the same name.
+  DistributedNotificationCenter.default().postNotificationName(
+    showSettingsNotification,
+    object: nil,
+    userInfo: nil,
+    deliverImmediately: true
+  )
+  exit(EXIT_SUCCESS)
 }
+
+// Nothing is serving the input method yet. Detach one server so exiting
+// does not send SIGHUP. Launch Services' open would start another instance
+// of this bundle and give that instance a Dock tile.
+let process = Process()
+process.executableURL = URL(fileURLWithPath: "/bin/sh")
+process.arguments = [
+  "-c",
+  "/usr/bin/nohup \"$1\" --show-settings >/dev/null 2>&1 &",
+  "sh",
+  executable.path
+]
 process.standardOutput = FileHandle.nullDevice
 process.standardError = FileHandle.nullDevice
 do {
@@ -89,6 +93,4 @@ do {
 if process.terminationStatus != 0 {
   fail(failed, "")
 }
-// NSApplication.shared keeps a Swift app alive after main returns, which
-// leaves a second Paretly tile in the Dock. Exit once the handoff returns.
 exit(EXIT_SUCCESS)

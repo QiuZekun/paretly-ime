@@ -50,8 +50,9 @@ struct SquirrelApp {
 
   // swiftlint:disable:next cyclomatic_complexity
   static func main() {
-    let rimeAPI: RimeApi_stdbool = rime_get_api_stdbool().pointee
-
+    // librime stays unloaded until this process is actually the server or a
+    // --build. --show-settings only posts a notification when a server is
+    // already running, and loading the library first is what made that path slow.
     let handled = autoreleasepool {
       let installer = SquirrelInstaller()
       let args = CommandLine.arguments
@@ -113,11 +114,13 @@ struct SquirrelApp {
           // Notification
           SquirrelApplicationDelegate.showMessage(msgText: NSLocalizedString("deploy_update", comment: ""))
           // Build all schemas in current directory
+          let rimeAPI: RimeApi_stdbool = rime_get_api_stdbool().pointee
           var builderTraits = RimeTraits.rimeStructInit()
           builderTraits.setCString("rime.paretly-builder", to: \.app_name)
           rimeAPI.setup(&builderTraits)
           rimeAPI.deployer_initialize(nil)
           _ = rimeAPI.deploy()
+          rimeAPI.finalize()
           return true
         case "--sync":
           DistributedNotificationCenter.default().postNotificationName(.init("ParetlySyncNotification"), object: nil)
@@ -127,7 +130,12 @@ struct SquirrelApp {
           let others = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId)
             .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
           if !others.isEmpty {
-            DistributedNotificationCenter.default().postNotificationName(.init("ParetlyShowSettingsNotification"), object: nil)
+            DistributedNotificationCenter.default().postNotificationName(
+              .init("ParetlyShowSettingsNotification"),
+              object: nil,
+              userInfo: nil,
+              deliverImmediately: true
+            )
             return true
           }
           SquirrelApp.presentSettingsOnLaunch = true
@@ -145,17 +153,16 @@ struct SquirrelApp {
       return
     }
 
+    let rimeAPI: RimeApi_stdbool = rime_get_api_stdbool().pointee
     autoreleasepool {
       // find the bundle identifier and then initialize the input method server
       let main = Bundle.main
       let connectionName = main.object(forInfoDictionaryKey: "InputMethodConnectionName") as! String
       _ = IMKServer(name: connectionName, bundleIdentifier: main.bundleIdentifier!)
-      // load the bundle explicitly because in this case the input method is a
-      // background only application
+      // LSUIElement in Info.plist makes this an agent before main runs.
+      // Do not call setActivationPolicy here. Switching an agent to .regular
+      // later leaves the agent tile and adds a second Dock tile.
       let app = NSApplication.shared
-      // Accessory is the LSUIElement behavior (no Dock icon, no menu bar).
-      // The plist key stays unset so a later switch to .regular shows one tile.
-      app.setActivationPolicy(.accessory)
       let delegate = SquirrelApplicationDelegate()
       app.delegate = delegate
 

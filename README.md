@@ -168,11 +168,11 @@ python3 resources/icons/generate.py
 
 ### 启动台
 
-输入法在 `/Library/Input Methods`，启动台不会列出它。进程启动时是辅助应用（accessory）：没有 Dock 图标，也没有自己的菜单栏，和平时藏在后台的输入法一样。Info.plist 不设 `LSUIElement`。那个键再叠加「打开设置时改成普通应用」，Dock 会为同一个进程画两个图标。设置或关于打开时，输入法改成普通应用，Dock 里只有一个图标；这两个窗口都关掉之后回到辅助应用，图标消失。
+输入法在 `/Library/Input Methods`，启动台不会列出它。`Info.plist` 里 `LSUIElement` 为真，进程从启动起就是代理应用，平时 Dock 里没有图标。打开设置或关于时，用 `TransformProcessType` 把这一个进程转成前台应用，Dock 里只有一个图标；窗口关掉后转回代理应用，图标消失。不要再调用 `setActivationPolicy(.regular)`：代理进程上这么做会留下原来的图标，再加一个。
 
-`make` 编译 `launcher/main.swift`，放进 `Paretly.app/Contents/Resources/ParetlyLauncher.tar`。`scripts/postinstall` 再解到 `/Applications/Paretly.app`。
+`make` 编译 `launcher/main.swift`，放进 `Paretly.app/Contents/Resources/ParetlyLauncher.tar`。`scripts/postinstall` 再解到 `/Applications/Paretly.app`，并对输入法和启动器执行 `lsregister -f`。安装包是原地替换，Launch Services 会一直用旧的 `LSUIElement` 记录，除非强制刷新。记录和磁盘上的 plist 不一致时，一打开设置就会出现两个 Dock 图标。
 
-这是一个普通前台 App，图标和输入法相同，名字也是 Paretly，所以启动台能列出它。点开后它先把自己的 Dock 图标收起来，再通知已经在运行的输入法打开设置，或者拉起输入法。交接完成这个进程就退出，不留下第二个图标。设置窗口里的「重新部署」调用原来的 `deploy()`。
+启动器自己的 `LSUIElement` 为真，Dock 不会给它图标，成功时也不去改激活策略（那一步会卡住，而且收不回已经画上的图标）。输入法已在运行时，启动器直接投递 `ParetlyShowSettingsNotification` 然后退出，不再启动第二个 Paretly 进程。没有输入法在跑时，它在后台拉起那一个进程并马上退出，不用 `NSWorkspace` 或 `open`。macOS 13 到 15 的启动台不列出代理应用；设置从输入法菜单打开，应用文件仍在 `/Applications/Paretly.app`。设置窗口里的「重新部署」调用原来的 `deploy()`。
 
 不用指向输入法的替身。替身的目标不在启动台扫描的目录里。安装包里也不把第二个 `.app` 嵌进输入法目录，避免 `pkgbuild` 把它当成另一个可重定位的 bundle。
 
@@ -375,11 +375,11 @@ The script uses only the Python 3 standard library. It rewrites:
 
 ### Launchpad
 
-The input method lives in `/Library/Input Methods`, so Launchpad does not list it. It starts as an accessory app: no Dock icon and no menu bar, the same background behavior an input method had with `LSUIElement`. Info.plist leaves that key unset. Setting the key and later switching the process to a regular app makes the Dock draw two icons for one process. While Settings or About is open the input method becomes a regular app and shows one Dock icon. When both windows close it returns to accessory and the icon goes away.
+The input method lives in `/Library/Input Methods`, so Launchpad does not list it. `LSUIElement` is true, so the process is an agent from the start and has no Dock icon while it is idle. Opening Settings or About calls `TransformProcessType` and turns that one process into a foreground app, which is one Dock icon. Closing the windows turns it back into an agent and the icon goes away. `setActivationPolicy(.regular)` is not used: on an agent process the Dock keeps the agent tile and adds a second one.
 
-`make` compiles `launcher/main.swift` into `Paretly.app/Contents/Resources/ParetlyLauncher.tar`. `scripts/postinstall` unpacks that to `/Applications/Paretly.app`.
+`make` compiles `launcher/main.swift` into `Paretly.app/Contents/Resources/ParetlyLauncher.tar`. `scripts/postinstall` unpacks that to `/Applications/Paretly.app` and runs `lsregister -f` on both bundles. An in-place package does not refresh Launch Services by itself. A cached `LSUIElement` value that does not match the plist on disk is what draws two Dock icons when Settings opens.
 
-That app is a normal foreground bundle with the same icon and the name Paretly, which is why Launchpad lists it. On launch it hides its own Dock tile, asks a running input method to open Settings, or starts the input method when none is running. The launcher then exits, so it does not keep a second tile. **Deploy** in the settings window calls the existing `deploy()`.
+The launcher is an agent too (`LSUIElement`), so it never takes a Dock tile, and the success path does not call `setActivationPolicy` (that call blocks on the Dock and does not remove a tile Launch Services already created). When the input method is already running, the launcher posts `ParetlyShowSettingsNotification` and exits. It does not start a second Paretly process. When nothing is running, it detaches one server and exits, without `NSWorkspace` or `open`. Launchpad on macOS 13–15 hides agent apps. Settings is in the input menu, and the bundle stays at `/Applications/Paretly.app`. **Deploy** in the settings window calls the existing `deploy()`.
 
 An alias to the input method would not show up in Launchpad: the target is outside the folders Launchpad scans. The package also does not nest a second `.app` inside the input method, because `pkgbuild` would treat that as another relocatable bundle.
 

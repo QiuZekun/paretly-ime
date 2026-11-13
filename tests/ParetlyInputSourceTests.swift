@@ -19,7 +19,7 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertEqual(plist["CFBundleIdentifier"] as? String, "$(PRODUCT_BUNDLE_IDENTIFIER)")
     XCTAssertEqual(plist["tsInputMethodIconFileKey"] as? String, ParetlyInputSource.menuIconFile)
     XCTAssertEqual(plist["LSBackgroundOnly"] as? Bool, false)
-    XCTAssertNil(plist["LSUIElement"])
+    XCTAssertEqual(plist["LSUIElement"] as? Bool, true)
     XCTAssertFalse(serialized(plist).contains("im.rime.inputmethod.Squirrel"))
 
     let component = try XCTUnwrap(plist["ComponentInputModeDict"] as? [String: Any])
@@ -63,6 +63,10 @@ final class ParetlyInputSourceTests: XCTestCase {
     let select = try XCTUnwrap(postinstall.range(of: "--select-input-source"))
     XCTAssertLessThan(register.lowerBound, enable.lowerBound)
     XCTAssertLessThan(enable.lowerBound, select.lowerBound)
+    // -f on the input method bundle, in the console user's GUI session, before
+    // TIS registration. The launcher registration uses "${dest}", not app_root.
+    let refresh = try XCTUnwrap(postinstall.range(of: "run_as_console_user \"${reg}\" -f \"${app_root}\""))
+    XCTAssertLessThan(refresh.lowerBound, register.lowerBound)
 
     let quit = try XCTUnwrap(preinstall.range(of: "--quit"))
     let force = try XCTUnwrap(preinstall.range(of: "killall -KILL"))
@@ -80,21 +84,29 @@ final class ParetlyInputSourceTests: XCTestCase {
 
   func testInputMethodStartsHiddenAndPromotesOnce() throws {
     let plist = try propertyList("resources/Info.plist")
-    XCTAssertNil(plist["LSUIElement"])
+    XCTAssertEqual(plist["LSUIElement"] as? Bool, true)
     XCTAssertEqual(plist["LSBackgroundOnly"] as? Bool, false)
 
     let main = try text("sources/Main.swift")
-    let accessory = try XCTUnwrap(main.range(of: "setActivationPolicy(.accessory)"))
-    let run = try XCTUnwrap(main.range(of: "app.run()"))
-    XCTAssertLessThan(accessory.lowerBound, run.lowerBound)
-    XCTAssertFalse(main.contains("setActivationPolicy(.regular)"))
+    XCTAssertFalse(main.contains("setActivationPolicy("))
+    let show = try XCTUnwrap(main.range(of: "case \"--show-settings\":"))
+    let help = try XCTUnwrap(main.range(of: "case \"--help\":"))
+    let showBody = main[show.upperBound..<help.lowerBound]
+    XCTAssertFalse(showBody.contains("rime_get_api_stdbool()"))
+    XCTAssertTrue(String(showBody).contains("deliverImmediately: true"))
+    let handled = try XCTUnwrap(main.range(of: "if handled {"))
+    XCTAssertTrue(main[handled.upperBound...].contains("rime_get_api_stdbool()"))
 
     let window = try text("sources/ParetlySettingsWindow.swift")
-    XCTAssertTrue(window.contains("guard NSApp.activationPolicy() != policy else { return }"))
-    XCTAssertTrue(window.contains("NSApp.setActivationPolicy(policy)"))
+    XCTAssertTrue(window.contains("TransformProcessType"))
+    XCTAssertTrue(window.contains("kProcessTransformToForegroundApplication"))
+    XCTAssertTrue(window.contains("kProcessTransformToUIElementApplication"))
     XCTAssertTrue(window.contains("ParetlyDockIcon.visibility"))
-    XCTAssertFalse(window.contains("setActivationPolicy(.regular)"))
-    XCTAssertFalse(window.contains("setActivationPolicy(.accessory)"))
+    XCTAssertFalse(window.contains("setActivationPolicy("))
+    XCTAssertFalse(window.contains("orderFrontRegardless"))
+    let promote = try XCTUnwrap(window.range(of: "ParetlyWindowActivation.promote()"))
+    let install = try XCTUnwrap(window.range(of: "installWindow()"))
+    XCTAssertLessThan(promote.lowerBound, install.lowerBound)
 
     for path in [
       "sources/ParetlyUpdateController.swift",
@@ -106,16 +118,26 @@ final class ParetlyInputSourceTests: XCTestCase {
     }
   }
 
-  func testLauncherHidesItsDockIconAndExits() throws {
+  func testLauncherMessagesTheRunningInputMethodAndDoesNotShowATile() throws {
     let source = try text("launcher/main.swift")
-    let accessory = try XCTUnwrap(source.range(of: "setActivationPolicy(.accessory)"))
-    let run = try XCTUnwrap(source.range(of: "process.run()"))
+    let posted = try XCTUnwrap(source.range(of: "deliverImmediately: true"))
     let done = try XCTUnwrap(source.range(of: "exit(EXIT_SUCCESS)"))
-    XCTAssertLessThan(accessory.lowerBound, run.lowerBound)
-    XCTAssertLessThan(run.lowerBound, done.lowerBound)
+    XCTAssertLessThan(posted.lowerBound, done.lowerBound)
+    XCTAssertTrue(source.contains("ParetlyShowSettingsNotification"))
+    XCTAssertFalse(source.contains("setActivationPolicy(.accessory)"))
+    XCTAssertFalse(source.contains("NSWorkspace"))
+    XCTAssertFalse(source.contains("/usr/bin/open"))
+    XCTAssertFalse(source.contains("process.executableURL = executable"))
     XCTAssertFalse(source.contains("app.run("))
     XCTAssertFalse(source.contains("NSApp.run("))
+    // A missing install can still present an alert.
     XCTAssertTrue(source.contains("setActivationPolicy(.regular)"))
+
+    let builder = try text("tools/build-launcher.sh")
+    let key = try XCTUnwrap(builder.range(of: "<key>LSUIElement</key>"))
+    XCTAssertTrue(builder[key.upperBound...].contains("<true/>"))
+    XCTAssertTrue(builder.contains("Launcher must set LSUIElement"))
+    XCTAssertFalse(builder.contains("Launcher must not set LSUIElement"))
   }
 
   private func assertMode(_ mode: [String: Any], id: String, language: String, isDefault: Bool) {

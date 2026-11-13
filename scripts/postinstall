@@ -98,9 +98,23 @@ relaunch_paretly() {
     run_as_console_user /usr/bin/open -g "${app_root}" || true
 }
 
+# The pkg replaces the input method in place. Launch Services keeps the
+# previous LSUIElement bit unless this is forced, and a stale agent record
+# plus a foreground Settings window is a second Dock tile. Same GUI session
+# as input-source registration.
+refresh_input_method_launch_services() {
+  local reg="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+  if [ ! -x "${reg}" ]; then
+    echo "lsregister is missing; the input method's Launch Services record was not refreshed." >&2
+    return 0
+  fi
+  run_as_console_user "${reg}" -f "${app_root}" || true
+}
+
 trap relaunch_paretly EXIT
 
 install_applications_launcher
+refresh_input_method_launch_services
 
 if [ ! -x "${executable}" ]; then
     echo "Paretly executable is missing at ${executable}" >&2
