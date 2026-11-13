@@ -91,6 +91,10 @@ final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUSta
     ParetlySettingsController.shared.present()
   }
 
+  func openAbout() {
+    ParetlyAboutController.shared.present()
+  }
+
   func checkForUpdates() {
     ParetlyUpdatePresenter.shared.checkManually()
   }

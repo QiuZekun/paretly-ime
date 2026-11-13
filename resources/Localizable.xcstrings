@@ -656,13 +656,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paretly 设置…"
+            "value" : "设置…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paretly 設定…"
+            "value" : "設定…"
           }
         }
       }
@@ -759,6 +759,12 @@
             "state" : "translated",
             "value" : "应用"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套用"
+          }
         }
       }
     },
@@ -770,6 +776,12 @@
             "state" : "translated",
             "value" : "浅色"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "淺色"
+          }
         }
       }
     },
@@ -777,6 +789,12 @@
       "comment" : "Settings",
       "localizations" : {
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "深色"
@@ -814,6 +832,12 @@
             "state" : "translated",
             "value" : "横排"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橫排"
+          }
         }
       }
     },
@@ -824,6 +848,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "竖排"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直排"
           }
         }
       }
@@ -836,6 +866,12 @@
             "state" : "translated",
             "value" : "候选字号"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候選字級"
+          }
         }
       }
     },
@@ -846,6 +882,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "序号字号"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標號字級"
           }
         }
       }
@@ -858,6 +900,12 @@
             "state" : "translated",
             "value" : "圆角"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圓角"
+          }
         }
       }
     },
@@ -869,6 +917,12 @@
             "state" : "translated",
             "value" : "点卡片赋给当前槽位，再点应用写入并重新部署"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點卡片填入目前選取的外觀，再點「套用」儲存並重新部署。"
+          }
         }
       }
     },
@@ -879,6 +933,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在写入…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在寫入…"
           }
         }
       }
@@ -908,6 +968,12 @@
             "state" : "translated",
             "value" : "已写入并重新部署。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已寫入並重新部署。"
+          }
         }
       }
     },
@@ -918,6 +984,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "没有需要写入的改动。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有需要寫入的變更。"
           }
         }
       }
@@ -930,6 +1002,12 @@
             "state" : "translated",
             "value" : "找不到随包的 paretly.yaml。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到隨附的 paretly.yaml。"
+          }
         }
       }
     },
@@ -940,6 +1018,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法读取用户目录里的 paretly.yaml。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法讀取使用者目錄裡的 paretly.yaml。"
           }
         }
       }
@@ -952,6 +1036,12 @@
             "state" : "translated",
             "value" : "未能在 paretly.yaml 里解析到配色。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未能在 paretly.yaml 裡解析到配色。"
+          }
         }
       }
     },
@@ -962,6 +1052,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法写入 paretly.custom.yaml。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法寫入 paretly.custom.yaml。"
           }
         }
       }
@@ -974,6 +1070,12 @@
             "state" : "translated",
             "value" : "未知浅色配色。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知的淺色配色。"
+          }
         }
       }
     },
@@ -984,6 +1086,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未知深色配色。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知的深色配色。"
           }
         }
       }
@@ -996,6 +1104,12 @@
             "state" : "translated",
             "value" : "排列方式只能是横排或竖排。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排列方式只能是橫排或直排。"
+          }
         }
       }
     },
@@ -1006,6 +1120,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "候选字号需在 12–28 之间。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候選字級需在 12–28 之間。"
           }
         }
       }
@@ -1018,6 +1138,12 @@
             "state" : "translated",
             "value" : "序号字号需在 10–24 之间。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標號字級需在 10–24 之間。"
+          }
         }
       }
     },
@@ -1029,6 +1155,12 @@
             "state" : "translated",
             "value" : "圆角需在 0–20 之间。"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圓角需在 0–20 之間。"
+          }
         }
       }
     },
@@ -1039,6 +1171,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "（文件中未见此配色）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "（檔案中未見此配色）"
           }
         }
       }
@@ -1056,6 +1194,669 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "[version] 現已發佈"
+          }
+        }
+      }
+    },
+    "General" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常规"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
+        }
+      }
+    },
+    "Appearance" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外觀"
+          }
+        }
+      }
+    },
+    "Input" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入"
+          }
+        }
+      }
+    },
+    "Updates" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
+          }
+        }
+      }
+    },
+    "About" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於"
+          }
+        }
+      }
+    },
+    "Paretly — %@" : {
+      "comment" : "Window title",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly — %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly — %@"
+          }
+        }
+      }
+    },
+    "Settings File" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定檔"
+          }
+        }
+      }
+    },
+    "Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“应用”只把改过的配色、排列和字号写入 ~/Library/Rime/paretly.custom.yaml，并保留其它补丁，然后重新部署。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「套用」只把改過的配色、排列和字級寫入 ~/Library/Rime/paretly.custom.yaml，並保留其它補丁，然後重新部署。"
+          }
+        }
+      }
+    },
+    "Current Appearance" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前外观"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前外觀"
+          }
+        }
+      }
+    },
+    "The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black)." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统为浅色时使用浅色配色，为深色时使用深色配色。深色默认是「简约黑」（clean_black）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統為淺色時使用淺色配色，為深色時使用深色配色。深色預設是「簡約黑」（clean_black）。"
+          }
+        }
+      }
+    },
+    "Color Schemes" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配色"
+          }
+        }
+      }
+    },
+    "Light Scheme" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色配色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "淺色配色"
+          }
+        }
+      }
+    },
+    "Dark Scheme" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色配色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色配色"
+          }
+        }
+      }
+    },
+    "All Schemes" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部配色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部配色"
+          }
+        }
+      }
+    },
+    "Assign Cards To" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片赋给"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片指定給"
+          }
+        }
+      }
+    },
+    "Preview" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽"
+          }
+        }
+      }
+    },
+    "Candidate preview" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候选窗预览"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候選窗預覽"
+          }
+        }
+      }
+    },
+    "Sample candidate window for the selected appearance." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前外观下的候选窗示例。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前外觀下的候選窗範例。"
+          }
+        }
+      }
+    },
+    "Candidate Window" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候选窗"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候選窗"
+          }
+        }
+      }
+    },
+    "Layout" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排列"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排列"
+          }
+        }
+      }
+    },
+    "Horizontal candidates sit on one line. Vertical candidates are stacked." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "横排时候选在同一行，竖排时上下排列。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橫排時候選在同一行，直排時上下排列。"
+          }
+        }
+      }
+    },
+    "Candidate size is 12 to 28 points. Label size is 10 to 24 points." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候选字号为 12–28 点，序号字号为 10–24 点。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候選字級為 12–28 點，標號字級為 10–24 點。"
+          }
+        }
+      }
+    },
+    "Corner radius is 0 to 20 points." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圆角为 0–20 点。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圓角為 0–20 點。"
+          }
+        }
+      }
+    },
+    "Software Update" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "软件更新"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "軟體更新"
+          }
+        }
+      }
+    },
+    "Paretly checks GitHub for a newer release. Checking does not replace the running copy." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 会在 GitHub 上查找新版本。检查更新不会替换正在运行的副本。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 會在 GitHub 上尋找新版本。檢查更新不會替換正在執行的副本。"
+          }
+        }
+      }
+    },
+    "Redeploy reloads Rime. It does not change the choices in this window." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“重新部署”会重新载入 Rime，不会改动这个窗口里的选择。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「重新部署」會重新載入 Rime，不會改動這個視窗裡的選擇。"
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "comment" : "About",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %@"
+          }
+        }
+      }
+    },
+    "Version unavailable" : {
+      "comment" : "About",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本未知"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有版本號"
+          }
+        }
+      }
+    },
+    "Licensed under GPL-3.0." : {
+      "comment" : "About",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以 GPL-3.0 许可发布。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以 GPL-3.0 授權釋出。"
+          }
+        }
+      }
+    },
+    "Paretly is a GPL-3.0 fork of Squirrel. It uses librime and ships Rime ICE." : {
+      "comment" : "About",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 是 Squirrel（鼠须管）的 GPL-3.0 分支，使用 librime，并附带雾凇拼音（Rime ICE）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 是 Squirrel（鼠鬚管）的 GPL-3.0 分支，使用 librime，並附帶霧凇拼音（Rime ICE）。"
+          }
+        }
+      }
+    },
+    "Credits" : {
+      "comment" : "About",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "致谢"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "致謝"
+          }
+        }
+      }
+    },
+    "Fills the selected appearance." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "填入当前选中的外观。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "填入目前選取的外觀。"
+          }
+        }
+      }
+    },
+    "Sync User Data" : {
+      "comment" : "Menu item",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步用户数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步用戶資料"
+          }
+        }
+      }
+    },
+    "Logs…" : {
+      "comment" : "Menu item",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日志…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日誌…"
+          }
+        }
+      }
+    },
+    "Rime Wiki…" : {
+      "comment" : "Menu item",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在线文档…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在線文檔…"
+          }
+        }
+      }
+    },
+    "About Paretly" : {
+      "comment" : "About",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于 Paretly"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於 Paretly"
+          }
+        }
+      }
+    },
+    "Skip This Version" : {
+      "comment" : "Update",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳过此版本"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳過此版本"
+          }
+        }
+      }
+    },
+    "Beta releases are offered only when this is on. A beta build turns it on until you change it." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有打开此项时才会提供测试版。以测试版构建的副本会默认打开，直到你改掉。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有打開此項目時才會提供測試版。以測試版建置的副本會預設打開，直到你改掉。"
+          }
+        }
+      }
+    },
+    "Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer." : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「一键更新」会要求输入管理员密码，原地安装，然后重新打开 Paretly。如果失败，安装包会用「安装器」打开。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「一鍵更新」會要求輸入管理員密碼，原地安裝，然後重新打開 Paretly。如果失敗，安裝包會用「安裝程式」打開。"
           }
         }
       }

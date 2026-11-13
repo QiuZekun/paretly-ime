@@ -101,6 +101,9 @@
 		A7E1A0422C0A000100000022 /* ParetlyUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0432C0A000100000023 /* ParetlyUpdateController.swift */; };
 		A7E1A0442C0A000100000024 /* ParetlyRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0412C0A000100000021 /* ParetlyRelease.swift */; };
 		A7E1A0452C0A000100000025 /* ParetlyReleaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0462C0A000100000026 /* ParetlyReleaseTests.swift */; };
+		A7E1A0622C0A000100000032 /* ParetlyInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0602C0A000100000030 /* ParetlyInterface.swift */; };
+		A7E1A0632C0A000100000033 /* ParetlyInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0602C0A000100000030 /* ParetlyInterface.swift */; };
+		A7E1A0642C0A000100000034 /* ParetlyInterfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E1A0612C0A000100000031 /* ParetlyInterfaceTests.swift */; };
 		A7E1A0172C0A000100000001 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A7E1A0062C0A000100000001 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
@@ -318,6 +321,8 @@
 		A7E1A0412C0A000100000021 /* ParetlyRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyRelease.swift; path = sources/ParetlyRelease.swift; sourceTree = "<group>"; };
 		A7E1A0432C0A000100000023 /* ParetlyUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyUpdateController.swift; path = sources/ParetlyUpdateController.swift; sourceTree = "<group>"; };
 		A7E1A0462C0A000100000026 /* ParetlyReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyReleaseTests.swift; path = tests/ParetlyReleaseTests.swift; sourceTree = "<group>"; };
+		A7E1A0602C0A000100000030 /* ParetlyInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyInterface.swift; path = sources/ParetlyInterface.swift; sourceTree = "<group>"; };
+		A7E1A0612C0A000100000031 /* ParetlyInterfaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParetlyInterfaceTests.swift; path = tests/ParetlyInterfaceTests.swift; sourceTree = "<group>"; };
 		A7E1A0062C0A000100000001 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		A7E1A0072C0A000100000001 /* ParetlyThemeSettingsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ParetlyThemeSettingsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -365,6 +370,7 @@
 				A7E1A0042C0A000100000001 /* ParetlySettingsWindow.swift */,
 				A7E1A0412C0A000100000021 /* ParetlyRelease.swift */,
 				A7E1A0432C0A000100000023 /* ParetlyUpdateController.swift */,
+				A7E1A0602C0A000100000030 /* ParetlyInterface.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -539,6 +545,7 @@
 			children = (
 				A7E1A0052C0A000100000001 /* ParetlyThemeSettingsTests.swift */,
 				A7E1A0462C0A000100000026 /* ParetlyReleaseTests.swift */,
+				A7E1A0612C0A000100000031 /* ParetlyInterfaceTests.swift */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -662,6 +669,7 @@
 				A7E1A0142C0A000100000001 /* ParetlySettingsWindow.swift in Sources */,
 				A7E1A0402C0A000100000020 /* ParetlyRelease.swift in Sources */,
 				A7E1A0422C0A000100000022 /* ParetlyUpdateController.swift in Sources */,
+				A7E1A0622C0A000100000032 /* ParetlyInterface.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -673,6 +681,8 @@
 				A7E1A0162C0A000100000001 /* ParetlyThemeSettingsTests.swift in Sources */,
 				A7E1A0442C0A000100000024 /* ParetlyRelease.swift in Sources */,
 				A7E1A0452C0A000100000025 /* ParetlyReleaseTests.swift in Sources */,
+				A7E1A0632C0A000100000033 /* ParetlyInterface.swift in Sources */,
+				A7E1A0642C0A000100000034 /* ParetlyInterfaceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
