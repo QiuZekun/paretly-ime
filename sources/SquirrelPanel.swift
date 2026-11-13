@@ -7,10 +7,18 @@
 
 import AppKit
 
+/// Clicks, scrolling, and caret hits in the candidate panel.
+/// The input controller and the settings try-typing field both drive these.
+protocol SquirrelPanelInput: AnyObject {
+  func selectCandidate(_ index: Int) -> Bool
+  func page(up: Bool) -> Bool
+  func moveCaret(forward: Bool) -> Bool
+}
+
 final class SquirrelPanel: NSPanel {
   private let view: SquirrelView
   private let back: NSVisualEffectView
-  var inputController: SquirrelInputController?
+  var inputController: SquirrelPanelInput?
 
   var position: NSRect
   private var screenRect: NSRect = .zero

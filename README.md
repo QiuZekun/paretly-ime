@@ -70,19 +70,19 @@ xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.pkg
 
 ## 打开设置
 
-菜单栏点 Paretly 的输入法图标，选 **设置…**。英文界面这一项是 **Settings…**，繁体中文是 **設定…**。启动台里的 **Paretly** 打开同一个窗口。窗口会记住大小和位置。Command-W 或 Esc 关闭窗口。
+菜单栏点 Paretly 的输入法图标，选 **设置…**。英文界面这一项是 **Settings…**，繁体中文是 **設定…**。启动台里的 **Paretly** 打开同一个窗口。窗口大小固定，不能缩放，绿色全屏按钮是停用的。放不下的内容在窗口里滚动。窗口会记住位置。Command-W 或 Esc 关闭窗口。焦点在顶部试用框里时，Esc 先结束这次输入。
 
-窗口是一页。顶部是状态、**重新部署**、**应用**。下面按这个顺序：
+窗口是一页。顶部是图标、试用框（占位「打字试试看效果~」，在这里打字会弹出真正的候选窗）、状态、**重新部署**、**应用**。下面是同一张分组表单：
 
-1. **外观**：一个浅色/深色分段控件。它决定候选窗预览和配色卡片用哪一套外观，卡片填入的也是这个外观的配色。
-2. **配色**：浅色配色、深色配色两个弹出菜单，分别记在系统浅色和系统深色下面。
-3. **全部配色**：配色卡片。点卡片填入当前外观。
-4. **候选窗**：横排或竖排、候选字号、序号字号、圆角，以及实时预览。
-5. **软件更新**：自动检查更新、**接收测试版（Beta）**、**检查更新…**。有新版本时，对话框里的 **一键更新** 会要求管理员密码并原地安装；失败则打开安装器。
+1. **外观**：一个浅色/深色分段控件。它决定候选窗预览和配色卡片用哪一套外观，点卡片写入的也是这个外观的配色。
+2. **配色**：只读。一枚小色块加上名称，例如浅色：简约白、深色：简约黑。
+3. **全部配色**和候选窗实时预览并排，两边一样高。卡片在一侧，多了就在这一列里滚动；预览在另一侧，竖直居中。点卡片写入当前外观的配色。选中的卡片有勾和强调色边框。
+4. **候选窗**：横排或竖排、候选字号、序号字号、圆角，排在上面那一行的下面。
+5. **软件更新**：自动检查更新、**接收测试版（Beta）**、**检查更新…**。接收测试版的说明在鼠标悬停时出现。有新版本时，对话框里的 **一键更新** 会要求管理员密码并原地安装；失败则打开安装器。
 
 **重新部署** 不改这些选择，只重新部署。**应用** 写入并重新部署。
 
-可以给浅色和深色各选一套配色。配色卡片来自随包 `paretly.yaml` 的 `preset_color_schemes`，再叠上 `~/Library/Rime/paretly.yaml` 里的同名覆盖。点卡片会填入当前选中的外观。
+可以给浅色和深色各选一套配色。配色卡片来自随包 `paretly.yaml` 的 `preset_color_schemes`，再叠上 `~/Library/Rime/paretly.yaml` 里的同名覆盖。点卡片会填入外观控件当前选中的那一套。
 
 **应用** 只把这次改过的键写进 `~/Library/Rime/paretly.custom.yaml` 的 `patch:`，文件里原有的其它补丁会保留。这个文件如果已经存在，第一次覆盖前会复制成 `paretly.custom.yaml.bak`。写完后 Paretly 在进程内重新部署。
 
@@ -285,19 +285,19 @@ The mode ids are `com.qiuzekun.inputmethod.Paretly.Hans` and `com.qiuzekun.input
 
 ### Open settings
 
-From the input menu, choose **Settings…**. Simplified Chinese shows **设置…**. Traditional Chinese shows **設定…**. The **Paretly** app in Launchpad opens the same window. The window remembers its size and position. Command-W or Esc closes it.
+From the input menu, choose **Settings…**. Simplified Chinese shows **设置…**. Traditional Chinese shows **設定…**. The **Paretly** app in Launchpad opens the same window. The window has a fixed size: it does not resize, and the green zoom button is disabled. Content that does not fit scrolls inside the window. The window remembers its position. Command-W or Esc closes it. While the try-typing field is focused, Esc ends that edit first.
 
-The window is one page. The top bar is status, **Deploy**, and **Apply**. The page below is:
+The window is one page. The top bar is the icon, a try-typing field (placeholder “打字试试看效果~”; typing there shows the real candidate window), status, **Deploy**, and **Apply**. Below that is one grouped form:
 
 1. **Appearance**: one Light / Dark segmented control. It chooses the appearance used by the candidate preview and the scheme cards, and a card fills that appearance's scheme.
-2. **Color Schemes**: Light Scheme and Dark Scheme pop-up menus. Each value is what the candidate window uses for that system appearance.
-3. **All Schemes**: the scheme cards. A card fills the appearance selected above.
-4. **Candidate Window**: horizontal or vertical candidates, candidate size, label size, corner radius, and the live preview.
-5. **Software Update**: automatic checks, **Receive beta updates** (接收测试版（Beta）), and **Check for Updates…**. When a newer release exists, **Update Now** in that dialog asks for an administrator password and installs in place; if that fails, the package opens in Installer.
+2. **Color Schemes**: read only. A small swatch and the scheme name for each appearance, for example Light: Clean White and Dark: Clean Black.
+3. **All Schemes** and the live candidate preview sit side by side at the same height. Cards are on one side and scroll when they overflow; the preview is on the other, vertically centered. A card fills the appearance selected above. The selected card shows a checkmark and an accent border.
+4. **Candidate Window**: horizontal or vertical candidates, candidate size, label size, and corner radius, under that row.
+5. **Software Update**: automatic checks, **Receive beta updates** (接收测试版（Beta）), and **Check for Updates…**. The beta switch explains itself in a hover tooltip. When a newer release exists, **Update Now** in that dialog asks for an administrator password and installs in place; if that fails, the package opens in Installer.
 
 **Deploy** reloads Rime without changing these choices. **Apply** writes them and redeploys.
 
-Pick a light scheme and a dark scheme. Cards come from `preset_color_schemes` in the bundled `paretly.yaml`, with the same keys from `~/Library/Rime/paretly.yaml` overlaid. A card fills the appearance selected above the grid.
+Pick a light scheme and a dark scheme. Cards come from `preset_color_schemes` in the bundled `paretly.yaml`, with the same keys from `~/Library/Rime/paretly.yaml` overlaid. A card fills the appearance selected by the Light / Dark control.
 
 **Apply** writes only the keys you changed into `~/Library/Rime/paretly.custom.yaml` under `patch:`. Other patches in that file stay. The first time Apply overwrites an existing file, it is copied to `paretly.custom.yaml.bak`. Paretly then redeploys in-process.
 

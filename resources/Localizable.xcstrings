@@ -808,6 +808,57 @@
         }
       }
     },
+    "Light: %@" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "淺色：%@"
+          }
+        }
+      }
+    },
+    "Dark: %@" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色：%@"
+          }
+        }
+      }
+    },
+    "Type to try it~" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打字试试看效果~"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打字試試看效果~"
+          }
+        }
+      }
+    },
     "Used when the system appearance is light" : {
       "comment" : "Settings",
       "localizations" : {

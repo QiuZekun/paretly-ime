@@ -18,11 +18,12 @@ struct ParetlySettingsView: View {
       if let banner = model.banner {
         SettingsBanner(text: banner)
       }
+      SettingsHeader(model: model)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+      Divider()
       ScrollView {
         Form {
-          Section {
-            SettingsHeader(model: model)
-          }
           ForEach(ParetlySettingsSection.allCases, id: \.self) { section in
             sectionBody(section)
           }
@@ -34,9 +35,7 @@ struct ParetlySettingsView: View {
     }
     .background(Color(nsColor: .windowBackgroundColor))
     .background(WindowCloseShortcuts())
-    .onExitCommand {
-      NSApp.keyWindow?.performClose(nil)
-    }
+    .onExitCommand(perform: closeKeyWindow)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
@@ -66,11 +65,9 @@ struct ParetlySettingsView: View {
       .labelsHidden()
       .frame(maxWidth: 280)
       .accessibilityLabel(Text(settingsText("Appearance")))
-      .accessibilityHint(Text(appearanceExplanation))
+      .help(appearanceExplanation)
     } header: {
       sectionHeader(.appearance)
-    } footer: {
-      Text(appearanceExplanation)
     }
   }
 
@@ -84,12 +81,12 @@ struct ParetlySettingsView: View {
 
   private var schemesSection: some View {
     Section {
-      SchemeMenu(model: model, slot: .light)
-      SchemeMenu(model: model, slot: .dark)
+      HStack(spacing: 20) {
+        SchemeSelection(model: model, slot: .light)
+        SchemeSelection(model: model, slot: .dark)
+      }
     } header: {
       sectionHeader(.schemes)
-    } footer: {
-      Text(settingsText("The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black)."))
     }
   }
 
@@ -100,29 +97,11 @@ struct ParetlySettingsView: View {
         Text(settingsText("Vertical")).tag("stacked")
       }
       .pickerStyle(.segmented)
-      .accessibilityHint(Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked.")))
       SettingsSlider(title: settingsText("Candidate size"), value: $model.fontPoint, range: 12...28)
       SettingsSlider(title: settingsText("Label size"), value: $model.labelFontPoint, range: 10...24)
       SettingsSlider(title: settingsText("Corner radius"), value: $model.cornerRadius, range: 0...20)
-      CandidatePreview(
-        palette: model.paletteForPreview(),
-        layout: model.candidateListLayout,
-        fontSize: CGFloat(model.fontPoint),
-        labelSize: CGFloat(model.labelFontPoint),
-        cornerRadius: CGFloat(model.cornerRadius)
-      )
-      .frame(maxWidth: .infinity, minHeight: 120)
-      .padding(.vertical, 8)
-      .accessibilityLabel(Text(settingsText("Candidate preview")))
     } header: {
       sectionHeader(.layout)
-    } footer: {
-      VStack(alignment: .leading, spacing: 4) {
-        Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked."))
-        Text(settingsText("Candidate size is 12 to 28 points. Label size is 10 to 24 points."))
-        Text(settingsText("Corner radius is 0 to 20 points."))
-        Text(settingsText("Sample candidate window for the selected appearance."))
-      }
     }
   }
 
@@ -132,30 +111,59 @@ struct ParetlySettingsView: View {
         .toggleStyle(.checkbox)
       Toggle(settingsText("Receive beta updates"), isOn: $model.includeBetaUpdates)
         .toggleStyle(.checkbox)
+        .help(settingsText("Beta releases are offered only when this is on. A beta build turns it on until you change it."))
       Button(settingsText("Check for Updates…")) {
         ParetlyUpdatePresenter.shared.checkManually()
       }
     } header: {
       sectionHeader(.update)
-    } footer: {
-      Text(settingsText("Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer."))
     }
   }
 
   private var schemeLibrary: some View {
     Section {
-      Text(settingsText("Click a card to fill the selected slot, then Apply to save and redeploy."))
-        .font(.callout)
-        .foregroundStyle(.secondary)
-      LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
-        ForEach(model.schemes) { scheme in
-          SchemeCard(model: model, scheme: scheme)
-        }
-      }
-      .fixedSize(horizontal: false, vertical: true)
+      schemeAndPreview
     } header: {
       sectionHeader(.schemesGrid)
     }
+  }
+
+  private var schemeAndPreview: some View {
+    HStack(alignment: .top, spacing: 12) {
+      ScrollView {
+        LazyVStack(spacing: 12) {
+          ForEach(model.schemes) { scheme in
+            SchemeCard(model: model, scheme: scheme)
+          }
+        }
+        .padding(.vertical, 2)
+      }
+      .scrollDisabled(false)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+      VStack {
+        Spacer(minLength: 0)
+        CandidatePreview(
+          palette: model.paletteForPreview(),
+          layout: model.candidateListLayout,
+          fontSize: CGFloat(model.fontPoint),
+          labelSize: CGFloat(model.labelFontPoint),
+          cornerRadius: CGFloat(model.cornerRadius)
+        )
+        .padding(16)
+        Spacer(minLength: 0)
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+          .fill(Color(nsColor: .textBackgroundColor))
+      )
+      .overlay(
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+          .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+      )
+    }
+    .frame(height: 312)
   }
 
   private func sectionHeader(_ section: ParetlySettingsSection) -> some View {
@@ -170,10 +178,12 @@ private struct SettingsHeader: View {
   var body: some View {
     HStack(alignment: .center, spacing: 12) {
       headerIcon
+      ParetlyTryField()
+        .frame(width: 196)
       Text(model.statusText)
         .font(.callout)
         .foregroundStyle(statusColor)
-        .lineLimit(2)
+        .lineLimit(1)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityHidden(model.statusText.isEmpty)
       Button(settingsText("Deploy")) {
@@ -223,53 +233,42 @@ private struct SettingsHeader: View {
   }
 }
 
-private struct SchemeMenu: View {
+private struct SchemeSelection: View {
   @ObservedObject var model: ParetlySettingsModel
   var slot: ThemeSlot
 
   private var schemeID: String { slot == .light ? model.colorScheme : model.colorSchemeDark }
 
   var body: some View {
-    Picker(settingsText(slot == .light ? "Light Scheme" : "Dark Scheme"), selection: selection) {
-      ForEach(options) { scheme in
-        Text(optionTitle(scheme)).tag(scheme.id)
+    HStack(spacing: 6) {
+      SchemeSwatch(palette: model.palette(for: slot))
+      Text(String(format: settingsText(slot == .light ? "Light: %@" : "Dark: %@"), model.schemeTitle(schemeID)))
+        .lineLimit(1)
+        .truncationMode(.tail)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .accessibilityElement(children: .combine)
+  }
+}
+
+private struct SchemeSwatch: View {
+  var palette: ThemePalette
+
+  var body: some View {
+    RoundedRectangle(cornerRadius: 3, style: .continuous)
+      .fill(palette.back.isClear ? Color(palette.candidateText) : Color(palette.back))
+      .overlay(alignment: .bottomTrailing) {
+        Circle()
+          .fill(Color(palette.hilitedCandidateBack))
+          .frame(width: 6, height: 6)
+          .padding(1)
       }
-    }
-    .accessibilityHint(Text(settingsText(slot == .light ? "Used when the system appearance is light" : "Used when the system appearance is dark")))
-  }
-
-  private var selection: Binding<String> {
-    Binding(get: { schemeID }, set: { schemeID in
-      if slot == .light {
-        model.chooseLight(schemeID)
-      } else {
-        model.chooseDark(schemeID)
-      }
-    })
-  }
-
-  private var options: [ThemeScheme] {
-    var list = model.schemes
-    if !schemeID.isEmpty, !list.contains(where: { $0.id == schemeID }) {
-      list.append(ThemeScheme(
-        id: schemeID,
-        name: schemeID,
-        author: "",
-        isNative: false,
-        fields: [:],
-        palette: model.previewDark ? .nativeDark : .nativeLight,
-        lightPalette: nil,
-        darkPalette: nil
-      ))
-    }
-    return list
-  }
-
-  private func optionTitle(_ scheme: ThemeScheme) -> String {
-    if model.schemes.contains(where: { $0.id == scheme.id }) {
-      return "\(scheme.name) (\(scheme.id))"
-    }
-    return "\(scheme.id) \(settingsText("Not in the theme file"))"
+      .overlay(
+        RoundedRectangle(cornerRadius: 3, style: .continuous)
+          .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+      )
+      .frame(width: 14, height: 14)
+      .accessibilityHidden(true)
   }
 }
 
@@ -390,8 +389,10 @@ private struct SchemeCard: View {
   var scheme: ThemeScheme
   @FocusState private var focused: Bool
 
-  private var isLight: Bool { model.colorScheme == scheme.id }
-  private var isDark: Bool { model.colorSchemeDark == scheme.id }
+  private var isSelected: Bool {
+    let activeID = model.previewDark ? model.colorSchemeDark : model.colorScheme
+    return scheme.id == activeID
+  }
 
   var body: some View {
     Button(action: { model.assign(scheme.id) }) {
@@ -416,74 +417,53 @@ private struct SchemeCard: View {
             .foregroundStyle(.secondary)
             .lineLimit(1)
           Spacer(minLength: 4)
-          if isLight {
-            roleBadge(settingsText("Light"))
-          }
-          if isDark {
-            roleBadge(settingsText("Dark"))
+          if isSelected {
+            Image(systemName: "checkmark")
+              .font(.body.weight(.semibold))
+              .foregroundStyle(Color.accentColor)
+              .accessibilityHidden(true)
           }
         }
       }
       .padding(10)
       .background(
         RoundedRectangle(cornerRadius: 10, style: .continuous)
-          .fill(Color(nsColor: .controlBackgroundColor))
+          .fill(isSelected ? Color.accentColor.opacity(0.12) : Color(nsColor: .controlBackgroundColor))
       )
       .overlay(cardStroke)
     }
     .buttonStyle(.plain)
     .focused($focused)
-    .accessibilityLabel(Text(accessibilityName))
-    .accessibilityHint(Text(settingsText("Fills the selected appearance.")))
-    .accessibilityAddTraits(isLight || isDark ? .isSelected : [])
-  }
-
-  private var accessibilityName: String {
-    var parts = [scheme.name, scheme.id]
-    if isLight { parts.append(settingsText("Light")) }
-    if isDark { parts.append(settingsText("Dark")) }
-    return parts.joined(separator: ", ")
+    .help(settingsText("Fills the selected appearance."))
+    .accessibilityLabel(Text("\(scheme.name), \(scheme.id)"))
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
   }
 
   private var cardStroke: some View {
     RoundedRectangle(cornerRadius: 10, style: .continuous)
-      .stroke(strokeColor, lineWidth: focused || isLight || isDark ? 2 : 1)
-  }
-
-  private var strokeColor: Color {
-    if focused || isLight {
-      return Color.accentColor
-    }
-    if isDark {
-      return Color.purple
-    }
-    return Color(nsColor: .separatorColor)
-  }
-
-  private func roleBadge(_ title: String) -> some View {
-    Text(title)
-      .font(.caption2.weight(.semibold))
-      .padding(.horizontal, 6)
-      .padding(.vertical, 2)
-      .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+      .strokeBorder(isSelected || focused ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isSelected || focused ? 2 : 1)
   }
 }
 
 private struct WindowCloseShortcuts: View {
   var body: some View {
     ZStack {
-      Button(action: closeWindow) { EmptyView() }
+      Button(action: closeKeyWindow) { EmptyView() }
         .keyboardShortcut("w", modifiers: .command)
-      Button(action: closeWindow) { EmptyView() }
+      Button(action: closeKeyWindow) { EmptyView() }
         .keyboardShortcut(.cancelAction)
     }
     .accessibilityHidden(true)
     .frame(width: 0, height: 0)
   }
+}
 
-  private func closeWindow() {
-    NSApp.keyWindow?.performClose(nil)
+private func closeKeyWindow() {
+  guard let window = NSApp.keyWindow else { return }
+  if let editor = window.fieldEditor(false, for: nil), window.firstResponder === editor {
+    return
   }
+  window.performClose(nil)
 }
 
 private func settingsText(_ key: String) -> String {
@@ -536,7 +516,7 @@ struct ParetlySettingsView_Previews: PreviewProvider {
   static var previews: some View {
     ParetlySettingsView(model: .previewModel())
       .previewDisplayName("Settings")
-      .frame(width: 1120, height: 800)
+      .frame(width: 800, height: 760)
     ParetlyAboutPanelView()
       .previewDisplayName("About Panel")
       .frame(width: 460, height: 540)

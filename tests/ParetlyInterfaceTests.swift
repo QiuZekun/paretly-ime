@@ -39,6 +39,38 @@ final class ParetlyInterfaceTests: XCTestCase {
     XCTAssertFalse(view.contains("func settingsGroup"))
   }
 
+  func testSettingsUsesCardsPreviewAndAFixedWindow() throws {
+    XCTAssertGreaterThanOrEqual(ParetlySettingsWindowMetrics.contentWidth, 760)
+    XCTAssertLessThanOrEqual(ParetlySettingsWindowMetrics.contentWidth, 820)
+    XCTAssertGreaterThan(ParetlySettingsWindowMetrics.contentHeight, 600)
+
+    let view = try settingsViewSource()
+    XCTAssertFalse(view.contains("SchemeMenu"))
+    XCTAssertFalse(view.contains("Light Scheme"))
+    XCTAssertFalse(view.contains("Dark Scheme"))
+    XCTAssertFalse(view.contains("footer:"))
+    XCTAssertFalse(view.contains("Click a card to fill the selected slot"))
+    XCTAssertTrue(view.contains("schemeAndPreview"))
+    XCTAssertTrue(view.contains("\"Light: %@\""))
+    XCTAssertTrue(view.contains("\"Dark: %@\""))
+    XCTAssertTrue(view.contains("checkmark"))
+    XCTAssertTrue(view.contains("ParetlyTryField()"))
+    XCTAssertTrue(view.contains(".scrollDisabled(false)"))
+    XCTAssertTrue(view.contains("Beta releases are offered only when this is on."))
+    XCTAssertTrue(view.contains(".help("))
+
+    let window = try windowSource()
+    XCTAssertTrue(window.contains("ParetlySettingsWindowMetrics.contentWidth"))
+    XCTAssertTrue(window.contains("ParetlySettingsWindowMetrics.contentHeight"))
+    XCTAssertTrue(window.contains("contentMinSize"))
+    XCTAssertTrue(window.contains("contentMaxSize"))
+    XCTAssertTrue(window.contains("standardWindowButton(.zoomButton)?.isEnabled = false"))
+    XCTAssertTrue(window.contains(".fullScreenNone"))
+    XCTAssertTrue(window.contains("sizingOptions = []"))
+    XCTAssertFalse(window.contains(".resizable"))
+    XCTAssertTrue(window.contains("ParetlyTryField.identifier"))
+  }
+
   func testDockIconShowsForSettingsAboutOrUpdateUIOnly() {
     XCTAssertEqual(
       ParetlyDockIcon.visibility(settingsVisible: false, aboutVisible: false, updateUIVisible: false),
@@ -169,6 +201,12 @@ final class ParetlyInterfaceTests: XCTestCase {
     XCTAssertEqual(translated("Sync User Data", language: "zh-Hans", catalog: catalog), "同步用户数据")
     XCTAssertEqual(translated("Logs…", language: "zh-Hans", catalog: catalog), "日志…")
     XCTAssertEqual(translated("Rime Wiki…", language: "zh-Hans", catalog: catalog), "在线文档…")
+    XCTAssertEqual(translated("Type to try it~", language: "zh-Hans", catalog: catalog), "打字试试看效果~")
+    XCTAssertEqual(translated("Type to try it~", language: "zh-Hant", catalog: catalog), "打字試試看效果~")
+    XCTAssertEqual(translated("Light: %@", language: "zh-Hans", catalog: catalog), "浅色：%@")
+    XCTAssertEqual(translated("Light: %@", language: "zh-Hant", catalog: catalog), "淺色：%@")
+    XCTAssertEqual(translated("Dark: %@", language: "zh-Hans", catalog: catalog), "深色：%@")
+    XCTAssertEqual(translated("Dark: %@", language: "zh-Hant", catalog: catalog), "深色：%@")
   }
 
   private func isTitleCase(_ title: String) -> Bool {
@@ -189,10 +227,18 @@ final class ParetlyInterfaceTests: XCTestCase {
   }
 
   private func settingsViewSource() throws -> String {
+    try source("sources/ParetlySettingsView.swift")
+  }
+
+  private func windowSource() throws -> String {
+    try source("sources/ParetlySettingsWindow.swift")
+  }
+
+  private func source(_ relativePath: String) throws -> String {
     let url = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()
       .deletingLastPathComponent()
-      .appendingPathComponent("sources/ParetlySettingsView.swift")
+      .appendingPathComponent(relativePath)
     return try String(contentsOf: url, encoding: .utf8)
   }
 

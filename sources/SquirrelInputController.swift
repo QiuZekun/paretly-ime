@@ -7,7 +7,7 @@
 
 import InputMethodKit
 
-final class SquirrelInputController: IMKInputController {
+final class SquirrelInputController: IMKInputController, SquirrelPanelInput {
   private static let keyRollOver = 50
   private static var unknownAppCnt: UInt = 0
 
