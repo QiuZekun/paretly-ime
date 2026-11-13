@@ -52,7 +52,10 @@ final class ParetlyInterfaceTests: XCTestCase {
     )
     var settings = ThemeSettings.fallback
     settings.fontPoint = 99
-    let problem = ParetlyThemeDocument.validate(settings, knownSchemeIDs: ["native"])
+    let problem = ParetlyThemeDocument.validate(
+      settings,
+      knownSchemeIDs: [settings.colorScheme, settings.colorSchemeDark]
+    )
     XCTAssertEqual(
       ParetlyApplyDeploy.plan(validationProblem: problem, hasEdits: true),
       .rejected("Candidate size must be between 12 and 28.")
