@@ -1,19 +1,64 @@
 #!/bin/bash
-# Stop the running input method before the payload replaces it.
-# Installer runs this as root. A busy bundle cannot be overwritten.
+# Release the input method before the payload replaces
+# /Library/Input Methods/Paretly.app.
+#
+# SIGKILL looks like a crash. macOS then disables the input source, and the
+# menu-bar input menu will not offer it. Ask the running copy to quit first
+# and give Text Input Sources time to drop the bundle. Force-quit only if it
+# is still alive after that.
 
 login_user="$(/usr/bin/stat -f%Su /dev/console 2>/dev/null || true)"
+app_root="/Library/Input Methods/Paretly.app"
+executable="${app_root}/Contents/MacOS/Paretly"
 
-stop_named() {
-  /usr/bin/killall "$1" >/dev/null 2>&1 || true
-  /bin/sleep 0.2
-  /usr/bin/killall -KILL "$1" >/dev/null 2>&1 || true
-  if [ -n "${login_user}" ] && [ "${login_user}" != "root" ] && [ "${login_user}" != "loginwindow" ]; then
-    /usr/bin/sudo -u "${login_user}" /usr/bin/killall "$1" >/dev/null 2>&1 || true
-    /usr/bin/sudo -u "${login_user}" /usr/bin/killall -KILL "$1" >/dev/null 2>&1 || true
+run_as_console_user() {
+  if [ -z "${login_user}" ] || [ "${login_user}" = "root" ] || [ "${login_user}" = "loginwindow" ]; then
+    return 0
   fi
+  local uid
+  uid="$(/usr/bin/id -u "${login_user}" 2>/dev/null || true)"
+  if [ -z "${uid}" ]; then
+    return 0
+  fi
+  /bin/launchctl asuser "${uid}" /usr/bin/sudo -H -u "${login_user}" -- "$@"
 }
 
-stop_named Paretly
-stop_named ParetlyLauncher
+paretly_still_running() {
+  /usr/bin/pgrep -x Paretly >/dev/null 2>&1 || /usr/bin/pgrep -x ParetlyLauncher >/dev/null 2>&1
+}
+
+wait_until_stopped() {
+  local i
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    if ! paretly_still_running; then
+      return 0
+    fi
+    /bin/sleep 0.3
+  done
+  return 1
+}
+
+if [ -x "${executable}" ]; then
+  run_as_console_user "${executable}" --quit || true
+  wait_until_stopped || true
+fi
+
+if paretly_still_running; then
+  /usr/bin/killall Paretly >/dev/null 2>&1 || true
+  /usr/bin/killall ParetlyLauncher >/dev/null 2>&1 || true
+  if [ -n "${login_user}" ] && [ "${login_user}" != "root" ] && [ "${login_user}" != "loginwindow" ]; then
+    /usr/bin/sudo -H -u "${login_user}" -- /usr/bin/killall Paretly >/dev/null 2>&1 || true
+    /usr/bin/sudo -H -u "${login_user}" -- /usr/bin/killall ParetlyLauncher >/dev/null 2>&1 || true
+  fi
+  wait_until_stopped || true
+fi
+
+if paretly_still_running; then
+  /usr/bin/killall -KILL Paretly >/dev/null 2>&1 || true
+  /usr/bin/killall -KILL ParetlyLauncher >/dev/null 2>&1 || true
+  /bin/sleep 0.3
+fi
+
+# The installer replaces the bundle as soon as this script returns.
+/bin/sleep 0.5
 exit 0

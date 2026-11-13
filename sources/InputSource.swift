@@ -9,107 +9,163 @@ import Foundation
 import InputMethodKit
 
 final class SquirrelInstaller {
-  enum InputMode: String, CaseIterable {
+  enum InputMode: CaseIterable, RawRepresentable {
     static let primary = Self.hans
-    case hans = "com.qiuzekun.inputmethod.Paretly.Hans"
-    case hant = "com.qiuzekun.inputmethod.Paretly.Hant"
-  }
-  private lazy var inputSources: [String: TISInputSource] = {
-    var inputSources = [String: TISInputSource]()
-    var matchingSources = [InputMode: TISInputSource]()
-    let sourceList = TISCreateInputSourceList(nil, true).takeRetainedValue() as! [TISInputSource]
-    for inputSource in sourceList {
-      let sourceIDRef = TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceID)
-      guard let sourceID = unsafeBitCast(sourceIDRef, to: CFString?.self) as String? else { continue }
-      // print("[DEBUG] Examining input source: \(sourceID)")
-      inputSources[sourceID] = inputSource
+    case hans
+    case hant
+
+    var rawValue: String {
+      switch self {
+      case .hans: return ParetlyInputSource.modeHans
+      case .hant: return ParetlyInputSource.modeHant
+      }
     }
-    return inputSources
-  }()
+
+    init?(rawValue: String) {
+      switch rawValue {
+      case ParetlyInputSource.modeHans: self = .hans
+      case ParetlyInputSource.modeHant: self = .hant
+      default: return nil
+      }
+    }
+  }
+
+  private lazy var inputSources: [String: TISInputSource] = Self.loadInputSources()
+
+  @discardableResult
+  func register() -> Bool {
+    guard assertConsoleUser(action: "register") else { return false }
+    let url = SquirrelApp.registrationBundleURL
+    guard FileManager.default.fileExists(atPath: url.path) else {
+      print("Input method bundle is missing at \(url.path)")
+      return false
+    }
+    // Always register. Replacing the bundle at the same path does not refresh
+    // the running session, and skipping this when a mode is already enabled
+    // leaves the menu bar attached to the previous binary.
+    let status = TISRegisterInputSource(url as CFURL)
+    print("Register \(status == noErr ? "succeeds" : "fails (\(status))") for \(url.path)")
+    return status == noErr
+  }
+
+  /// Enables every requested mode. When `modes` is empty and the user already
+  /// enabled a subset, that subset is enabled again (a crash or bundle
+  /// replacement can leave a mode "enabled" but not selectable). When nothing
+  /// is enabled, both Hans and Hant are enabled.
+  @discardableResult
+  func enable(modes: [InputMode] = []) -> Bool {
+    guard assertConsoleUser(action: "enable") else { return false }
+    let already = enabledModes()
+    let modesToEnable = modes.isEmpty ? (already.isEmpty ? InputMode.allCases : already) : modes
+    _ = enableParent()
+    var enabledAll = true
+    for mode in modesToEnable {
+      if !enableSource(id: mode.rawValue) {
+        enabledAll = false
+      }
+    }
+    return enabledAll && !modesToEnable.isEmpty
+  }
+
+  @discardableResult
+  func select(mode: InputMode? = nil) -> Bool {
+    guard assertConsoleUser(action: "select") else { return false }
+    let modeToSelect = mode ?? .primary
+    if !enabledModes().contains(modeToSelect) {
+      _ = enable(modes: [modeToSelect])
+    }
+    guard let inputSource = inputSources[modeToSelect.rawValue] else {
+      print("Input source not found: \(modeToSelect.rawValue)")
+      return false
+    }
+    let enabled = getBool(for: inputSource, key: kTISPropertyInputSourceIsEnabled) ?? false
+    let selectable = getBool(for: inputSource, key: kTISPropertyInputSourceIsSelectCapable) ?? false
+    let selected = getBool(for: inputSource, key: kTISPropertyInputSourceIsSelected) ?? false
+    if !enabled {
+      print("Cannot select \(modeToSelect.rawValue): not enabled")
+      return false
+    }
+    if !selectable {
+      print("Cannot select \(modeToSelect.rawValue): not selectable")
+      return false
+    }
+    if selected {
+      print("Already selected \(modeToSelect.rawValue)")
+      return true
+    }
+    let error = TISSelectInputSource(inputSource)
+    print("Selection \(error == noErr ? "succeeds" : "fails (\(error))") for input source: \(modeToSelect.rawValue)")
+    return error == noErr
+  }
+
+  @discardableResult
+  func disable(modes: [InputMode] = []) -> Bool {
+    guard assertConsoleUser(action: "disable") else { return false }
+    let modesToDisable = modes.isEmpty ? InputMode.allCases : modes
+    var sawOne = false
+    for mode in modesToDisable {
+      guard let inputSource = inputSources[mode.rawValue] else {
+        print("Input source not found: \(mode.rawValue)")
+        continue
+      }
+      sawOne = true
+      if getBool(for: inputSource, key: kTISPropertyInputSourceIsEnabled) == true {
+        let error = TISDisableInputSource(inputSource)
+        print("Disable \(error == noErr ? "succeeds" : "fails (\(error))") for input source: \(mode.rawValue)")
+      }
+    }
+    return sawOne || modesToDisable.isEmpty
+  }
 
   func enabledModes() -> [InputMode] {
     var enabledModes = Set<InputMode>()
-    for (mode, inputSource) in getInputSource(modes: InputMode.allCases) {
-      if let enabled = getBool(for: inputSource, key: kTISPropertyInputSourceIsEnabled), enabled {
+    for mode in InputMode.allCases {
+      guard let inputSource = inputSources[mode.rawValue] else { continue }
+      if getBool(for: inputSource, key: kTISPropertyInputSourceIsEnabled) == true {
         enabledModes.insert(mode)
-      }
-      if enabledModes.count == InputMode.allCases.count {
-        break
       }
     }
     return Array(enabledModes)
   }
 
-  func register() {
-    // Always register. An upgrade keeps the same path, and skipping this when the
-    // source is already enabled would leave macOS running the previous bundle.
-    let status = TISRegisterInputSource(SquirrelApp.appDir as CFURL)
-    print("Register \(status == noErr ? "succeeds" : "fails") for \(SquirrelApp.appDir)")
+  private func enableParent() -> Bool {
+    enableSource(id: ParetlyInputSource.bundleIdentifier)
   }
 
-  func enable(modes: [InputMode] = []) {
-    let enabledInputModes = enabledModes()
-    if !enabledInputModes.isEmpty && modes.isEmpty {
-      print("User already enabled Paretly method(s): \(enabledInputModes.map { $0.rawValue })")
-      // keep user's manually enabled input modes.
-      return
+  private func enableSource(id: String) -> Bool {
+    guard let inputSource = inputSources[id] else {
+      print("Input source not found: \(id). Run --register-input-source as the logged-in user first.")
+      return false
     }
-    let modesToEnable = modes.isEmpty ? [.primary] : modes
-    for (mode, inputSource) in getInputSource(modes: modesToEnable) {
-      if let enabled = getBool(for: inputSource, key: kTISPropertyInputSourceIsEnabled), !enabled {
-        let error = TISEnableInputSource(inputSource)
-        print("Enable \(error == noErr ? "succeeds" : "fails") for input source: \(mode.rawValue)")
-      }
-    }
+    // Call even when the enabled bit is already set. After a forced quit the
+    // bit can stay true while the menu bar will not offer the source.
+    let error = TISEnableInputSource(inputSource)
+    print("Enable \(error == noErr ? "succeeds" : "fails (\(error))") for input source: \(id)")
+    return error == noErr
   }
 
-  func select(mode: InputMode? = nil) {
-    let enabledInputModes = enabledModes()
-    let modeToSelect = mode ?? .primary
-    if !enabledInputModes.contains(modeToSelect) {
-      if mode != nil {
-        enable(modes: [modeToSelect])
-      } else {
-        print("Default method not enabled yet: \(modeToSelect.rawValue)")
-        return
-      }
+  private func assertConsoleUser(action: String) -> Bool {
+    if geteuid() == 0 {
+      print("Refusing to \(action) the input source as root. TIS updates the current user, and root is not the logged-in console user. Run this command in that user's GUI session, without sudo.")
+      return false
     }
-    for (mode, inputSource) in getInputSource(modes: [modeToSelect]) {
-      if let enabled = getBool(for: inputSource, key: kTISPropertyInputSourceIsEnabled),
-         let selectable = getBool(for: inputSource, key: kTISPropertyInputSourceIsSelectCapable),
-         let selected = getBool(for: inputSource, key: kTISPropertyInputSourceIsSelected),
-         enabled && selectable && !selected {
-        let error = TISSelectInputSource(inputSource)
-        print("Selection \(error == noErr ? "succeeds" : "fails") for input source: \(mode.rawValue)")
-      } else {
-        print("Failed to select \(mode.rawValue)")
-      }
-    }
-  }
-
-  func disable(modes: [InputMode] = []) {
-    let modesToDisable = modes.isEmpty ? InputMode.allCases : modes
-    for (mode, inputSource) in getInputSource(modes: modesToDisable) {
-      if let enabled = getBool(for: inputSource, key: kTISPropertyInputSourceIsEnabled), enabled {
-        let error = TISDisableInputSource(inputSource)
-        print("Disable \(error == noErr ? "succeeds" : "fails") for input source: \(mode.rawValue)")
-      }
-    }
-  }
-
-  private func getInputSource(modes: [InputMode]) -> [InputMode: TISInputSource] {
-    var matchingSources = [InputMode: TISInputSource]()
-    for mode in modes {
-      if let inputSource = inputSources[mode.rawValue] {
-        matchingSources[mode] = inputSource
-      }
-    }
-    return matchingSources
+    return true
   }
 
   private func getBool(for inputSource: TISInputSource, key: CFString!) -> Bool? {
     let enabledRef = TISGetInputSourceProperty(inputSource, key)
     guard let enabled = unsafeBitCast(enabledRef, to: CFBoolean?.self) else { return nil }
     return CFBooleanGetValue(enabled)
+  }
+
+  private static func loadInputSources() -> [String: TISInputSource] {
+    var inputSources = [String: TISInputSource]()
+    let sourceList = TISCreateInputSourceList(nil, true).takeRetainedValue() as! [TISInputSource]
+    for inputSource in sourceList {
+      let sourceIDRef = TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceID)
+      guard let sourceID = unsafeBitCast(sourceIDRef, to: CFString?.self) as String? else { continue }
+      inputSources[sourceID] = inputSource
+    }
+    return inputSources
   }
 }

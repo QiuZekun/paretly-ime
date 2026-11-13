@@ -715,6 +715,12 @@
             "state" : "translated",
             "value" : "Paretly 设置"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 設定"
+          }
         }
       }
     },

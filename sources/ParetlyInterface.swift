@@ -7,50 +7,62 @@
 //  This file is part of Paretly, a GPL-3.0 fork of Squirrel (鼠须管).
 //  See LICENSE.txt.
 //
-//  Names and order for the settings tabs, the input-method menu, the About
-//  credits, and update-alert buttons. The app localizes these keys. Tests
-//  lock the order and the Human Interface Guidelines wording.
+//  Names and order for the single settings window, the input-method menu,
+//  the input-source ids, the About credits, and update-alert buttons. The app
+//  localizes these keys. Tests lock the order and the Human Interface
+//  Guidelines wording.
 
 import Foundation
 
-enum ParetlySettingsTab: String, CaseIterable, Equatable {
-  case general
-  case appearance
-  case input
-  case updates
-  case about
+/// Bundle id and input-mode ids shared by Info.plist, the installer, and
+/// `SquirrelInstaller`. A mismatch here is what drops Paretly out of the
+/// menu-bar input menu.
+enum ParetlyInputSource {
+  static let bundleIdentifier = "com.qiuzekun.inputmethod.Paretly"
+  static let connectionName = "Paretly_Connection"
+  static let serverControllerClass = "Paretly.SquirrelInputController"
+  static let installedAppPath = "/Library/Input Methods/Paretly.app"
+  static let modeHans = "com.qiuzekun.inputmethod.Paretly.Hans"
+  static let modeHant = "com.qiuzekun.inputmethod.Paretly.Hant"
+  /// Menu order. Matches `tsVisibleInputModeOrderedArrayKey`.
+  static let modes = [modeHans, modeHant]
+  static let menuIconFile = "paretly.tiff"
+}
+
+/// Top-to-bottom sections of the single settings window. This is the layout
+/// from before the five-tab toolbar: update, scheme pickers, candidate
+/// metrics, live preview, then the scheme cards.
+enum ParetlySettingsSection: String, CaseIterable, Equatable {
+  case update
+  case schemes
+  case layout
+  case preview
+  case schemesGrid
 
   var titleKey: String {
     switch self {
-    case .general: return "General"
-    case .appearance: return "Appearance"
-    case .input: return "Input"
-    case .updates: return "Updates"
-    case .about: return "About"
+    case .update: return "Software Update"
+    case .schemes: return "Color Schemes"
+    case .layout: return "Candidate Window"
+    case .preview: return "Preview"
+    case .schemesGrid: return "All Schemes"
     }
   }
 
   /// SF Symbols available on macOS 13.
   var symbolName: String {
     switch self {
-    case .general: return "gearshape"
-    case .appearance: return "paintbrush"
-    case .input: return "keyboard"
-    case .updates: return "arrow.triangle.2.circlepath"
-    case .about: return "info.circle"
+    case .update: return "arrow.triangle.2.circlepath"
+    case .schemes: return "paintbrush"
+    case .layout: return "slider.horizontal.3"
+    case .preview: return "eye"
+    case .schemesGrid: return "square.grid.2x2"
     }
   }
+}
 
-  /// Command-1 through Command-5, in tab order.
-  var shortcut: Character {
-    switch self {
-    case .general: return "1"
-    case .appearance: return "2"
-    case .input: return "3"
-    case .updates: return "4"
-    case .about: return "5"
-    }
-  }
+enum ParetlySettingsWindowCopy {
+  static let titleKey = "Paretly Settings"
 }
 
 enum ParetlyMenuAction: String, Equatable {
@@ -159,7 +171,6 @@ enum ParetlyAlertCopy {
 
 enum ParetlyInterfaceStrings {
   static let proseKeys = [
-    "Paretly — %@",
     "Settings File",
     "Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime.",
     "Current Appearance",
@@ -191,7 +202,8 @@ enum ParetlyInterfaceStrings {
   ]
 
   static var requiredKeys: [String] {
-    var keys = ParetlySettingsTab.allCases.map(\.titleKey)
+    var keys = ParetlySettingsSection.allCases.map(\.titleKey)
+    keys.append(ParetlySettingsWindowCopy.titleKey)
     keys.append(contentsOf: ParetlyInputMenu.itemSpecs.map(\.titleKey))
     keys.append(contentsOf: proseKeys)
     keys.append(ParetlyAlertCopy.updateButton)

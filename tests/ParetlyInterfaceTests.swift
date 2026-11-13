@@ -10,18 +10,21 @@
 import XCTest
 
 final class ParetlyInterfaceTests: XCTestCase {
-  func testSettingsTabsFollowToolbarOrder() {
+  func testSettingsSectionsFollowTheSingleWindowOrder() {
     XCTAssertEqual(
-      ParetlySettingsTab.allCases.map(\.rawValue),
-      ["general", "appearance", "input", "updates", "about"]
+      ParetlySettingsSection.allCases.map(\.rawValue),
+      ["update", "schemes", "layout", "preview", "schemesGrid"]
     )
-    XCTAssertEqual(ParetlySettingsTab.allCases.map(\.titleKey), ["General", "Appearance", "Input", "Updates", "About"])
     XCTAssertEqual(
-      ParetlySettingsTab.allCases.map(\.symbolName),
-      ["gearshape", "paintbrush", "keyboard", "arrow.triangle.2.circlepath", "info.circle"]
+      ParetlySettingsSection.allCases.map(\.titleKey),
+      ["Software Update", "Color Schemes", "Candidate Window", "Preview", "All Schemes"]
     )
-    XCTAssertEqual(ParetlySettingsTab.allCases.map(\.shortcut), ["1", "2", "3", "4", "5"])
-    XCTAssertEqual(Set(ParetlySettingsTab.allCases.map(\.symbolName)).count, ParetlySettingsTab.allCases.count)
+    XCTAssertEqual(
+      ParetlySettingsSection.allCases.map(\.symbolName),
+      ["arrow.triangle.2.circlepath", "paintbrush", "slider.horizontal.3", "eye", "square.grid.2x2"]
+    )
+    XCTAssertEqual(Set(ParetlySettingsSection.allCases.map(\.symbolName)).count, ParetlySettingsSection.allCases.count)
+    XCTAssertEqual(ParetlySettingsWindowCopy.titleKey, "Paretly Settings")
   }
 
   func testInputMenuOrderWordingAndShortcut() {
@@ -115,11 +118,10 @@ final class ParetlyInterfaceTests: XCTestCase {
     XCTAssertEqual(translated("Check for Updates…", language: "zh-Hans", catalog: catalog), "检查更新…")
     XCTAssertEqual(translated("Check for Updates…", language: "zh-Hant", catalog: catalog), "檢查更新…")
     XCTAssertEqual(translated("About Paretly", language: "zh-Hans", catalog: catalog), "关于 Paretly")
-    XCTAssertEqual(translated("General", language: "zh-Hans", catalog: catalog), "常规")
-    XCTAssertEqual(translated("Appearance", language: "zh-Hans", catalog: catalog), "外观")
-    XCTAssertEqual(translated("Input", language: "zh-Hans", catalog: catalog), "输入")
-    XCTAssertEqual(translated("Updates", language: "zh-Hans", catalog: catalog), "更新")
-    XCTAssertEqual(translated("About", language: "zh-Hans", catalog: catalog), "关于")
+    XCTAssertEqual(translated("Paretly Settings", language: "zh-Hans", catalog: catalog), "Paretly 设置")
+    XCTAssertEqual(translated("Paretly Settings", language: "zh-Hant", catalog: catalog), "Paretly 設定")
+    XCTAssertEqual(translated("Software Update", language: "zh-Hans", catalog: catalog), "软件更新")
+    XCTAssertEqual(translated("Color Schemes", language: "zh-Hans", catalog: catalog), "配色")
     XCTAssertEqual(translated("Skip This Version", language: "zh-Hans", catalog: catalog), "跳过此版本")
     XCTAssertEqual(translated("Update Now", language: "zh-Hans", catalog: catalog), "一键更新")
     XCTAssertEqual(translated("Update Now", language: "zh-Hant", catalog: catalog), "一鍵更新")

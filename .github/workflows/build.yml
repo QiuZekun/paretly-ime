@@ -29,6 +29,16 @@ jobs:
         with:
           submodules: true
 
+      - name: Unit tests
+        run: |
+          xcodebuild test \
+            -project Squirrel.xcodeproj \
+            -scheme ParetlyThemeSettings \
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY=- \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
       # Every CI build gets a higher CFBundleVersion and package version so
       # installing over an existing copy replaces it. A v* tag still sets
       # CFBundleShortVersionString. Main builds are the beta channel.
@@ -98,8 +108,19 @@ jobs:
           grep -q 'postinstall-action="none"' "${expanded}/pkg/PackageInfo"
           test -x "${expanded}/pkg/Scripts/preinstall"
           test -x "${expanded}/pkg/Scripts/postinstall"
+          grep -q -- '--quit' "${expanded}/pkg/Scripts/preinstall"
           grep -q killall "${expanded}/pkg/Scripts/preinstall"
+          grep -q 'launchctl asuser' "${expanded}/pkg/Scripts/preinstall"
+          grep -q 'launchctl asuser' "${expanded}/pkg/Scripts/postinstall"
+          grep -q '/Library/Input Methods/Paretly.app' "${expanded}/pkg/Scripts/postinstall"
           grep -q -- '--register-input-source' "${expanded}/pkg/Scripts/postinstall"
+          grep -q -- '--enable-input-source' "${expanded}/pkg/Scripts/postinstall"
+          grep -q 'com.qiuzekun.inputmethod.Paretly.Hans' "${expanded}/pkg/Scripts/postinstall"
+          grep -q 'com.qiuzekun.inputmethod.Paretly.Hant' "${expanded}/pkg/Scripts/postinstall"
+          if grep -q killall "${expanded}/pkg/Scripts/postinstall"; then
+            echo "postinstall must not kill Paretly after registering the input source" >&2
+            exit 1
+          fi
           rm -rf "${expanded}"
 
       # iconutil expands AppIcon.icns and sips prints each PNG's pixel size.
