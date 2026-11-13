@@ -256,36 +256,87 @@
         }
       }
     },
-    "Paretly is not signed or notarized, so it will not replace itself. The installer opens for you to finish. If macOS blocks the package, right-click it and choose Open, or open System Settings > Privacy & Security and choose Open Anyway." : {
+    "Paretly is not signed or notarized, so it will not replace itself quietly. Update Now asks for an administrator password, installs the package in place, and opens the input method again. If that fails, the package opens in Installer. If macOS blocks it, right-click the package and choose Open, or open System Settings > Privacy & Security and choose Open Anyway." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paretly 没有签名，也没有公证，所以不会替换正在运行的程序。安装包会用「安装器」打开，由你来完成安装。如果系统拦截，请在安装包上右键选择「打开」，或到系统设置 > 隐私与安全性点「仍要打开」。"
+            "value" : "Paretly 没有签名，也没有公证，所以不会悄悄替换正在运行的程序。点「一键更新」会要求输入管理员密码，原地安装，然后重新打开输入法。如果这一步失败，安装包会用「安装器」打开。如果系统拦截，请在安装包上右键选择「打开」，或到系统设置 > 隐私与安全性点「仍要打开」。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paretly 沒有簽名，也沒有公證，所以不會替換正在執行的程式。安裝包會用「安裝程式」打開，由你來完成安裝。如果系統攔截，請在安裝包上按右鍵選擇「打開」，或到系統設定 > 隱私權與安全性點「仍要打開」。"
+            "value" : "Paretly 沒有簽名，也沒有公證，所以不會悄悄替換正在執行的程式。點「一鍵更新」會要求輸入管理員密碼，原地安裝，然後重新打開輸入法。如果這一步失敗，安裝包會用「安裝程式」打開。如果系統攔截，請在安裝包上按右鍵選擇「打開」，或到系統設定 > 隱私權與安全性點「仍要打開」。"
           }
         }
       }
     },
-    "Download & Install" : {
+    "Update Now" : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "下载并安装"
+            "value" : "一键更新"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "下載並安裝"
+            "value" : "一鍵更新"
+          }
+        }
+      }
+    },
+    "Receive beta updates" : {
+      "comment" : "Settings",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收测试版（Beta）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收測試版（Beta）"
+          }
+        }
+      }
+    },
+    "Paretly was updated." : {
+      "comment" : "Update",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 已更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paretly 已更新。"
+          }
+        }
+      }
+    },
+    "The input method is opening again." : {
+      "comment" : "Update",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在重新打开输入法。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在重新打開輸入法。"
           }
         }
       }
@@ -426,19 +477,19 @@
         }
       }
     },
-    "Finish installing in Installer. Paretly does not replace the running copy." : {
+    "Automatic install did not finish. Finish installing in Installer." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请在安装器里完成安装。Paretly 不会替换正在运行的副本。"
+            "value" : "没能自动安装。请在安装器里完成安装。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請在安裝程式裡完成安裝。Paretly 不會替換正在執行的副本。"
+            "value" : "沒能自動安裝。請在安裝程式裡完成安裝。"
           }
         }
       }

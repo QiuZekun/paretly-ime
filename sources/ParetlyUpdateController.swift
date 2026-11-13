@@ -8,13 +8,14 @@
 //  See LICENSE.txt.
 //
 //  Updates come from the public GitHub Releases API. The package is
-//  unsigned, so this downloads it and opens it with Installer. It does not
-//  replace the app.
+//  unsigned. A verified download is installed in place with administrator
+//  privileges; if that fails, Installer opens the package.
 
 import AppKit
 
 struct ParetlyUpdatePreferences {
   static let automaticKey = "ParetlyAutomaticUpdateChecks"
+  static let betaKey = "ParetlyIncludeBetaUpdates"
   static let lastCheckKey = "ParetlyLastUpdateCheck"
   static let skippedKey = "ParetlySkippedUpdateVersion"
 
@@ -31,6 +32,20 @@ struct ParetlyUpdatePreferences {
     }
     nonmutating set {
       defaults.set(newValue, forKey: Self.automaticKey)
+    }
+  }
+
+  /// Off unless this copy was built as a beta, until the user chooses.
+  var includeBetas: Bool {
+    get {
+      if defaults.object(forKey: Self.betaKey) == nil {
+        let channel = Bundle.main.object(forInfoDictionaryKey: "ParetlyUpdateChannel") as? String
+        return ParetlyRelease.includesBetasByDefault(channel: channel)
+      }
+      return defaults.bool(forKey: Self.betaKey)
+    }
+    nonmutating set {
+      defaults.set(newValue, forKey: Self.betaKey)
     }
   }
 
@@ -74,8 +89,13 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
   }
 
   private func currentVersion() -> ParetlyVersion? {
-    let raw = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-    return raw.flatMap(ParetlyVersion.parse)
+    let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+    let bundle = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+    let channel = Bundle.main.object(forInfoDictionaryKey: "ParetlyUpdateChannel") as? String
+    guard let short else {
+      return nil
+    }
+    return ParetlyVersion.installed(shortVersion: short, bundleVersion: bundle ?? "", channel: channel)
   }
 
   private func fetchReleases(manual: Bool) {
@@ -96,7 +116,8 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     let fetch = ParetlyReleaseCatalog.interpret(
       statusCode: status,
       data: data,
-      transportError: error?.localizedDescription
+      transportError: error?.localizedDescription,
+      includeBetas: ParetlyUpdatePreferences.shared.includeBetas
     )
     let outcome = ParetlyReleaseCatalog.outcome(
       fetch: fetch,
@@ -174,7 +195,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
       release.version.display
     )
     let gatekeeper = NSLocalizedString(
-      "Paretly is not signed or notarized, so it will not replace itself. The installer opens for you to finish. If macOS blocks the package, right-click it and choose Open, or open System Settings > Privacy & Security and choose Open Anyway.",
+      "Paretly is not signed or notarized, so it will not replace itself quietly. Update Now asks for an administrator password, installs the package in place, and opens the input method again. If that fails, the package opens in Installer. If macOS blocks it, right-click the package and choose Open, or open System Settings > Privacy & Security and choose Open Anyway.",
       comment: "Update"
     )
     let youHave = String(format: NSLocalizedString("You have version %@.", comment: "Update"), current.display)
@@ -182,7 +203,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     if !release.notes.isEmpty {
       alert.accessoryView = notesView(release.notes)
     }
-    alert.addButton(withTitle: NSLocalizedString("Download & Install", comment: "Update"))
+    alert.addButton(withTitle: NSLocalizedString("Update Now", comment: "Update"))
     alert.addButton(withTitle: NSLocalizedString("Later", comment: "Update"))
     alert.addButton(withTitle: NSLocalizedString("Skip this version", comment: "Update"))
     switch present(alert) {
@@ -293,10 +314,19 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
         try verifyChecksum(checksum, data: data)
       }
       let destination = try installDownload(data)
+      if checksum != nil && installWithAdministratorPrivileges(destination) {
+        relaunchInstalledCopy()
+        inform(
+          title: NSLocalizedString("Paretly was updated.", comment: "Update"),
+          detail: NSLocalizedString("The input method is opening again.", comment: "Update"),
+          informational: true
+        )
+        return
+      }
       NSWorkspace.shared.open(destination)
       inform(
         title: NSLocalizedString("The installer is open.", comment: "Update"),
-        detail: NSLocalizedString("Finish installing in Installer. Paretly does not replace the running copy.", comment: "Update")
+        detail: NSLocalizedString("Automatic install did not finish. Finish installing in Installer.", comment: "Update")
       )
     } catch let error as UpdateFailure {
       inform(title: error.title, detail: error.detail)
@@ -364,6 +394,36 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     }
     try data.write(to: destination, options: .atomic)
     return destination
+  }
+
+  /// Standard macOS password dialog, then an in-place install. The package scripts stop Paretly and register the new copy.
+  private func installWithAdministratorPrivileges(_ package: URL) -> Bool {
+    let quoted = package.path
+      .replacingOccurrences(of: "\\", with: "\\\\")
+      .replacingOccurrences(of: "\"", with: "\\\"")
+    let source = """
+    do shell script "xattr -dr com.apple.quarantine \\"\(quoted)\\" && /usr/sbin/installer -pkg \\"\(quoted)\\" -target /" with administrator privileges
+    """
+    var error: NSDictionary?
+    guard let script = NSAppleScript(source: source) else {
+      return false
+    }
+    _ = script.executeAndReturnError(&error)
+    return error == nil
+  }
+
+  private func relaunchInstalledCopy() {
+    let app = URL(fileURLWithPath: "/Library/Input Methods/Paretly.app", isDirectory: true)
+    guard FileManager.default.fileExists(atPath: app.path) else {
+      return
+    }
+    let configuration = NSWorkspace.OpenConfiguration()
+    configuration.createsNewApplicationInstance = true
+    NSWorkspace.shared.openApplication(at: app, configuration: configuration) { _, _ in
+      DispatchQueue.main.async {
+        NSApp.terminate(nil)
+      }
+    }
   }
 
   private func closeProgress() {

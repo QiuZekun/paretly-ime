@@ -23,6 +23,9 @@ fi
 
 # A heredoc inside $(...) breaks on the bash 3.2 that ships with macOS.
 version="$(python3 "${root}/tools/check-bundle-icons.py" "${plist}")"
+build="$(plutil -extract CFBundleVersion raw -o - "${plist}")"
+test -n "${build}"
+test "${build}" != '$(CURRENT_PROJECT_VERSION)'
 test -f "${app}/Contents/Resources/AppIcon.icns"
 test -f "${app}/Contents/Resources/paretly.tiff"
 test -f "${app}/Contents/Resources/paretly.pdf"
@@ -101,7 +104,7 @@ cat > "${dest}/Contents/Info.plist" << EOF
 	<key>CFBundleShortVersionString</key>
 	<string>${version}</string>
 	<key>CFBundleVersion</key>
-	<string>${version}</string>
+	<string>${build}</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>

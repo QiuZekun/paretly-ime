@@ -6,10 +6,15 @@ at build time. `make` downloads the pin in `versions/rime-ice.env` and the
 prebuilt librime that Squirrel's `action-install.sh` already uses. The
 unsigned installer is `make package` (or the GitHub Actions workflow), which
 writes `package/Paretly.pkg`. CI copies that file to `dist/Paretly-unsigned.pkg`
-and publishes the package. Double-click the package to install. If Gatekeeper
-blocks the unsigned package, right-click it and choose Open, or use System
-Settings > Privacy & Security > Open Anyway. Then log out and back in, or add
-Paretly in System Settings > Keyboard > Input Sources.
+and publishes the package. CI sets `CFBundleVersion` and the package version to
+`github.run_number`, so installing a newer package replaces
+`/Library/Input Methods/Paretly.app` and the `/Applications` launcher. The
+scripts stop the running input method, register it again, and open it.
+Double-click the package to install. If Gatekeeper blocks the unsigned
+package, right-click it and choose Open, or use System Settings > Privacy &
+Security > Open Anyway. A logout is only needed when Paretly does not appear
+in the input menu; otherwise add it in System Settings > Keyboard > Input
+Sources. Pushes to `main` also publish a prerelease tagged `beta-<run number>`.
 
 The rest of this document is the upstream Squirrel build guide. The built
 app is `Paretly.app`, installed to `/Library/Input Methods`.

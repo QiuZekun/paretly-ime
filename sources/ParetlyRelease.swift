@@ -10,9 +10,19 @@
 import CryptoKit
 import Foundation
 
-/// Numeric version from a tag such as `v0.1.0` or a bundle version `0.1.0`.
+/// Version from a tag such as `v0.1.0` or a beta title `0.1.0-beta.12`.
+///
+/// Semver core is compared first. The build number is the tiebreaker: a beta's
+/// number is the CI run number, and a stable release with no build number sorts
+/// as build 0. A newer beta of the same core is therefore newer than that stable
+/// release, which is what the beta channel offers. A higher core still wins, so
+/// `0.2.0` is newer than `0.1.0-beta.100`.
 struct ParetlyVersion: Equatable, Comparable {
   let components: [Int]
+  /// Set for `0.1.0-beta.N`. Nil for a stable release.
+  let betaBuild: Int?
+  /// CFBundleVersion of this copy when it is a plain integer. Nil for a release parsed from GitHub.
+  let ciBuild: Int?
 
   /// `1.2` and `1.2.0` are the same version.
   static func == (lhs: ParetlyVersion, rhs: ParetlyVersion) -> Bool {
@@ -24,21 +34,39 @@ struct ParetlyVersion: Equatable, Comparable {
     if text.first == "v" || text.first == "V" {
       text.removeFirst()
     }
+    let beta = splitBeta(&text)
+    if beta == .rejected {
+      return nil
+    }
     let parts = text.split(separator: ".", omittingEmptySubsequences: false)
     if parts.count < 2 || parts.count > 4 {
       return nil
     }
     var numbers: [Int] = []
     for part in parts {
-      if part.isEmpty || (part.count > 1 && part.hasPrefix("0")) {
-        return nil
-      }
-      guard part.allSatisfy(\.isNumber), let value = Int(part) else {
+      guard let value = strictInteger(part) else {
         return nil
       }
       numbers.append(value)
     }
-    return ParetlyVersion(components: numbers)
+    let betaBuild = beta.number
+    return ParetlyVersion(components: numbers, betaBuild: betaBuild, ciBuild: nil)
+  }
+
+  /// The copy that is running. Beta builds fold `CFBundleVersion` into the beta number.
+  static func installed(shortVersion: String, bundleVersion: String, channel: String?) -> ParetlyVersion? {
+    guard let parsed = parse(shortVersion) else {
+      return nil
+    }
+    let build = strictInteger(bundleVersion)
+    if channel == "beta" {
+      let beta = parsed.betaBuild ?? build ?? 0
+      return ParetlyVersion(components: parsed.components, betaBuild: beta, ciBuild: build ?? beta)
+    }
+    if parsed.betaBuild != nil {
+      return parsed
+    }
+    return ParetlyVersion(components: parsed.components, betaBuild: nil, ciBuild: build)
   }
 
   static func < (lhs: ParetlyVersion, rhs: ParetlyVersion) -> Bool {
@@ -50,11 +78,54 @@ struct ParetlyVersion: Equatable, Comparable {
         return left < right
       }
     }
-    return false
+    return lhs.sortBuild < rhs.sortBuild
   }
 
   var display: String {
-    components.map(String.init).joined(separator: ".")
+    let core = components.map(String.init).joined(separator: ".")
+    if let betaBuild {
+      return "\(core)-beta.\(betaBuild)"
+    }
+    return core
+  }
+
+  var sortBuild: Int {
+    betaBuild ?? ciBuild ?? 0
+  }
+
+  private enum BetaSplit {
+    case none
+    case rejected
+    case beta(Int)
+
+    var number: Int? {
+      if case .beta(let value) = self {
+        return value
+      }
+      return nil
+    }
+  }
+
+  private static func splitBeta(_ text: inout String) -> BetaSplit {
+    guard let range = text.range(of: "-beta.") else {
+      return text.contains("-") ? .rejected : .none
+    }
+    let suffix = text[range.upperBound...]
+    guard let value = strictInteger(suffix) else {
+      return .rejected
+    }
+    text = String(text[..<range.lowerBound])
+    return .beta(value)
+  }
+
+  private static func strictInteger<S: StringProtocol>(_ part: S) -> Int? {
+    if part.isEmpty || (part.count > 1 && part.hasPrefix("0")) {
+      return nil
+    }
+    guard part.allSatisfy(\.isNumber), let value = Int(part, radix: 10) else {
+      return nil
+    }
+    return value
   }
 }
 
@@ -74,6 +145,10 @@ struct ParetlyRelease: Equatable {
   static let packageName = "Paretly-unsigned.pkg"
   static let checksumName = "Paretly-unsigned.pkg.sha256"
   static let releasesURL = URL(string: "https://api.github.com/repos/QiuZekun/paretly-ime/releases?per_page=20")!
+
+  static func includesBetasByDefault(channel: String?) -> Bool {
+    channel == "beta"
+  }
 }
 
 enum ParetlyUpdateDecision: Equatable {
@@ -111,12 +186,12 @@ enum ParetlyReleaseFetch: Equatable {
 }
 
 enum ParetlyReleaseCatalog {
-  static func releases(from data: Data) throws -> [ParetlyRelease] {
+  static func releases(from data: Data, includeBetas: Bool = false) throws -> [ParetlyRelease] {
     let object = try JSONSerialization.jsonObject(with: data)
     guard let rows = object as? [[String: Any]] else {
       throw ParetlyReleaseError.notAReleaseList
     }
-    return rows.compactMap(parseRelease)
+    return rows.compactMap { parseRelease($0, includeBetas: includeBetas) }
   }
 
   static func newestStable(in releases: [ParetlyRelease]) -> ParetlyRelease? {
@@ -140,7 +215,7 @@ enum ParetlyReleaseCatalog {
   /// 404 and GitHub's `{"message":"Not Found"}` body mean there is no published
   /// release (`/releases/latest` returns that before the first release). An
   /// empty list is a catalog the caller turns into `nothingPublished`.
-  static func interpret(statusCode: Int?, data: Data?, transportError: String?) -> ParetlyReleaseFetch {
+  static func interpret(statusCode: Int?, data: Data?, transportError: String?, includeBetas: Bool = false) -> ParetlyReleaseFetch {
     if statusCode == 404 || githubMessage(in: data) == "Not Found" {
       return .noPublishedRelease
     }
@@ -154,7 +229,7 @@ enum ParetlyReleaseCatalog {
       return .failed(.unreadable)
     }
     do {
-      return .catalog(try releases(from: data))
+      return .catalog(try releases(from: data, includeBetas: includeBetas))
     } catch {
       return .failed(.unreadable)
     }
@@ -208,11 +283,19 @@ enum ParetlyReleaseCatalog {
     return message.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
-  private static func parseRelease(_ row: [String: Any]) -> ParetlyRelease? {
-    if (row["draft"] as? Bool) == true || (row["prerelease"] as? Bool) == true {
+  private static func parseRelease(_ row: [String: Any], includeBetas: Bool) -> ParetlyRelease? {
+    if (row["draft"] as? Bool) == true {
       return nil
     }
-    guard let tag = row["tag_name"] as? String, let version = ParetlyVersion.parse(tag) else {
+    let prerelease = (row["prerelease"] as? Bool) == true
+    guard let tag = row["tag_name"] as? String, let version = version(in: row) else {
+      return nil
+    }
+    if prerelease {
+      guard includeBetas, version.betaBuild != nil else {
+        return nil
+      }
+    } else if version.betaBuild != nil {
       return nil
     }
     let assets = (row["assets"] as? [[String: Any]]) ?? []
@@ -227,6 +310,17 @@ enum ParetlyReleaseCatalog {
       installer: installer,
       checksum: asset(named: ParetlyRelease.checksumName, in: assets)
     )
+  }
+
+  /// Beta releases are titled `0.1.0-beta.N` and tagged `beta-N`, so the title is tried first.
+  private static func version(in row: [String: Any]) -> ParetlyVersion? {
+    if let name = row["name"] as? String, let version = ParetlyVersion.parse(name) {
+      return version
+    }
+    if let tag = row["tag_name"] as? String, let version = ParetlyVersion.parse(tag) {
+      return version
+    }
+    return nil
   }
 
   private static func asset(named name: String, in rows: [[String: Any]]) -> ParetlyReleaseAsset? {

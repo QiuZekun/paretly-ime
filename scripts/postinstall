@@ -40,7 +40,31 @@ install_applications_launcher() {
     fi
 }
 
-/usr/bin/sudo -u "${login_user}" /usr/bin/killall Paretly > /dev/null || true
+stop_paretly() {
+    /usr/bin/killall Paretly >/dev/null 2>&1 || true
+    /usr/bin/killall ParetlyLauncher >/dev/null 2>&1 || true
+    /bin/sleep 0.2
+    /usr/bin/killall -KILL Paretly >/dev/null 2>&1 || true
+    /usr/bin/killall -KILL ParetlyLauncher >/dev/null 2>&1 || true
+}
+
+relaunch_paretly() {
+    if [ -z "${login_user}" ] || [ "${login_user}" = "root" ] || [ "${login_user}" = "loginwindow" ]; then
+        return 0
+    fi
+    local uid
+    uid="$(/usr/bin/id -u "${login_user}" 2>/dev/null || true)"
+    if [ -z "${uid}" ]; then
+        return 0
+    fi
+    # Detach from the installer. `open` returns immediately; the input method keeps running.
+    /bin/launchctl asuser "${uid}" /usr/bin/sudo -u "${login_user}" /usr/bin/open -g "${app_root}" >/dev/null 2>&1 || \
+        /usr/bin/sudo -u "${login_user}" /usr/bin/open -g "${app_root}" >/dev/null 2>&1 || true
+}
+
+trap relaunch_paretly EXIT
+
+stop_paretly
 
 install_applications_launcher
 
