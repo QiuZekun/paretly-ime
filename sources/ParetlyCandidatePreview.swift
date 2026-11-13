@@ -99,6 +99,10 @@ struct CandidatePreview: View {
         .stroke(Color(palette.border), lineWidth: 1)
     )
     .shadow(color: .black.opacity(compact ? 0.16 : 0.22), radius: compact ? 3 : 12, y: compact ? 1 : 6)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(Text(NSLocalizedString("Candidate preview", comment: "Settings")))
+    .accessibilityHint(Text(NSLocalizedString("Sample candidate window for the selected appearance.", comment: "Settings")))
+    .accessibilityHidden(compact)
   }
 
   @ViewBuilder

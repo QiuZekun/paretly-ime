@@ -7,326 +7,196 @@
 //  This file is part of Paretly, a GPL-3.0 fork of Squirrel (鼠须管).
 //  See LICENSE.txt.
 
+import AppKit
 import SwiftUI
-
-struct SettingsChrome {
-  var dark: Bool
-
-  var background: Color { dark ? rgb(29, 29, 31) : rgb(232, 232, 237) }
-  var panel: Color { dark ? rgb(44, 44, 46) : .white }
-  var text: Color { dark ? rgb(245, 245, 247) : rgb(29, 29, 31) }
-  var muted: Color { dark ? rgb(161, 161, 166) : rgb(110, 110, 115) }
-  var line: Color { dark ? rgb(58, 58, 60) : rgb(210, 210, 215) }
-  var accent: Color { dark ? rgb(10, 132, 255) : rgb(0, 113, 227) }
-  var accentDark: Color { dark ? rgb(218, 143, 255) : rgb(175, 82, 222) }
-  var desk: Color { dark ? rgb(20, 20, 22) : rgb(201, 205, 212) }
-  var ok: Color { dark ? rgb(50, 215, 75) : rgb(36, 138, 61) }
-  var warn: Color { dark ? rgb(255, 214, 10) : rgb(154, 103, 0) }
-  var err: Color { dark ? rgb(255, 69, 58) : rgb(215, 0, 21) }
-
-  func status(_ kind: ThemeStatusKind) -> Color {
-    switch kind {
-    case .neutral: return muted
-    case .ok: return ok
-    case .warn: return warn
-    case .err: return err
-    }
-  }
-
-  private func rgb(_ red: Double, _ green: Double, _ blue: Double) -> Color {
-    Color(red: red / 255, green: green / 255, blue: blue / 255)
-  }
-}
 
 struct ParetlySettingsView: View {
   @ObservedObject var model: ParetlySettingsModel
 
-  private var chrome: SettingsChrome { SettingsChrome(dark: model.previewDark) }
-
   var body: some View {
-    let palette = chrome
-    ZStack {
-      palette.background.ignoresSafeArea()
-      VStack(spacing: 0) {
-        header(palette)
-        Divider().overlay(palette.line)
-        updateRow(palette)
-        if let banner = model.banner {
-          Text(banner)
-            .font(.system(size: 13))
-            .foregroundStyle(palette.err)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(palette.err.opacity(0.12))
-        }
-        controls(palette)
-        stage(palette)
-        ScrollView {
-          schemeGrid(palette)
-            .padding(.horizontal, 20)
-            .padding(.top, 4)
-            .padding(.bottom, 28)
-        }
+    VStack(spacing: 0) {
+      if let banner = model.banner {
+        SettingsBanner(text: banner)
       }
+      pane
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+      Divider()
+      SettingsActionBar(model: model)
     }
-    .foregroundStyle(palette.text)
-    .environment(\.colorScheme, model.previewDark ? .dark : .light)
+    .background(Color(nsColor: .windowBackgroundColor))
+    .background(SettingsKeyShortcuts(model: model))
+    .onExitCommand {
+      NSApp.keyWindow?.performClose(nil)
+    }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
-  private func header(_ palette: SettingsChrome) -> some View {
-    HStack(spacing: 12) {
-      Text("中")
-        .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(palette.dark ? rgbText(29, 29, 31) : .white)
-        .frame(width: 28, height: 28)
-        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(palette.dark ? rgbText(245, 245, 247) : rgbText(29, 29, 31)))
-      Text(settingsText("Paretly Colors"))
-        .font(.system(size: 16, weight: .semibold))
-      previewSwitch(palette)
-      Text(model.statusText)
-        .font(.system(size: 12))
-        .foregroundStyle(palette.status(model.statusKind))
-        .lineLimit(1)
-      Spacer(minLength: 8)
-      Button(action: { model.redeploy() }) {
-        Text(settingsText("Deploy"))
-          .font(.system(size: 13, weight: .semibold))
-          .foregroundStyle(palette.accent)
-          .padding(.horizontal, 12)
-          .padding(.vertical, 6)
-          .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-              .stroke(palette.accent, lineWidth: 1)
-          )
-      }
-      .buttonStyle(.plain)
-      .disabled(model.applying)
-      Button(action: { model.apply() }) {
-        Text(settingsText("Apply"))
-          .font(.system(size: 13, weight: .semibold))
-          .foregroundStyle(.white)
-          .padding(.horizontal, 16)
-          .padding(.vertical, 6)
-          .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(palette.accent.opacity(model.applying ? 0.55 : 1)))
-      }
-      .buttonStyle(.plain)
-      .disabled(model.applying || model.schemes.isEmpty)
-      .keyboardShortcut(.defaultAction)
+  @ViewBuilder
+  private var pane: some View {
+    switch model.selectedTab {
+    case .general:
+      GeneralSettingsPane(model: model)
+    case .appearance:
+      AppearanceSettingsPane(model: model)
+    case .input:
+      InputSettingsPane(model: model)
+    case .updates:
+      UpdatesSettingsPane(model: model)
+    case .about:
+      AboutSettingsPane()
     }
-    .padding(.horizontal, 20)
-    .padding(.top, 16)
-    .padding(.bottom, 10)
-  }
-
-  private func updateRow(_ palette: SettingsChrome) -> some View {
-    HStack(alignment: .center, spacing: 12) {
-      VStack(alignment: .leading, spacing: 6) {
-        Toggle(isOn: $model.automaticUpdateChecks) {
-          Text(settingsText("Check for updates automatically"))
-            .font(.system(size: 13))
-        }
-        .toggleStyle(.checkbox)
-        Toggle(isOn: $model.includeBetaUpdates) {
-          Text(settingsText("Receive beta updates"))
-            .font(.system(size: 13))
-        }
-        .toggleStyle(.checkbox)
-      }
-      Spacer(minLength: 8)
-      Button(action: { ParetlyUpdatePresenter.shared.checkManually() }) {
-        Text(settingsText("Check for Updates…"))
-          .font(.system(size: 13, weight: .semibold))
-          .foregroundStyle(palette.accent)
-      }
-      .buttonStyle(.plain)
-    }
-    .padding(.horizontal, 20)
-    .padding(.vertical, 8)
-  }
-
-  private func previewSwitch(_ palette: SettingsChrome) -> some View {
-    HStack(spacing: 0) {
-      previewButton(settingsText("Light Preview"), dark: false, palette: palette)
-      previewButton(settingsText("Dark Preview"), dark: true, palette: palette)
-    }
-    .padding(2)
-    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(palette.dark ? rgbText(35, 35, 38) : rgbText(246, 246, 248)))
-    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(palette.line, lineWidth: 1))
-  }
-
-  private func previewButton(_ title: String, dark: Bool, palette: SettingsChrome) -> some View {
-    let selected = model.previewDark == dark
-    return Button(action: { model.setPreview(dark: dark) }) {
-      Text(title)
-        .font(.system(size: 13, weight: selected ? .semibold : .regular))
-        .foregroundStyle(selected ? palette.text : palette.muted)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
-        .background(
-          RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .fill(selected ? palette.panel : .clear)
-            .shadow(color: .black.opacity(selected ? 0.08 : 0), radius: 1, y: 1)
-        )
-    }
-    .buttonStyle(.plain)
-  }
-
-  private func controls(_ palette: SettingsChrome) -> some View {
-    VStack(spacing: 12) {
-      HStack(spacing: 12) {
-        SchemeSlot(model: model, slot: .light, palette: palette)
-        SchemeSlot(model: model, slot: .dark, palette: palette)
-      }
-      metrics(palette)
-    }
-    .padding(.horizontal, 20)
-    .padding(.top, 14)
-  }
-
-  private func metrics(_ palette: SettingsChrome) -> some View {
-    HStack(spacing: 16) {
-      HStack(spacing: 0) {
-        layoutButton(settingsText("Horizontal"), value: "linear", palette: palette)
-        layoutButton(settingsText("Vertical"), value: "stacked", palette: palette)
-      }
-      .padding(2)
-      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(palette.dark ? rgbText(35, 35, 38) : rgbText(246, 246, 248)))
-      .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(palette.line, lineWidth: 1))
-      metricSlider(settingsText("Candidate size"), value: $model.fontPoint, range: 12...28, palette: palette)
-      metricSlider(settingsText("Label size"), value: $model.labelFontPoint, range: 10...24, palette: palette)
-      metricSlider(settingsText("Corner radius"), value: $model.cornerRadius, range: 0...20, palette: palette)
-      Spacer(minLength: 8)
-      Text(settingsText("Click a card to fill the selected slot, then Apply to save and redeploy."))
-        .font(.system(size: 12))
-        .foregroundStyle(palette.muted)
-        .multilineTextAlignment(.trailing)
-        .frame(maxWidth: 280, alignment: .trailing)
-    }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 8)
-    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(palette.panel))
-    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(palette.line, lineWidth: 1))
-  }
-
-  private func layoutButton(_ title: String, value: String, palette: SettingsChrome) -> some View {
-    let selected = model.candidateListLayout == value
-    return Button(action: { model.candidateListLayout = value }) {
-      Text(title)
-        .font(.system(size: 13, weight: selected ? .semibold : .regular))
-        .foregroundStyle(selected ? palette.text : palette.muted)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(selected ? palette.panel : .clear))
-    }
-    .buttonStyle(.plain)
-  }
-
-  private func metricSlider(_ title: String, value: Binding<Int>, range: ClosedRange<Int>, palette: SettingsChrome) -> some View {
-    HStack(spacing: 8) {
-      Text(title)
-        .font(.system(size: 13))
-        .foregroundStyle(palette.muted)
-      Slider(
-        value: Binding(get: { Double(value.wrappedValue) }, set: { value.wrappedValue = Int($0.rounded()) }),
-        in: Double(range.lowerBound)...Double(range.upperBound),
-        step: 1
-      )
-      .frame(width: 108)
-      .tint(palette.accent)
-      Text("\(value.wrappedValue)")
-        .font(.system(size: 13))
-        .monospacedDigit()
-        .frame(width: 22, alignment: .trailing)
-    }
-  }
-
-  private func stage(_ palette: SettingsChrome) -> some View {
-    ZStack {
-      CandidatePreview(
-        palette: model.paletteForPreview(),
-        layout: model.candidateListLayout,
-        fontSize: CGFloat(model.fontPoint),
-        labelSize: CGFloat(model.labelFontPoint),
-        cornerRadius: CGFloat(model.cornerRadius)
-      )
-    }
-    .frame(maxWidth: .infinity, minHeight: 168)
-    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(palette.desk))
-    .padding(.horizontal, 20)
-    .padding(.top, 14)
-    .padding(.bottom, 16)
-  }
-
-  private func schemeGrid(_ palette: SettingsChrome) -> some View {
-    LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 12)], spacing: 12) {
-      ForEach(model.schemes) { scheme in
-        SchemeCard(model: model, scheme: scheme, palette: palette)
-      }
-    }
-  }
-
-  private func rgbText(_ red: Double, _ green: Double, _ blue: Double) -> Color {
-    Color(red: red / 255, green: green / 255, blue: blue / 255)
   }
 }
 
-private struct SchemeSlot: View {
+private struct GeneralSettingsPane: View {
   @ObservedObject var model: ParetlySettingsModel
-  var slot: ThemeSlot
-  var palette: SettingsChrome
-
-  private var schemeID: String { slot == .light ? model.colorScheme : model.colorSchemeDark }
-  private var active: Bool { model.activeSlot == slot }
 
   var body: some View {
-    let border = active ? (slot == .light ? palette.accent : palette.accentDark) : palette.line
-    let tint = slot == .light ? palette.accent : palette.accentDark
-    HStack(spacing: 10) {
-      Text(settingsText(slot == .light ? "Light" : "Dark"))
-        .font(.system(size: 11, weight: .semibold))
-        .foregroundStyle(tint)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 2)
-        .background(Capsule().fill(tint.opacity(0.18)))
-      VStack(alignment: .leading, spacing: 1) {
-        Text(model.scheme(id: schemeID)?.name ?? (schemeID.isEmpty ? "—" : schemeID))
-          .font(.system(size: 13, weight: .semibold))
-          .lineLimit(1)
-        Text(settingsText(slot == .light ? "Used when the system appearance is light" : "Used when the system appearance is dark"))
-          .font(.system(size: 12))
-          .foregroundStyle(palette.muted)
-          .lineLimit(1)
+    Form {
+      Section {
+        LabeledContent(settingsText("Settings File")) {
+          Text(settingsPath)
+            .font(.body)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.trailing)
+            .lineLimit(3)
+            .textSelection(.enabled)
+        }
+      } footer: {
+        Text(settingsText("Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime."))
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .contentShape(Rectangle())
-      .onTapGesture { model.activate(slot) }
-      Picker(slot == .light ? settingsText("Light") : settingsText("Dark"), selection: selection) {
-        ForEach(options, id: \.id) { scheme in
-          Text(optionTitle(scheme)).tag(scheme.id)
+      Section {
+        LabeledContent(settingsText("Light Scheme")) {
+          Text(model.schemeTitle(model.colorScheme))
+        }
+        LabeledContent(settingsText("Dark Scheme")) {
+          Text(model.schemeTitle(model.colorSchemeDark))
+        }
+      } header: {
+        Text(settingsText("Current Appearance"))
+      } footer: {
+        Text(settingsText("The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black)."))
+      }
+    }
+    .formStyle(.grouped)
+    .controlSize(.regular)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+  }
+
+  private var settingsPath: String {
+    SquirrelApp.userDir.appendingPathComponent(ParetlyThemeDocument.customFileName).path
+  }
+}
+
+private struct AppearanceSettingsPane: View {
+  @ObservedObject var model: ParetlySettingsModel
+
+  var body: some View {
+    Form {
+      Section {
+        schemePicker(settingsText("Light Scheme"), selection: lightSelection)
+        schemePicker(settingsText("Dark Scheme"), selection: darkSelection)
+      } header: {
+        Text(settingsText("Color Schemes"))
+      } footer: {
+        Text(settingsText("The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black)."))
+      }
+      Section {
+        Picker(settingsText("Assign Cards To"), selection: slotSelection) {
+          Text(settingsText("Light")).tag(ThemeSlot.light)
+          Text(settingsText("Dark")).tag(ThemeSlot.dark)
+        }
+        .pickerStyle(.segmented)
+        .accessibilityHint(Text(settingsText("Fills the selected appearance.")))
+        CandidatePreview(
+          palette: model.paletteForPreview(),
+          layout: model.candidateListLayout,
+          fontSize: CGFloat(model.fontPoint),
+          labelSize: CGFloat(model.labelFontPoint),
+          cornerRadius: CGFloat(model.cornerRadius)
+        )
+        .frame(maxWidth: .infinity)
+        .padding(16)
+        .background(
+          RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color(nsColor: .textBackgroundColor))
+        )
+        .overlay(
+          RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke(Color(nsColor: .separatorColor))
+        )
+      } header: {
+        Text(settingsText("Preview"))
+      } footer: {
+        Text(settingsText("Sample candidate window for the selected appearance."))
+      }
+      Section {
+        schemeCards
+          .padding(.vertical, 4)
+      } header: {
+        Text(settingsText("All Schemes"))
+      } footer: {
+        Text(settingsText("Click a card to fill the selected slot, then Apply to save and redeploy."))
+      }
+      Section {
+        SettingsSlider(title: settingsText("Corner radius"), value: $model.cornerRadius, range: 0...20)
+      } footer: {
+        Text(settingsText("Corner radius is 0 to 20 points."))
+      }
+    }
+    .formStyle(.grouped)
+    .controlSize(.regular)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+  }
+
+  private var schemeCards: some View {
+    VStack(spacing: 12) {
+      ForEach(pairedSchemeIDs, id: \.self) { row in
+        HStack(alignment: .top, spacing: 12) {
+          ForEach(row, id: \.self) { schemeID in
+            if let scheme = model.scheme(id: schemeID) {
+              SchemeCard(model: model, scheme: scheme)
+                .frame(maxWidth: .infinity, alignment: .top)
+            }
+          }
+          if row.count == 1 {
+            Color.clear
+              .frame(maxWidth: .infinity)
+              .accessibilityHidden(true)
+          }
         }
       }
-      .labelsHidden()
-      .frame(maxWidth: 210)
     }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 10)
-    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(palette.panel))
-    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(border, lineWidth: 2))
   }
 
-  private var selection: Binding<String> {
-    Binding(get: { schemeID }, set: { schemeID in
-      if slot == .light {
-        model.chooseLight(schemeID)
-      } else {
-        model.chooseDark(schemeID)
+  private var pairedSchemeIDs: [[String]] {
+    let identifiers = model.schemes.map(\.id)
+    return stride(from: 0, to: identifiers.count, by: 2).map { index in
+      Array(identifiers[index..<min(index + 2, identifiers.count)])
+    }
+  }
+
+  private var lightSelection: Binding<String> {
+    Binding(get: { model.colorScheme }, set: { model.chooseLight($0) })
+  }
+
+  private var darkSelection: Binding<String> {
+    Binding(get: { model.colorSchemeDark }, set: { model.chooseDark($0) })
+  }
+
+  private var slotSelection: Binding<ThemeSlot> {
+    Binding(get: { model.activeSlot }, set: { model.activate($0) })
+  }
+
+  private func schemePicker(_ title: String, selection: Binding<String>) -> some View {
+    Picker(title, selection: selection) {
+      ForEach(choices(selected: selection.wrappedValue)) { scheme in
+        Text(optionTitle(scheme)).tag(scheme.id)
       }
-    })
+    }
   }
 
-  private var options: [ThemeScheme] {
+  private func choices(selected schemeID: String) -> [ThemeScheme] {
     var list = model.schemes
     if !schemeID.isEmpty, !list.contains(where: { $0.id == schemeID }) {
       list.append(ThemeScheme(
@@ -351,88 +221,416 @@ private struct SchemeSlot: View {
   }
 }
 
+private struct InputSettingsPane: View {
+  @ObservedObject var model: ParetlySettingsModel
+
+  var body: some View {
+    Form {
+      Section {
+        Picker(settingsText("Layout"), selection: $model.candidateListLayout) {
+          Text(settingsText("Horizontal")).tag("linear")
+          Text(settingsText("Vertical")).tag("stacked")
+        }
+        .pickerStyle(.radioGroup)
+        SettingsSlider(title: settingsText("Candidate size"), value: $model.fontPoint, range: 12...28)
+        SettingsSlider(title: settingsText("Label size"), value: $model.labelFontPoint, range: 10...24)
+      } header: {
+        Text(settingsText("Candidate Window"))
+      } footer: {
+        VStack(alignment: .leading, spacing: 4) {
+          Text(settingsText("Horizontal candidates sit on one line. Vertical candidates are stacked."))
+          Text(settingsText("Candidate size is 12 to 28 points. Label size is 10 to 24 points."))
+        }
+      }
+    }
+    .formStyle(.grouped)
+    .controlSize(.regular)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+  }
+}
+
+private struct UpdatesSettingsPane: View {
+  @ObservedObject var model: ParetlySettingsModel
+
+  var body: some View {
+    Form {
+      Section {
+        Toggle(settingsText("Check for updates automatically"), isOn: $model.automaticUpdateChecks)
+        Toggle(settingsText("Receive beta updates"), isOn: $model.includeBetaUpdates)
+      } header: {
+        Text(settingsText("Software Update"))
+      } footer: {
+        Text(settingsText("Beta releases are offered only when this is on. A beta build turns it on until you change it."))
+      }
+      Section {
+        Button(settingsText("Check for Updates…")) {
+          ParetlyUpdatePresenter.shared.checkManually()
+        }
+      } footer: {
+        Text(settingsText("Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer."))
+      }
+    }
+    .formStyle(.grouped)
+    .controlSize(.regular)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+  }
+}
+
+private struct AboutSettingsPane: View {
+  var body: some View {
+    Form {
+      Section {
+        ParetlyAboutContent()
+      } header: {
+        Text(settingsText("About"))
+      }
+    }
+    .formStyle(.grouped)
+    .controlSize(.regular)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+  }
+}
+
+struct ParetlyAboutPanelView: View {
+  var body: some View {
+    ScrollView {
+      ParetlyAboutContent()
+        .padding(24)
+    }
+    .background(Color(nsColor: .windowBackgroundColor))
+    .background(WindowCloseShortcuts())
+    .onExitCommand {
+      NSApp.keyWindow?.performClose(nil)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+  }
+}
+
+struct ParetlyAboutContent: View {
+  var body: some View {
+    VStack(spacing: 14) {
+      icon
+      Text("Paretly")
+        .font(.title2.weight(.semibold))
+        .accessibilityAddTraits(.isHeader)
+      Text(ParetlyAbout.versionLabel(marketingVersion: ParetlyAbout.marketingVersion()))
+        .font(.body)
+        .foregroundStyle(.secondary)
+      Text(settingsText("Licensed under GPL-3.0."))
+        .font(.body)
+      Text(settingsText("Paretly is a GPL-3.0 fork of Squirrel. It uses librime and ships Rime ICE."))
+        .font(.callout)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: 380)
+      VStack(alignment: .leading, spacing: 8) {
+        Text(settingsText("Credits"))
+          .font(.headline)
+          .frame(maxWidth: .infinity, alignment: .leading)
+        ForEach(ParetlyAbout.credits, id: \.name) { credit in
+          HStack(alignment: .firstTextBaseline) {
+            Link(credit.name, destination: credit.url)
+              .accessibilityHint(Text(credit.url.absoluteString))
+            Spacer(minLength: 12)
+            Text(credit.url.host ?? "")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+              .accessibilityHidden(true)
+          }
+        }
+      }
+      .frame(maxWidth: 380)
+    }
+    .frame(maxWidth: .infinity)
+    .padding(.vertical, 8)
+  }
+
+  @ViewBuilder
+  private var icon: some View {
+    if let image = ParetlyAppIcon.image {
+      Image(nsImage: image)
+        .resizable()
+        .frame(width: 96, height: 96)
+        .accessibilityLabel(Text("Paretly"))
+    } else {
+      RoundedRectangle(cornerRadius: 22, style: .continuous)
+        .fill(Color(nsColor: .controlBackgroundColor))
+        .frame(width: 96, height: 96)
+        .overlay(Text("中").font(.largeTitle))
+        .accessibilityLabel(Text("Paretly"))
+    }
+  }
+}
+
+private struct SettingsActionBar: View {
+  @ObservedObject var model: ParetlySettingsModel
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 12) {
+      Text(model.statusText)
+        .font(.callout)
+        .foregroundStyle(statusColor)
+        .lineLimit(2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityHidden(model.statusText.isEmpty)
+      Button(settingsText("Deploy")) {
+        model.redeploy()
+      }
+      .disabled(model.applying)
+      .help(settingsText("Redeploy reloads Rime. It does not change the choices in this window."))
+      Button(settingsText("Apply")) {
+        model.apply()
+      }
+      .keyboardShortcut(.defaultAction)
+      .buttonStyle(.borderedProminent)
+      .disabled(model.applying || model.schemes.isEmpty)
+    }
+    .controlSize(.regular)
+    .padding(.horizontal, 20)
+    .padding(.vertical, 12)
+    .background(Material.bar)
+  }
+
+  private var statusColor: Color {
+    switch model.statusKind {
+    case .neutral:
+      return Color(nsColor: .secondaryLabelColor)
+    case .ok:
+      return Color(nsColor: .systemGreen)
+    case .warn:
+      return Color(nsColor: .systemOrange)
+    case .err:
+      return Color(nsColor: .systemRed)
+    }
+  }
+}
+
+private struct SettingsBanner: View {
+  var text: String
+
+  var body: some View {
+    Label(text, systemImage: "exclamationmark.triangle.fill")
+      .font(.callout)
+      .foregroundStyle(Color(nsColor: .systemRed))
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.horizontal, 20)
+      .padding(.vertical, 10)
+      .background(Color(nsColor: .systemRed).opacity(0.12))
+      .accessibilityElement(children: .combine)
+  }
+}
+
+private struct SettingsSlider: View {
+  var title: String
+  @Binding var value: Int
+  var range: ClosedRange<Int>
+
+  var body: some View {
+    LabeledContent(title) {
+      HStack(spacing: 8) {
+        Slider(
+          value: Binding(
+            get: { Double(value) },
+            set: { value = Int($0.rounded()) }
+          ),
+          in: Double(range.lowerBound)...Double(range.upperBound),
+          step: 1
+        )
+        .accessibilityValue(Text("\(value)"))
+        Text("\(value)")
+          .font(.body.monospacedDigit())
+          .frame(width: 36, alignment: .trailing)
+          .accessibilityHidden(true)
+      }
+    }
+  }
+}
+
 private struct SchemeCard: View {
   @ObservedObject var model: ParetlySettingsModel
   var scheme: ThemeScheme
-  var palette: SettingsChrome
-  @State private var hovered = false
+  @FocusState private var focused: Bool
 
   private var isLight: Bool { model.colorScheme == scheme.id }
   private var isDark: Bool { model.colorSchemeDark == scheme.id }
 
   var body: some View {
     Button(action: { model.assign(scheme.id) }) {
-      VStack(alignment: .leading, spacing: 7) {
-        ZStack {
-          CandidatePreview(
-            palette: scheme.palette(previewDark: model.previewDark),
-            layout: "linear",
-            fontSize: 13,
-            labelSize: 11,
-            cornerRadius: 7,
-            compact: true
-          )
-        }
-        .frame(maxWidth: .infinity, minHeight: 78)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 6)
-        .background(
-          LinearGradient(
-            colors: [Color.black.opacity(palette.dark ? 0.03 : 0.04), Color.black.opacity(palette.dark ? 0.25 : 0.08)],
-            startPoint: .top,
-            endPoint: .bottom
-          )
+      VStack(alignment: .leading, spacing: 8) {
+        CandidatePreview(
+          palette: scheme.palette(previewDark: model.previewDark),
+          layout: "linear",
+          fontSize: 13,
+          labelSize: 11,
+          cornerRadius: 7,
+          compact: true
         )
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .frame(maxWidth: .infinity, minHeight: 72)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 4)
         HStack(alignment: .firstTextBaseline, spacing: 6) {
           Text(scheme.name)
-            .font(.system(size: 12, weight: .semibold))
+            .font(.callout.weight(.semibold))
             .lineLimit(1)
           Text(scheme.id)
-            .font(.system(size: 11))
-            .foregroundStyle(palette.muted)
+            .font(.caption)
+            .foregroundStyle(.secondary)
             .lineLimit(1)
           Spacer(minLength: 4)
           if isLight {
-            badge(settingsText("Light"), tint: palette.accent)
+            roleBadge(settingsText("Light"))
           }
           if isDark {
-            badge(settingsText("Dark"), tint: palette.accentDark)
+            roleBadge(settingsText("Dark"))
           }
         }
       }
       .padding(10)
-      .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(palette.panel))
+      .background(
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+          .fill(Color(nsColor: .controlBackgroundColor))
+      )
       .overlay(cardStroke)
     }
     .buttonStyle(.plain)
-    .offset(y: hovered ? -1 : 0)
-    .onHover { hovered = $0 }
-    .accessibilityLabel(Text("\(scheme.name) \(scheme.id)"))
+    .focused($focused)
+    .accessibilityLabel(Text(accessibilityName))
+    .accessibilityHint(Text(settingsText("Fills the selected appearance.")))
+    .accessibilityAddTraits(isLight || isDark ? .isSelected : [])
+  }
+
+  private var accessibilityName: String {
+    var parts = [scheme.name, scheme.id]
+    if isLight { parts.append(settingsText("Light")) }
+    if isDark { parts.append(settingsText("Dark")) }
+    return parts.joined(separator: ", ")
   }
 
   private var cardStroke: some View {
-    RoundedRectangle(cornerRadius: 14, style: .continuous)
-      .stroke(isLight ? palette.accent : (isDark ? palette.accentDark : palette.line), lineWidth: 2)
-      .overlay {
-        if isLight && isDark {
-          RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .stroke(palette.accentDark, lineWidth: 2)
-            .padding(3)
-        }
-      }
+    RoundedRectangle(cornerRadius: 10, style: .continuous)
+      .stroke(strokeColor, lineWidth: focused || isLight || isDark ? 2 : 1)
   }
 
-  private func badge(_ title: String, tint: Color) -> some View {
+  private var strokeColor: Color {
+    if focused || isLight {
+      return Color.accentColor
+    }
+    if isDark {
+      return Color.purple
+    }
+    return Color(nsColor: .separatorColor)
+  }
+
+  private func roleBadge(_ title: String) -> some View {
     Text(title)
-      .font(.system(size: 10, weight: .semibold))
-      .foregroundStyle(tint)
-      .padding(.horizontal, 5)
-      .padding(.vertical, 1)
-      .background(Capsule().fill(tint.opacity(0.18)))
+      .font(.caption2.weight(.semibold))
+      .padding(.horizontal, 6)
+      .padding(.vertical, 2)
+      .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+  }
+}
+
+private struct SettingsKeyShortcuts: View {
+  @ObservedObject var model: ParetlySettingsModel
+
+  var body: some View {
+    ZStack {
+      WindowCloseShortcuts()
+      ForEach(ParetlySettingsTab.allCases, id: \.rawValue) { tab in
+        Button(action: { model.selectedTab = tab }) {
+          EmptyView()
+        }
+        .keyboardShortcut(KeyEquivalent(tab.shortcut), modifiers: .command)
+        .accessibilityHidden(true)
+        .frame(width: 0, height: 0)
+      }
+    }
+    .accessibilityHidden(true)
+  }
+}
+
+private struct WindowCloseShortcuts: View {
+  var body: some View {
+    ZStack {
+      Button(action: closeWindow) { EmptyView() }
+        .keyboardShortcut("w", modifiers: .command)
+      Button(action: closeWindow) { EmptyView() }
+        .keyboardShortcut(.cancelAction)
+    }
+    .accessibilityHidden(true)
+    .frame(width: 0, height: 0)
+  }
+
+  private func closeWindow() {
+    NSApp.keyWindow?.performClose(nil)
   }
 }
 
 private func settingsText(_ key: String) -> String {
   NSLocalizedString(key, comment: "Settings")
 }
+
+#if DEBUG
+extension ParetlySettingsModel {
+  static func previewModel(tab: ParetlySettingsTab) -> ParetlySettingsModel {
+    let model = ParetlySettingsModel()
+    model.schemes = [
+      ThemeScheme(
+        id: "native",
+        name: "系统配色",
+        author: "",
+        isNative: true,
+        fields: [:],
+        palette: .nativeLight,
+        lightPalette: .nativeLight,
+        darkPalette: .nativeDark
+      ),
+      ThemeScheme(
+        id: "clean_white",
+        name: "简约白",
+        author: "",
+        isNative: false,
+        fields: [:],
+        palette: .nativeLight,
+        lightPalette: nil,
+        darkPalette: nil
+      ),
+      ThemeScheme(
+        id: "clean_black",
+        name: "简约黑",
+        author: "",
+        isNative: false,
+        fields: [:],
+        palette: .nativeDark,
+        lightPalette: nil,
+        darkPalette: nil
+      )
+    ]
+    model.colorScheme = "native"
+    model.colorSchemeDark = "clean_black"
+    model.selectedTab = tab
+    return model
+  }
+}
+
+struct ParetlySettingsView_Previews: PreviewProvider {
+  static var previews: some View {
+    Group {
+      settingsPreview(.general, "General")
+      settingsPreview(.appearance, "Appearance")
+      settingsPreview(.input, "Input")
+      settingsPreview(.updates, "Updates")
+      settingsPreview(.about, "About")
+      ParetlyAboutPanelView()
+        .previewDisplayName("About Panel")
+        .frame(width: 460, height: 540)
+    }
+  }
+
+  private static func settingsPreview(_ tab: ParetlySettingsTab, _ name: String) -> some View {
+    ParetlySettingsView(model: .previewModel(tab: tab))
+      .previewDisplayName(name)
+      .frame(width: 860, height: 680)
+  }
+}
+#endif

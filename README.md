@@ -52,13 +52,25 @@ xattr -dr com.apple.quarantine ~/Downloads/Paretly-unsigned.pkg
 
 ## 打开设置
 
-菜单栏点 Paretly 的输入法图标，选 **Paretly 设置…**。系统语言是英文时这一项显示 **Settings…**，繁体中文显示 **Paretly 設定…**。启动台里的 **Paretly** 打开的是同一个窗口。窗口右上角的 **重新部署** 不改配色，只重新部署。
+菜单栏点 Paretly 的输入法图标，选 **设置…**。英文界面这一项是 **Settings…**，繁体中文是 **設定…**。启动台里的 **Paretly** 打开同一个窗口。窗口会记住大小和位置。Command-W 或 Esc 关闭窗口。
 
-可以给浅色和深色各选一套配色，并改横排或竖排、候选字号、序号字号和圆角。配色卡片来自随包 `paretly.yaml` 的 `preset_color_schemes`，再叠上 `~/Library/Rime/paretly.yaml` 里的同名覆盖。
+工具栏分成五页：
+
+- **常规**：设置文件的位置，以及当前浅色、深色配色。
+- **外观**：浅色和深色配色、候选窗预览、配色卡片和圆角。
+- **输入**：横排或竖排、候选字号、序号字号。
+- **更新**：自动检查更新、**接收测试版（Beta）**，以及 **检查更新…**。有新版本时 **一键更新** 会要求管理员密码并原地安装；失败则打开安装器。
+- **关于**：图标、版本、GPL-3.0，以及 Squirrel、librime、雾凇拼音和本仓库的链接。
+
+窗口底部的 **重新部署** 不改这些选择，只重新部署。**应用** 写入并重新部署。
+
+可以给浅色和深色各选一套配色。配色卡片来自随包 `paretly.yaml` 的 `preset_color_schemes`，再叠上 `~/Library/Rime/paretly.yaml` 里的同名覆盖。点卡片会填入当前选中的外观。
 
 **应用** 只把这次改过的键写进 `~/Library/Rime/paretly.custom.yaml` 的 `patch:`，文件里原有的其它补丁会保留。这个文件如果已经存在，第一次覆盖前会复制成 `paretly.custom.yaml.bak`。写完后 Paretly 在进程内重新部署。
 
 深色默认是「简约黑」（`clean_black`）。浅色默认仍是 `native`。
+
+输入法菜单里的 **关于 Paretly** 会打开关于面板，内容和「关于」页相同。
 
 重新部署也可以在终端执行：
 
@@ -235,13 +247,25 @@ The first deploy selects schema `rime_ice`. Switch schemas with Control+` or F4.
 
 ### Open settings
 
-From the input menu, choose **Paretly 设置…**. The English title is **Settings…**. Traditional Chinese shows **Paretly 設定…**. The **Paretly** app in Launchpad opens the same window. **Deploy** in that window redeploys without writing theme changes.
+From the input menu, choose **Settings…**. Simplified Chinese shows **设置…**. Traditional Chinese shows **設定…**. The **Paretly** app in Launchpad opens the same window. The window remembers its size and position. Command-W or Esc closes it.
 
-Pick a light scheme and a dark scheme, then set horizontal or vertical candidates, candidate size, label size, and corner radius. Cards come from `preset_color_schemes` in the bundled `paretly.yaml`, with the same keys from `~/Library/Rime/paretly.yaml` overlaid.
+The toolbar has five tabs:
+
+- **General**: where settings are saved, and the current light and dark schemes.
+- **Appearance**: light and dark schemes, the candidate preview, scheme cards, and corner radius.
+- **Input**: horizontal or vertical candidates, candidate size, and label size.
+- **Updates**: automatic checks, **Receive beta updates**, and **Check for Updates…**. **Update Now** asks for an administrator password and installs in place; if that fails, the package opens in Installer.
+- **About**: the icon, version, GPL-3.0, and links to Squirrel, librime, Rime ICE, and this repository.
+
+**Deploy** at the bottom reloads Rime without changing these choices. **Apply** writes them and redeploys.
+
+Pick a light scheme and a dark scheme. Cards come from `preset_color_schemes` in the bundled `paretly.yaml`, with the same keys from `~/Library/Rime/paretly.yaml` overlaid. A card fills the appearance selected above the grid.
 
 **Apply** writes only the keys you changed into `~/Library/Rime/paretly.custom.yaml` under `patch:`. Other patches in that file stay. The first time Apply overwrites an existing file, it is copied to `paretly.custom.yaml.bak`. Paretly then redeploys in-process.
 
 Dark mode defaults to **简约黑 / Clean Black** (`clean_black`). Light mode stays on `native`.
+
+**About Paretly** in the input menu opens an About panel with the same credits as the About tab.
 
 Reload from the terminal:
 

@@ -226,29 +226,41 @@ final class SquirrelInputController: IMKInputController {
   }
 
   override func menu() -> NSMenu! {
-    let deploy = NSMenuItem(title: NSLocalizedString("Deploy", comment: "Menu item"), action: #selector(deploy), keyEquivalent: "`")
-    deploy.target = self
-    deploy.keyEquivalentModifierMask = [.control, .option]
-    let sync = NSMenuItem(title: NSLocalizedString("Sync user data", comment: "Menu item"), action: #selector(syncUserData), keyEquivalent: "")
-    sync.target = self
-    let logDir = NSMenuItem(title: NSLocalizedString("Logs...", comment: "Menu item"), action: #selector(openLogFolder), keyEquivalent: "")
-    logDir.target = self
-    let setting = NSMenuItem(title: NSLocalizedString("Settings…", comment: "Menu item"), action: #selector(openSettings), keyEquivalent: "")
-    setting.target = self
-    let wiki = NSMenuItem(title: NSLocalizedString("Rime Wiki...", comment: "Menu item"), action: #selector(openWiki), keyEquivalent: "")
-    wiki.target = self
-    let update = NSMenuItem(title: NSLocalizedString("Check for Updates…", comment: "Menu item"), action: #selector(checkForUpdates), keyEquivalent: "")
-    update.target = self
-
-    let menu = NSMenu()
-    menu.addItem(deploy)
-    menu.addItem(sync)
-    menu.addItem(logDir)
-    menu.addItem(setting)
-    menu.addItem(wiki)
-    menu.addItem(update)
-
+    let menu = NSMenu(title: NSLocalizedString("Paretly", comment: "Menu title"))
+    for entry in ParetlyInputMenu.entries {
+      menu.addItem(makeMenuItem(entry))
+    }
     return menu
+  }
+
+  private func makeMenuItem(_ entry: ParetlyMenuEntry) -> NSMenuItem {
+    switch entry {
+    case .separator:
+      return .separator()
+    case .item(let spec):
+      let item = NSMenuItem(
+        title: NSLocalizedString(spec.titleKey, comment: "Menu item"),
+        action: selector(for: spec.action),
+        keyEquivalent: spec.keyEquivalent
+      )
+      item.target = self
+      if spec.usesControlOption {
+        item.keyEquivalentModifierMask = [.control, .option]
+      }
+      return item
+    }
+  }
+
+  private func selector(for action: ParetlyMenuAction) -> Selector {
+    switch action {
+    case .openSettings: return #selector(openSettings)
+    case .checkForUpdates: return #selector(checkForUpdates)
+    case .deploy: return #selector(deploy)
+    case .syncUserData: return #selector(syncUserData)
+    case .openLogFolder: return #selector(openLogFolder)
+    case .openWiki: return #selector(openWiki)
+    case .openAbout: return #selector(openAbout)
+    }
   }
 
   @objc func deploy() {
@@ -277,6 +289,10 @@ final class SquirrelInputController: IMKInputController {
 
   @objc func openWiki() {
     NSApp.squirrelAppDelegate.openWiki()
+  }
+
+  @objc func openAbout() {
+    NSApp.squirrelAppDelegate.openAbout()
   }
 
   deinit {

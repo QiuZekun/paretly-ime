@@ -203,9 +203,9 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     if !release.notes.isEmpty {
       alert.accessoryView = notesView(release.notes)
     }
-    alert.addButton(withTitle: NSLocalizedString("Update Now", comment: "Update"))
-    alert.addButton(withTitle: NSLocalizedString("Later", comment: "Update"))
-    alert.addButton(withTitle: NSLocalizedString("Skip this version", comment: "Update"))
+    for title in ParetlyAlertCopy.offerButtonTitleKeys() {
+      alert.addButton(withTitle: NSLocalizedString(title, comment: "Update"))
+    }
     switch present(alert) {
     case .alertFirstButtonReturn:
       download(release)
@@ -438,13 +438,20 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     alert.alertStyle = informational ? .informational : .warning
     alert.messageText = title
     alert.informativeText = detail
-    alert.addButton(withTitle: NSLocalizedString("OK", comment: "Update"))
+    alert.addButton(withTitle: NSLocalizedString(ParetlyAlertCopy.okButton, comment: "Update"))
     _ = present(alert)
     restoreIfIdle()
   }
 
   @discardableResult
   private func present(_ alert: NSAlert) -> NSApplication.ModalResponse {
+    alert.messageText = ParetlyAlertCopy.displayTitle(alert.messageText)
+    if let icon = ParetlyAppIcon.image {
+      alert.icon = icon
+    }
+    if alert.buttons.count >= 2 {
+      alert.buttons[1].keyEquivalent = "\u{1b}"
+    }
     activateForAlert()
     alert.window.level = .floating
     alert.window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -464,7 +471,9 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
   }
 
   private func restoreIfIdle() {
-    if progressPanel == nil && ParetlySettingsController.shared.window?.isVisible != true {
+    let settingsVisible = ParetlySettingsController.shared.window?.isVisible == true
+    let aboutVisible = ParetlyAboutController.shared.window?.isVisible == true
+    if progressPanel == nil && !settingsVisible && !aboutVisible {
       NSApp.setActivationPolicy(.accessory)
     }
   }
