@@ -96,18 +96,28 @@ final class ParetlySettingsModel: ObservableObject {
   }
 
   func schemeTitle(_ schemeID: String) -> String {
-    if let scheme = scheme(id: schemeID), !scheme.name.isEmpty {
-      return scheme.name
+    if let scheme = scheme(id: schemeID) {
+      return scheme.name.isEmpty ? scheme.id : scheme.name
     }
-    return schemeID.isEmpty ? "—" : schemeID
+    if schemeID.isEmpty {
+      return "—"
+    }
+    let missing = NSLocalizedString("Not in the theme file", comment: "Settings")
+    return "\(schemeID) \(missing)"
   }
 
   func paletteForPreview() -> ThemePalette {
-    let schemeID = previewDark ? colorSchemeDark : colorScheme
+    palette(for: previewDark ? .dark : .light)
+  }
+
+  /// Swatch for the scheme stored in one appearance slot.
+  func palette(for slot: ThemeSlot) -> ThemePalette {
+    let dark = slot == .dark
+    let schemeID = dark ? colorSchemeDark : colorScheme
     if let scheme = scheme(id: schemeID) {
-      return scheme.palette(previewDark: previewDark)
+      return scheme.palette(previewDark: dark)
     }
-    return previewDark ? .nativeDark : .nativeLight
+    return dark ? .nativeDark : .nativeLight
   }
 
   func activate(_ slot: ThemeSlot) {
@@ -291,6 +301,13 @@ final class ParetlyAuxiliaryWindow: NSWindow {
       performClose(nil)
       return true
     }
+    // Escape while trying a phrase stays in the field (cancel composition or
+    // end editing). The settings shortcuts must not close the window first.
+    if flags.isEmpty, event.keyCode == 53,
+       let editor = fieldEditor(false, for: nil), firstResponder === editor {
+      editor.keyDown(with: event)
+      return true
+    }
     return super.performKeyEquivalent(with: event)
   }
 
@@ -323,18 +340,31 @@ final class ParetlySettingsController: NSWindowController, NSWindowDelegate {
   }
 
   func windowWillClose(_ notification: Notification) {
+    ParetlyTryTyping.shared.end()
     let closing = notification.object as? NSWindow
     DispatchQueue.main.async {
       ParetlyWindowActivation.sync(ignoring: closing)
     }
   }
 
+  func windowWillReturnFieldEditor(_ sender: NSWindow, to client: Any?) -> Any? {
+    guard let field = client as? NSTextField, field.identifier == ParetlyTryField.identifier else {
+      return nil
+    }
+    return ParetlyTryFieldEditor.shared
+  }
+
   private func installWindow() {
     let host = NSHostingController(rootView: ParetlySettingsView(model: model))
-    host.sizingOptions = [.standardBounds]
+    // The form is taller than the window. Leave the size alone so the page scrolls.
+    host.sizingOptions = []
+    let size = NSSize(
+      width: ParetlySettingsWindowMetrics.contentWidth,
+      height: ParetlySettingsWindowMetrics.contentHeight
+    )
     let window = ParetlyAuxiliaryWindow(
-      contentRect: NSRect(x: 0, y: 0, width: 1120, height: 800),
-      styleMask: [.titled, .closable, .miniaturizable, .resizable],
+      contentRect: NSRect(origin: .zero, size: size),
+      styleMask: [.titled, .closable, .miniaturizable],
       backing: .buffered,
       defer: false
     )
@@ -344,15 +374,22 @@ final class ParetlySettingsController: NSWindowController, NSWindowDelegate {
     window.titlebarSeparatorStyle = .automatic
     window.isReleasedWhenClosed = false
     window.isRestorable = false
-    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    window.minSize = NSSize(width: 960, height: 680)
+    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .fullScreenNone]
+    window.contentMinSize = size
+    window.contentMaxSize = size
     window.delegate = self
     window.contentViewController = host
     self.window = window
     let restored = window.setFrameAutosaveName(ParetlyInputMenu.settingsFrameAutosaveName)
-    if !restored {
+    if restored {
+      let origin = window.frame.origin
+      window.setContentSize(size)
+      window.setFrameOrigin(origin)
+    } else {
+      window.setContentSize(size)
       window.center()
     }
+    window.standardWindowButton(.zoomButton)?.isEnabled = false
   }
 }
 

@@ -83,6 +83,14 @@ enum ParetlySettingsWindowCopy {
   static let titleKey = "Paretly Settings"
 }
 
+/// Fixed content size of the settings window. It does not resize or zoom.
+/// Width stays in the 760–820 pt range so the scheme cards and the candidate
+/// preview can sit side by side.
+enum ParetlySettingsWindowMetrics {
+  static let contentWidth: CGFloat = 800
+  static let contentHeight: CGFloat = 760
+}
+
 enum ParetlyMenuAction: String, Equatable {
   case openSettings
   case checkForUpdates
@@ -217,7 +225,10 @@ enum ParetlyInterfaceStrings {
     "Licensed under GPL-3.0.",
     "Paretly is a GPL-3.0 fork of Squirrel. It uses librime and ships Rime ICE.",
     "Credits",
-    "Fills the selected appearance."
+    "Fills the selected appearance.",
+    "Light: %@",
+    "Dark: %@",
+    "Type to try it~"
   ]
 
   static var requiredKeys: [String] {
