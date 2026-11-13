@@ -109,6 +109,8 @@ cat > "${dest}/Contents/Info.plist" << EOF
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
+	<key>LSUIElement</key>
+	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSPrincipalClass</key>
@@ -120,8 +122,13 @@ EOF
 plutil -lint "${dest}/Contents/Info.plist" >/dev/null
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "${dest}/Contents/Info.plist")" = "Paretly"
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${dest}/Contents/Info.plist")" = "ParetlyLauncher"
-if /usr/libexec/PlistBuddy -c 'Print :LSUIElement' "${dest}/Contents/Info.plist" >/dev/null 2>&1; then
-  echo "Launcher must not set LSUIElement; Launchpad would hide it." >&2
+# LSUIElement is what keeps the Dock from creating a tile before main().
+# Hiding a regular app with setActivationPolicy leaves that tile and blocks
+# on the Dock. Launchpad on macOS 13–15 does not list agent apps; Settings
+# stays in the input menu, and the bundle remains in /Applications.
+uielement="$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "${dest}/Contents/Info.plist" 2>/dev/null || true)"
+if [[ "${uielement}" != "true" ]]; then
+  echo "Launcher must set LSUIElement so it never takes a Dock tile." >&2
   exit 1
 fi
 

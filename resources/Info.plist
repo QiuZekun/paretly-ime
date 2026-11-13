@@ -110,11 +110,13 @@
 	<key>LSBackgroundOnly</key>
 	<false/>
 	<!--
-	  Leave LSUIElement unset. The Dock draws two icons when that key is set
-	  and the process later becomes a regular app to show Settings or About.
-	  Main.swift uses the accessory activation policy instead, which keeps
-	  the input method out of the Dock until one of those windows is open.
+	  Agent from the first instruction, so the Dock never creates a launch
+	  tile. A later setActivationPolicy(.regular) keeps that agent tile and
+	  adds a second one. Settings uses TransformProcessType instead, which
+	  replaces the process type and leaves a single tile.
 	-->
+	<key>LSUIElement</key>
+	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SUEnableAutomaticChecks</key>
