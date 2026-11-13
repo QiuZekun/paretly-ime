@@ -51,7 +51,6 @@ final class SquirrelPanel: NSPanel {
     self.view = SquirrelView(frame: position)
     self.back = NSVisualEffectView()
     super.init(contentRect: position, styleMask: .nonactivatingPanel, backing: .buffered, defer: true)
-    self.level = .init(Int(CGShieldingWindowLevel()))
     self.becomesKeyOnlyIfNeeded = true
     self.hasShadow = true
     self.isOpaque = false
@@ -66,6 +65,9 @@ final class SquirrelPanel: NSPanel {
     contentView.addSubview(view)
     contentView.addSubview(view.textView)
     self.contentView = contentView
+    // Nonactivating panels start with hidesOnDeactivate == false. Keep it
+    // that way, and join every Space: this panel is shown while another app is key.
+    placeForCurrentClient()
   }
 
   var linear: Bool {
@@ -176,23 +178,39 @@ final class SquirrelPanel: NSPanel {
   /// `orderFront` does not raise that panel over the settings key window
   /// (the shielding level is not honored for this process's own windows).
   /// Parenting it is what keeps it above that window. A child cannot use a
-  /// level above its parent, so the anchored panel drops to `.floating`.
+  /// level above its parent, so the anchored panel uses the parent's level.
+  /// `hidesOnDeactivate` stays false: an activation flicker while Settings
+  /// opens would otherwise hide candidates before they are drawn.
   func anchorAbove(_ window: NSWindow) {
-    hidesOnDeactivate = false
+    remainVisibleWhenInactive()
     if savedBehavior == nil {
       savedBehavior = collectionBehavior
     }
     var behavior = collectionBehavior
-    behavior.formUnion([.canJoinAllSpaces, .fullScreenAuxiliary])
+    behavior.formUnion(Self.externalCollectionBehavior)
+    behavior.remove(.moveToActiveSpace)
     collectionBehavior = behavior
     aboveParent = true
-    guard parent !== window else { return }
+    guard parent !== window else {
+      level = window.level
+      return
+    }
     parent?.removeChildWindow(self)
-    level = .floating
+    level = window.level
     window.addChildWindow(self, ordered: .above)
+    // addChildWindow clamps a higher level down to the parent. Reapply that
+    // level, and keep the panel from hiding if Paretly briefly deactivates.
+    level = window.level
+    remainVisibleWhenInactive()
   }
 
   /// Drop the settings-window parent so the next client gets the normal panel.
+  ///
+  /// Callers include both `hide()` and the external `showPanel` path, so this
+  /// must not arm `hidesOnDeactivate`. That flag makes WindowServer omit the
+  /// panel from the onscreen list whenever `NSApp` is inactive — which is
+  /// the whole time the user is typing in another app. The window keeps a
+  /// frame, but `kCGWindowIsOnscreen` is false.
   func releaseAnchor() {
     aboveParent = false
     if let savedBehavior {
@@ -202,8 +220,7 @@ final class SquirrelPanel: NSPanel {
     if let parent {
       parent.removeChildWindow(self)
     }
-    hidesOnDeactivate = true
-    level = .init(Int(CGShieldingWindowLevel()))
+    placeForCurrentClient()
   }
 
   // Main function to add attributes to text output from librime
@@ -357,7 +374,7 @@ final class SquirrelPanel: NSPanel {
     }
   }
 
-  func load(config: SquirrelConfig, forDarkMode isDark: Bool) {
+  func load(config: SquirrelThemeConfig, forDarkMode isDark: Bool) {
     if isDark {
       view.darkTheme = SquirrelTheme()
       view.darkTheme.load(config: config, dark: true)
@@ -366,9 +383,57 @@ final class SquirrelPanel: NSPanel {
       view.lightTheme.load(config: config, dark: isDark)
     }
   }
+
+  func show(status message: String) {
+    let theme = view.currentTheme
+    let text = NSMutableAttributedString(string: message, attributes: theme.attrs)
+    text.addAttribute(.paragraphStyle, value: theme.paragraphStyle, range: NSRange(location: 0, length: text.length))
+    view.textContentStorage.attributedString = text
+    view.textView.setLayoutOrientation(vertical ? .vertical : .horizontal)
+    view.drawView(candidateRanges: [NSRange(location: 0, length: text.length)], hilightedIndex: -1,
+                  preeditRange: .empty, highlightedPreeditRange: .empty, canPageUp: false, canPageDown: false)
+    show()
+
+    statusTimer?.invalidate()
+    statusTimer = Timer.scheduledTimer(withTimeInterval: SquirrelTheme.showStatusDuration, repeats: false) { _ in
+      self.hide()
+    }
+  }
 }
 
 private extension SquirrelPanel {
+  /// Visible on every Space, including beside a fullscreen app.
+  /// `moveToActiveSpace` only runs when a window becomes key. This panel is
+  /// nonactivating, so that flag would leave it on the Space where Paretly
+  /// was last active (often the settings window) instead of the app being typed in.
+  static let externalCollectionBehavior: NSWindow.CollectionBehavior = [
+    .canJoinAllSpaces, .fullScreenAuxiliary
+  ]
+
+  func remainVisibleWhenInactive() {
+    // isFloatingPanel == true forces hidesOnDeactivate back on.
+    isFloatingPanel = false
+    hidesOnDeactivate = false
+  }
+
+  /// Shielding level for other apps. While parented to Settings, the level
+  /// matches that window: a child cannot sit above its parent. Either way
+  /// the panel joins fullscreen Spaces and does not hide on deactivate.
+  func placeForCurrentClient() {
+    remainVisibleWhenInactive()
+    var behavior = collectionBehavior
+    behavior.formUnion(Self.externalCollectionBehavior)
+    behavior.remove(.moveToActiveSpace)
+    if behavior != collectionBehavior {
+      collectionBehavior = behavior
+    }
+    let shielding = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()))
+    let target = aboveParent ? (parent?.level ?? .normal) : shielding
+    if level != target {
+      level = target
+    }
+  }
+
   func mousePosition() -> NSPoint {
     var point = NSEvent.mouseLocation
     point = self.convertPoint(fromScreen: point)
@@ -502,34 +567,15 @@ private extension SquirrelPanel {
     invalidateShadow()
     // orderFront is a no-op for this panel once the process is foreground:
     // the key window stays above it. orderFrontRegardless shows it whether
-    // or not the input method itself is the active app.
-    if aboveParent {
-      // An activation flicker (TransformProcessType, launcher hand-off) would
-      // otherwise hide the panel before the user sees candidates.
-      hidesOnDeactivate = false
-      if level != .floating {
-        level = .floating
-      }
-    } else {
-      level = .init(Int(CGShieldingWindowLevel()))
-    }
+    // or not the input method itself is the active app. hidesOnDeactivate
+    // has to be false first, or WindowServer still leaves the panel offscreen
+    // while another app is key — including after Settings demotes this
+    // process back to a UI element.
+    placeForCurrentClient()
     orderFrontRegardless()
-  }
-
-  func show(status message: String) {
-    let theme = view.currentTheme
-    let text = NSMutableAttributedString(string: message, attributes: theme.attrs)
-    text.addAttribute(.paragraphStyle, value: theme.paragraphStyle, range: NSRange(location: 0, length: text.length))
-    view.textContentStorage.attributedString = text
-    view.textView.setLayoutOrientation(vertical ? .vertical : .horizontal)
-    view.drawView(candidateRanges: [NSRange(location: 0, length: text.length)], hilightedIndex: -1,
-                  preeditRange: .empty, highlightedPreeditRange: .empty, canPageUp: false, canPageDown: false)
-    show()
-
-    statusTimer?.invalidate()
-    statusTimer = Timer.scheduledTimer(withTimeInterval: SquirrelTheme.showStatusDuration, repeats: false) { _ in
-      self.hide()
-    }
+    // Ordering front can clear the level. Put the shielding (or parent)
+    // level back, and keep hidesOnDeactivate off after the order.
+    placeForCurrentClient()
   }
 
   func convert(range: Range<String.Index>, in string: String) -> NSRange {

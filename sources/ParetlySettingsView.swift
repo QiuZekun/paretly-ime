@@ -173,7 +173,7 @@ private struct SettingsHeader: View {
     HStack(alignment: .center, spacing: 12) {
       headerIcon
       ParetlyTryField()
-        .frame(width: 196)
+        .frame(width: ParetlyTryField.preferredWidth, height: ParetlyTryField.preferredHeight)
       Text(model.statusText)
         .font(.callout)
         .foregroundStyle(statusColor)

@@ -115,6 +115,8 @@ final class SquirrelConfig {
   }
 }
 
+extension SquirrelConfig: SquirrelThemeConfig {}
+
 private extension SquirrelConfig {
   func cachedValue<T>(of: T.Type, forKey key: String) -> T? {
     return cache[key] as? T
