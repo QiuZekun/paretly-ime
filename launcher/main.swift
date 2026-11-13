@@ -62,8 +62,8 @@ if alreadyRunning {
   // The running input method observes this name and presents Settings.
   // deliverImmediately sends it before this process exits. Spawning the
   // input-method binary here loads librime just to post the same name.
-  DistributedNotificationCenter.default().post(
-    name: showSettingsNotification,
+  DistributedNotificationCenter.default().postNotificationName(
+    showSettingsNotification,
     object: nil,
     userInfo: nil,
     deliverImmediately: true

@@ -130,8 +130,8 @@ struct SquirrelApp {
           let others = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId)
             .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
           if !others.isEmpty {
-            DistributedNotificationCenter.default().post(
-              name: .init("ParetlyShowSettingsNotification"),
+            DistributedNotificationCenter.default().postNotificationName(
+              .init("ParetlyShowSettingsNotification"),
               object: nil,
               userInfo: nil,
               deliverImmediately: true
