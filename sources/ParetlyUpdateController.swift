@@ -466,11 +466,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
 
   private func activateForAlert() {
     ParetlyWindowActivation.promote()
-    if #available(macOS 14.0, *) {
-      NSApp.activate()
-    } else {
-      NSApp.activate(ignoringOtherApps: true)
-    }
+    ParetlyWindowActivation.activateIgnoringOtherApps()
   }
 
   private func restoreIfIdle() {

@@ -7,9 +7,14 @@
 //  This file is part of Paretly, a GPL-3.0 fork of Squirrel (鼠须管).
 //  See LICENSE.txt.
 //
-//  The settings window lives in the input method process, so macOS will not
-//  deliver Paretly keystrokes into it. This field runs its own Rime session
-//  and shows the real candidate panel beside the insertion point.
+//  The settings window lives in this input-method process. macOS does not
+//  deliver IMK keystrokes into an input method's own windows, and a SwiftUI
+//  NSTextField often never installs the window field editor, so letters were
+//  inserted as plain text. This view is an NSTextView (a real
+//  NSTextInputClient) in the hierarchy. It runs its own Rime session and
+//  anchors the shared candidate panel above the settings window: that panel
+//  is created while the process is still an agent, and after
+//  TransformProcessType, orderFront leaves it behind the key window.
 
 import AppKit
 import Carbon
@@ -18,25 +23,19 @@ import SwiftUI
 struct ParetlyTryField: NSViewRepresentable {
   static let identifier = NSUserInterfaceItemIdentifier("ParetlyTryField")
 
-  func makeNSView(context: Context) -> NSTextField {
-    let field = NSTextField(string: "")
-    field.identifier = Self.identifier
-    field.isEditable = true
-    field.isSelectable = true
-    field.isBezeled = true
-    field.bezelStyle = .roundedBezel
-    field.font = .systemFont(ofSize: NSFont.systemFontSize)
-    field.placeholderString = Self.placeholder
-    field.cell?.lineBreakMode = .byTruncatingHead
-    field.setAccessibilityLabel(Self.placeholder)
-    return field
+  func makeNSView(context: Context) -> ParetlyTryFieldBox {
+    let box = ParetlyTryFieldBox()
+    box.textView.identifier = Self.identifier
+    box.textView.placeholderText = Self.placeholder
+    box.textView.setAccessibilityLabel(Self.placeholder)
+    return box
   }
 
-  func updateNSView(_ field: NSTextField, context: Context) {
+  func updateNSView(_ box: ParetlyTryFieldBox, context: Context) {
     let placeholder = Self.placeholder
-    if field.placeholderString != placeholder {
-      field.placeholderString = placeholder
-      field.setAccessibilityLabel(placeholder)
+    if box.textView.placeholderText != placeholder {
+      box.textView.placeholderText = placeholder
+      box.textView.setAccessibilityLabel(placeholder)
     }
   }
 
@@ -45,34 +44,154 @@ struct ParetlyTryField: NSViewRepresentable {
   }
 }
 
-final class ParetlyTryFieldEditor: NSTextView {
-  static let shared: ParetlyTryFieldEditor = {
-    let editor = ParetlyTryFieldEditor()
-    editor.isFieldEditor = true
-    editor.isRichText = false
-    editor.importsGraphics = false
-    editor.isAutomaticQuoteSubstitutionEnabled = false
-    editor.isAutomaticDashSubstitutionEnabled = false
-    editor.isAutomaticDataDetectionEnabled = false
-    editor.isAutomaticTextReplacementEnabled = false
-    editor.isAutomaticSpellingCorrectionEnabled = false
-    editor.isContinuousSpellCheckingEnabled = false
-    editor.isGrammarCheckingEnabled = false
-    editor.font = .systemFont(ofSize: NSFont.systemFontSize)
-    return editor
-  }()
+extension NSWindow {
+  /// True while the settings try-typing view is the first responder.
+  /// Escape cancels composition instead of closing the window.
+  var paretlyTryFieldIsEditing: Bool {
+    var view = firstResponder as? NSView
+    while let current = view {
+      if current.identifier == ParetlyTryField.identifier {
+        return true
+      }
+      view = current.superview
+    }
+    return false
+  }
+}
+
+final class ParetlyTryFieldBox: NSView {
+  let textView = ParetlyTryTextView(frame: .zero)
+  private let cell = NSTextFieldCell(textCell: "")
+  private let focusRing = ParetlyTryFocusRing(frame: .zero)
+
+  override init(frame frameRect: NSRect) {
+    super.init(frame: frameRect)
+    cell.isBezeled = true
+    cell.isBordered = true
+    cell.bezelStyle = .roundedBezel
+    cell.isEditable = false
+    cell.isSelectable = false
+    cell.font = .systemFont(ofSize: NSFont.systemFontSize)
+    cell.drawsBackground = true
+    cell.backgroundColor = .textBackgroundColor
+    cell.controlView = self
+    textView.drawsBackground = false
+    textView.isEditable = true
+    textView.isSelectable = true
+    textView.isRichText = false
+    textView.importsGraphics = false
+    textView.isAutomaticQuoteSubstitutionEnabled = false
+    textView.isAutomaticDashSubstitutionEnabled = false
+    textView.isAutomaticDataDetectionEnabled = false
+    textView.isAutomaticTextReplacementEnabled = false
+    textView.isAutomaticSpellingCorrectionEnabled = false
+    textView.isContinuousSpellCheckingEnabled = false
+    textView.isGrammarCheckingEnabled = false
+    textView.isAutomaticTextCompletionEnabled = false
+    textView.usesFontPanel = false
+    textView.usesFindPanel = false
+    textView.font = .systemFont(ofSize: NSFont.systemFontSize)
+    textView.textColor = .labelColor
+    textView.insertionPointColor = .labelColor
+    textView.textContainer?.lineFragmentPadding = 2
+    textView.textContainer?.maximumNumberOfLines = 1
+    textView.textContainer?.lineBreakMode = .byTruncatingHead
+    textView.textContainer?.widthTracksTextView = true
+    textView.isHorizontallyResizable = false
+    textView.isVerticallyResizable = false
+    textView.focusRingType = .none
+    textView.autoresizingMask = []
+    addSubview(textView)
+    focusRing.autoresizingMask = [.width, .height]
+    addSubview(focusRing)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override var intrinsicContentSize: NSSize {
+    NSSize(width: NSView.noIntrinsicMetric, height: 24)
+  }
+
+  override func layout() {
+    super.layout()
+    focusRing.frame = bounds
+    var interior = cell.titleRect(forBounds: bounds)
+    if interior.height < 14 || interior.width < 8 {
+      interior = bounds.insetBy(dx: 6, dy: 3)
+    }
+    textView.frame = interior
+    let font = textView.font ?? .systemFont(ofSize: NSFont.systemFontSize)
+    let line = ceil(font.ascender - font.descender + font.leading)
+    let extra = max(0, interior.height - line) / 2
+    textView.textContainerInset = NSSize(width: 1, height: extra)
+    focusRing.isFocused = window?.firstResponder === textView
+  }
+
+  override func draw(_ dirtyRect: NSRect) {
+    cell.stringValue = ""
+    cell.placeholderString = ""
+    cell.draw(withFrame: bounds, in: self)
+  }
+
+  override func mouseDown(with event: NSEvent) {
+    window?.makeFirstResponder(textView)
+  }
+
+  func noteFocusChange() {
+    needsLayout = true
+    focusRing.isFocused = window?.firstResponder === textView
+  }
+}
+
+final class ParetlyTryFocusRing: NSView {
+  var isFocused = false {
+    didSet {
+      if isFocused != oldValue { needsDisplay = true }
+    }
+  }
+
+  override var isOpaque: Bool { false }
+
+  override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+  override func draw(_ dirtyRect: NSRect) {
+    guard isFocused else { return }
+    NSColor.keyboardFocusIndicatorColor.setStroke()
+    let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 1.5, dy: 1.5), xRadius: 5, yRadius: 5)
+    path.lineWidth = 2
+    path.stroke()
+  }
+}
+
+final class ParetlyTryTextView: NSTextView {
+  var placeholderText = "" {
+    didSet { needsDisplay = true }
+  }
+
+  /// `NSView.isOpaque` is read-only. A clear background lets the field bezel show through.
+  override var isOpaque: Bool { false }
+
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
   override func becomeFirstResponder() -> Bool {
-    let ok = super.becomeFirstResponder()
-    if ok {
+    let accepted = super.becomeFirstResponder()
+    if accepted {
       ParetlyTryTyping.shared.begin(editor: self)
+      (superview as? ParetlyTryFieldBox)?.noteFocusChange()
     }
-    return ok
+    return accepted
   }
 
   override func resignFirstResponder() -> Bool {
-    ParetlyTryTyping.shared.end()
-    return super.resignFirstResponder()
+    let accepted = super.resignFirstResponder()
+    if accepted {
+      ParetlyTryTyping.shared.end()
+      (superview as? ParetlyTryFieldBox)?.noteFocusChange()
+    }
+    return accepted
   }
 
   override func keyDown(with event: NSEvent) {
@@ -94,6 +213,19 @@ final class ParetlyTryFieldEditor: NSTextView {
   override func cut(_ sender: Any?) {
     copy(sender)
     ParetlyTryTyping.shared.replaceAll("")
+  }
+
+  override func draw(_ dirtyRect: NSRect) {
+    super.draw(dirtyRect)
+    guard string.isEmpty, !placeholderText.isEmpty else { return }
+    let font = self.font ?? .systemFont(ofSize: NSFont.systemFontSize)
+    let attributes: [NSAttributedString.Key: Any] = [
+      .font: font,
+      .foregroundColor: NSColor.placeholderTextColor
+    ]
+    let padding = (textContainer?.lineFragmentPadding ?? 0) + textContainerInset.width
+    let rect = bounds.insetBy(dx: padding, dy: textContainerInset.height)
+    (placeholderText as NSString).draw(in: rect, withAttributes: attributes)
   }
 }
 
@@ -143,7 +275,7 @@ final class ParetlyTryTyping: SquirrelPanelInput {
     }
     if event.keyCode == 53 {
       DispatchQueue.main.async { [weak editor] in
-        editor?.window?.endEditing(for: nil)
+        editor?.window?.makeFirstResponder(nil)
       }
       return true
     }
@@ -363,11 +495,33 @@ final class ParetlyTryTyping: SquirrelPanelInput {
     } else {
       caret = (display as NSString).length
     }
+    let font = editor.font ?? .systemFont(ofSize: NSFont.systemFontSize)
     if editor.string != display {
       editor.string = display
     }
+    let total = (editor.string as NSString).length
+    let base: [NSAttributedString.Key: Any] = [
+      .font: font,
+      .foregroundColor: NSColor.labelColor
+    ]
+    if total > 0 {
+      editor.textStorage?.setAttributes(base, range: NSRange(location: 0, length: total))
+    }
+    if inline, !preedit.isEmpty {
+      let start = (committed as NSString).length
+      let length = (preedit as NSString).length
+      if length > 0, start + length <= total {
+        editor.textStorage?.addAttribute(
+          .underlineStyle,
+          value: NSUnderlineStyle.single.rawValue,
+          range: NSRange(location: start, length: length)
+        )
+      }
+    }
     let length = (editor.string as NSString).length
-    editor.setSelectedRange(NSRange(location: min(caret, length), length: 0))
+    let range = NSRange(location: min(caret, length), length: 0)
+    editor.setSelectedRange(range)
+    editor.scrollRangeToVisible(range)
   }
 
   private func showPanel(preedit: String, selRange: NSRange, caret: Int, menu: MenuSnapshot) {
@@ -378,6 +532,9 @@ final class ParetlyTryTyping: SquirrelPanelInput {
     }
     panel.inputController = self
     panel.position = caretScreenRect()
+    if let window = editor?.window {
+      panel.anchorAbove(window)
+    }
     panel.update(
       preedit: preedit,
       selRange: selRange,
@@ -409,10 +566,19 @@ final class ParetlyTryTyping: SquirrelPanelInput {
     }
     var actual = NSRange(location: NSNotFound, length: 0)
     let rect = editor.firstRect(forCharacterRange: editor.selectedRange(), actualRange: &actual)
-    if rect.width > 0 || rect.height > 0 {
-      return rect
+    if rect.height >= 1, NSScreen.screens.contains(where: { $0.frame.intersects(rect) }) {
+      var caret = rect
+      if caret.width < 1 {
+        caret.size.width = 1
+      }
+      return caret
     }
-    return window.convertToScreen(editor.convert(editor.bounds, to: nil))
+    let local = editor.bounds.isEmpty ? editor.superview?.bounds ?? editor.bounds : editor.bounds
+    let screen = window.convertToScreen(editor.convert(local, to: nil))
+    if screen.height >= 1 {
+      return screen
+    }
+    return window.frame
   }
 
   private func insertUnhandled(_ event: NSEvent) -> Bool {

@@ -197,10 +197,34 @@ enum ParetlyAlertCopy {
   }
 }
 
+/// One settings action: write paretly.custom.yaml when the window changed,
+/// then deploy. No edits still deploys, so files edited outside the window
+/// are reloaded. Validation failure does not write and does not deploy.
+enum ParetlyApplyDeployPlan: Equatable {
+  case rejected(String)
+  case saveThenDeploy
+  case deployOnly
+}
+
+enum ParetlyApplyDeploy {
+  static let buttonTitleKey = "Apply & Deploy"
+  static let helpKey = "Saves changes in this window to paretly.custom.yaml and redeploys Rime. Also picks up hand-edited Rime files."
+
+  static func plan(validationProblem: String?, hasEdits: Bool) -> ParetlyApplyDeployPlan {
+    if hasEdits, let validationProblem, !validationProblem.isEmpty {
+      return .rejected(validationProblem)
+    }
+    if hasEdits {
+      return .saveThenDeploy
+    }
+    return .deployOnly
+  }
+}
+
 enum ParetlyInterfaceStrings {
   static let proseKeys = [
     "Settings File",
-    "Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime.",
+    ParetlyApplyDeploy.helpKey,
     "Current Appearance",
     "Scheme cards and the candidate preview use this appearance. A card fills this appearance's scheme.",
     "The light scheme is used when the system appearance is light. The dark scheme is used when the system appearance is dark. Dark defaults to 简约黑 (clean_black).",
@@ -221,7 +245,6 @@ enum ParetlyInterfaceStrings {
     "Receive beta updates",
     "Beta releases are offered only when this is on. A beta build turns it on until you change it.",
     "Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer.",
-    "Redeploy reloads Rime. It does not change the choices in this window.",
     "Version %@",
     "Version unavailable",
     "Licensed under GPL-3.0.",
@@ -240,6 +263,7 @@ enum ParetlyInterfaceStrings {
     keys.append(contentsOf: proseKeys)
     keys.append(ParetlyAlertCopy.updateButton)
     keys.append(ParetlyAlertCopy.skipButton)
+    keys.append(ParetlyApplyDeploy.buttonTitleKey)
     return keys
   }
 }

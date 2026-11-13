@@ -27,6 +27,22 @@ private func inputMethodURL() -> URL? {
   return candidates.first { FileManager.default.fileExists(atPath: $0.path) }
 }
 
+/// The user opened this launcher. On macOS 14+ a background process cannot
+/// raise itself over the front app unless this process hands activation over.
+/// `activate(from:)` is that handoff. It does not call `setActivationPolicy`
+/// (that waits on the Dock and leaves a second tile).
+private func handOffToInputMethod() {
+  guard let target = NSRunningApplication.runningApplications(withBundleIdentifier: inputMethodBundleID).first else {
+    return
+  }
+  let options: NSApplication.ActivationOptions = [.activateAllWindows, .activateIgnoringOtherApps]
+  if #available(macOS 14.0, *) {
+    _ = target.activate(from: NSRunningApplication.current, options: options)
+  } else {
+    _ = target.activate(options: options)
+  }
+}
+
 private func fail(_ title: String, _ detail: String) -> Never {
   let app = NSApplication.shared
   app.setActivationPolicy(.regular)
@@ -68,6 +84,7 @@ if alreadyRunning {
     userInfo: nil,
     deliverImmediately: true
   )
+  handOffToInputMethod()
   exit(EXIT_SUCCESS)
 }
 

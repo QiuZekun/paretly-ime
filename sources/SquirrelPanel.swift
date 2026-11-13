@@ -41,6 +41,10 @@ final class SquirrelPanel: NSPanel {
   private var page: Int = 0
   private var lastPage: Bool = true
   private var pagingUp: Bool?
+  /// Set while the settings try-field parents this panel so it stays above
+  /// that window. Cleared before the panel is used for any other client.
+  private var aboveParent = false
+  private var savedBehavior: NSWindow.CollectionBehavior?
 
   init(position: NSRect) {
     self.position = position
@@ -48,6 +52,7 @@ final class SquirrelPanel: NSPanel {
     self.back = NSVisualEffectView()
     super.init(contentRect: position, styleMask: .nonactivatingPanel, backing: .buffered, defer: true)
     self.level = .init(Int(CGShieldingWindowLevel()))
+    self.becomesKeyOnlyIfNeeded = true
     self.hasShadow = true
     self.isOpaque = false
     self.backgroundColor = .clear
@@ -159,8 +164,46 @@ final class SquirrelPanel: NSPanel {
   func hide() {
     statusTimer?.invalidate()
     statusTimer = nil
+    releaseAnchor()
     orderOut(nil)
     maxHeight = 0
+  }
+
+  /// Keep the candidate panel above the settings window.
+  ///
+  /// The panel is created while this process is an agent, at the shielding
+  /// level. After `TransformProcessType` makes Paretly a foreground app,
+  /// `orderFront` does not raise that panel over the settings key window
+  /// (the shielding level is not honored for this process's own windows).
+  /// Parenting it is what keeps it above that window. A child cannot use a
+  /// level above its parent, so the anchored panel drops to `.floating`.
+  func anchorAbove(_ window: NSWindow) {
+    hidesOnDeactivate = false
+    if savedBehavior == nil {
+      savedBehavior = collectionBehavior
+    }
+    var behavior = collectionBehavior
+    behavior.formUnion([.canJoinAllSpaces, .fullScreenAuxiliary])
+    collectionBehavior = behavior
+    aboveParent = true
+    guard parent !== window else { return }
+    parent?.removeChildWindow(self)
+    level = .floating
+    window.addChildWindow(self, ordered: .above)
+  }
+
+  /// Drop the settings-window parent so the next client gets the normal panel.
+  func releaseAnchor() {
+    aboveParent = false
+    if let savedBehavior {
+      collectionBehavior = savedBehavior
+      self.savedBehavior = nil
+    }
+    if let parent {
+      parent.removeChildWindow(self)
+    }
+    hidesOnDeactivate = true
+    level = .init(Int(CGShieldingWindowLevel()))
   }
 
   // Main function to add attributes to text output from librime
@@ -457,8 +500,20 @@ private extension SquirrelPanel {
     }
     alphaValue = theme.alpha
     invalidateShadow()
-    orderFront(nil)
-    // voila!
+    // orderFront is a no-op for this panel once the process is foreground:
+    // the key window stays above it. orderFrontRegardless shows it whether
+    // or not the input method itself is the active app.
+    if aboveParent {
+      // An activation flicker (TransformProcessType, launcher hand-off) would
+      // otherwise hide the panel before the user sees candidates.
+      hidesOnDeactivate = false
+      if level != .floating {
+        level = .floating
+      }
+    } else {
+      level = .init(Int(CGShieldingWindowLevel()))
+    }
+    orderFrontRegardless()
   }
 
   func show(status message: String) {

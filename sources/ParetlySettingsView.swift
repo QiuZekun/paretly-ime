@@ -57,15 +57,9 @@ struct ParetlySettingsView: View {
 
   private var appearanceSection: some View {
     Section {
-      Picker(settingsText("Appearance"), selection: appearanceSelection) {
-        Text(settingsText("Light")).tag(false)
-        Text(settingsText("Dark")).tag(true)
-      }
-      .pickerStyle(.segmented)
-      .labelsHidden()
-      .frame(maxWidth: 280)
-      .accessibilityLabel(Text(settingsText("Appearance")))
-      .help(appearanceExplanation)
+      ParetlyAppearanceSwitch(isDark: appearanceSelection)
+        .frame(maxWidth: .infinity)
+        .help(appearanceExplanation)
     } header: {
       sectionHeader(.appearance)
     }
@@ -186,20 +180,14 @@ private struct SettingsHeader: View {
         .lineLimit(1)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityHidden(model.statusText.isEmpty)
-      Button(settingsText("Deploy")) {
-        model.redeploy()
-      }
-      .buttonStyle(.bordered)
-      .disabled(model.applying)
-      .help(settingsText("Redeploy reloads Rime. It does not change the choices in this window."))
-      Button(settingsText("Apply")) {
-        model.apply()
+      Button(settingsText(ParetlyApplyDeploy.buttonTitleKey)) {
+        model.applyAndDeploy()
       }
       .keyboardShortcut(.defaultAction)
       .buttonStyle(.borderedProminent)
-      .disabled(model.applying || model.schemes.isEmpty)
-      .help(settingsText("Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime."))
-      .accessibilityHint(Text(settingsText("Apply writes changed colors, layout, and sizes to ~/Library/Rime/paretly.custom.yaml, keeps other patches, and redeploys Rime.")))
+      .disabled(model.applying)
+      .help(settingsText(ParetlyApplyDeploy.helpKey))
+      .accessibilityHint(Text(settingsText(ParetlyApplyDeploy.helpKey)))
     }
     .controlSize(.regular)
   }
@@ -460,10 +448,84 @@ private struct WindowCloseShortcuts: View {
 
 private func closeKeyWindow() {
   guard let window = NSApp.keyWindow else { return }
-  if let editor = window.fieldEditor(false, for: nil), window.firstResponder === editor {
+  if window.paretlyTryFieldIsEditing {
     return
   }
   window.performClose(nil)
+}
+
+/// Light on the left, dark on the right. Equal halves so the row is not a
+/// short segmented control stuck on one side. There is no follow-system
+/// choice; the two stored schemes already follow the system appearance.
+private struct ParetlyAppearanceSwitch: View {
+  @Binding var isDark: Bool
+
+  var body: some View {
+    HStack(spacing: 2) {
+      segment(dark: false, title: settingsText("Light"), symbol: "sun.max.fill")
+      segment(dark: true, title: settingsText("Dark"), symbol: "moon.fill")
+    }
+    .padding(2)
+    .frame(maxWidth: .infinity, minHeight: 28)
+    .background(
+      RoundedRectangle(cornerRadius: 7, style: .continuous)
+        .fill(Color(nsColor: .controlBackgroundColor))
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 7, style: .continuous)
+        .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+    )
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel(Text(settingsText("Appearance")))
+  }
+
+  private func segment(dark: Bool, title: String, symbol: String) -> some View {
+    let selected = isDark == dark
+    return Button {
+      isDark = dark
+    } label: {
+      Label(title, systemImage: symbol)
+        .font(.body)
+        .labelStyle(.titleAndIcon)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.vertical, 3)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(AppearanceSegmentStyle(selected: selected))
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .accessibilityLabel(Text(title))
+    .accessibilityAddTraits(selected ? .isSelected : AccessibilityTraits())
+  }
+}
+
+private struct AppearanceSegmentStyle: ButtonStyle {
+  var selected: Bool
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .foregroundStyle(foreground)
+      .background(
+        RoundedRectangle(cornerRadius: 5, style: .continuous)
+          .fill(fill(pressed: configuration.isPressed))
+      )
+  }
+
+  private var foreground: Color {
+    if selected {
+      return Color(nsColor: .alternateSelectedControlTextColor)
+    }
+    return Color(nsColor: .labelColor)
+  }
+
+  private func fill(pressed: Bool) -> Color {
+    if selected {
+      return Color(nsColor: .selectedContentBackgroundColor)
+    }
+    if pressed {
+      return Color(nsColor: .selectedContentBackgroundColor).opacity(0.28)
+    }
+    return .clear
+  }
 }
 
 private func settingsText(_ key: String) -> String {

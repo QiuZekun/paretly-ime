@@ -39,6 +39,56 @@ final class ParetlyInterfaceTests: XCTestCase {
     XCTAssertFalse(view.contains("func settingsGroup"))
   }
 
+  func testApplyAndDeployMergesTheTwoButtons() throws {
+    XCTAssertEqual(ParetlyApplyDeploy.plan(validationProblem: nil, hasEdits: false), .deployOnly)
+    XCTAssertEqual(
+      ParetlyApplyDeploy.plan(validationProblem: "Unknown light color scheme.", hasEdits: false),
+      .deployOnly
+    )
+    XCTAssertEqual(ParetlyApplyDeploy.plan(validationProblem: nil, hasEdits: true), .saveThenDeploy)
+    XCTAssertEqual(
+      ParetlyApplyDeploy.plan(validationProblem: "Unknown light color scheme.", hasEdits: true),
+      .rejected("Unknown light color scheme.")
+    )
+    var settings = ThemeSettings.fallback
+    settings.fontPoint = 99
+    let problem = ParetlyThemeDocument.validate(
+      settings,
+      knownSchemeIDs: [settings.colorScheme, settings.colorSchemeDark]
+    )
+    XCTAssertEqual(
+      ParetlyApplyDeploy.plan(validationProblem: problem, hasEdits: true),
+      .rejected("Candidate size must be between 12 and 28.")
+    )
+    XCTAssertEqual(ParetlyApplyDeploy.buttonTitleKey, "Apply & Deploy")
+
+    let view = try settingsViewSource()
+    XCTAssertTrue(view.contains("model.applyAndDeploy()"))
+    XCTAssertTrue(view.contains("ParetlyApplyDeploy.buttonTitleKey"))
+    XCTAssertTrue(view.contains("ParetlyApplyDeploy.helpKey"))
+    XCTAssertTrue(view.contains(".keyboardShortcut(.defaultAction)"))
+    XCTAssertTrue(view.contains(".buttonStyle(.borderedProminent)"))
+    XCTAssertTrue(view.contains(".disabled(model.applying)"))
+    XCTAssertFalse(view.contains("settingsText(\"Deploy\")"))
+    XCTAssertFalse(view.contains("settingsText(\"Apply\")"))
+    XCTAssertFalse(view.contains("model.redeploy()"))
+    XCTAssertFalse(view.contains("model.apply()"))
+    XCTAssertTrue(ParetlyInputMenu.itemSpecs.contains { $0.action == .deploy && $0.titleKey == "Deploy" })
+  }
+
+  func testAppearanceSwitchSpansTheRowWithLightAndDark() throws {
+    let view = try settingsViewSource()
+    XCTAssertTrue(view.contains("sun.max.fill"))
+    XCTAssertTrue(view.contains("moon.fill"))
+    XCTAssertTrue(view.contains("settingsText(\"Light\")"))
+    XCTAssertTrue(view.contains("settingsText(\"Dark\")"))
+    XCTAssertTrue(view.contains("settingsText(\"Appearance\")"))
+    XCTAssertTrue(view.contains(".frame(maxWidth: .infinity)"))
+    XCTAssertFalse(view.contains(".frame(maxWidth: 280)"))
+    XCTAssertFalse(view.contains("Light Preview"))
+    XCTAssertFalse(view.contains("Dark Preview"))
+  }
+
   func testSettingsUsesCardsPreviewAndAFixedWindow() throws {
     XCTAssertGreaterThanOrEqual(ParetlySettingsWindowMetrics.contentWidth, 760)
     XCTAssertLessThanOrEqual(ParetlySettingsWindowMetrics.contentWidth, 820)
