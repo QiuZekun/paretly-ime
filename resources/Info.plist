@@ -104,9 +104,9 @@
 	<key>InputMethodConnectionName</key>
 	<string>Paretly_Connection</string>
 	<key>InputMethodServerControllerClass</key>
-	<string>Paretly.SquirrelInputController</string>
+	<string>ParetlyInputController</string>
 	<key>InputMethodServerDelegateClass</key>
-	<string>Paretly.SquirrelInputController</string>
+	<string>ParetlyInputController</string>
 	<key>LSBackgroundOnly</key>
 	<false/>
 	<!--

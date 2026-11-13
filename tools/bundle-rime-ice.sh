@@ -87,6 +87,18 @@ if command -v plutil >/dev/null 2>&1; then
     echo "InputMethodConnectionName is not Paretly_Connection" >&2
     exit 1
   fi
+  if ! plutil -extract InputMethodServerControllerClass raw -o - "${app}/Contents/Info.plist" | grep -qx 'ParetlyInputController'; then
+    echo "InputMethodServerControllerClass is not ParetlyInputController" >&2
+    exit 1
+  fi
+  if ! plutil -extract InputMethodServerDelegateClass raw -o - "${app}/Contents/Info.plist" | grep -qx 'ParetlyInputController'; then
+    echo "InputMethodServerDelegateClass is not ParetlyInputController" >&2
+    exit 1
+  fi
+  if ! test -f "${app}/Contents/Resources/paretly.tiff"; then
+    echo "Menu icon paretly.tiff is missing from Resources" >&2
+    exit 1
+  fi
 else
   echo "plutil is not available; skipped Info.plist checks" >&2
 fi

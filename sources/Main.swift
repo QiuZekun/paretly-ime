@@ -10,6 +10,9 @@ import InputMethodKit
 
 @main
 struct SquirrelApp {
+  /// Shared with Squirrel at `~/Library/Rime`. Frontend files are `paretly.yaml`
+  /// and `paretly.custom.yaml`, `app_name` is `rime.paretly`, and logs go to
+  /// `$TMPDIR/rime.paretly`. Do not move this without migrating existing users.
   static let userDir = if let pwuid = getpwuid(getuid()) {
     URL(fileURLWithFileSystemRepresentation: pwuid.pointee.pw_dir, isDirectory: true, relativeTo: nil).appending(components: "Library", "Rime")
   } else {

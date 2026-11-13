@@ -9,6 +9,9 @@ import UserNotifications
 import Sparkle
 import AppKit
 
+/// Runtime name is `ParetlyApplicationDelegate`. `SquirrelApplicationDelegate`
+/// is the name Squirrel registers with the Objective-C runtime.
+@objc(ParetlyApplicationDelegate)
 final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegate, UNUserNotificationCenterDelegate {
   static let rimeWikiURL = URL(string: "https://github.com/rime/home/wiki")!
   static let updateNotificationIdentifier = "ParetlyUpdateNotification"

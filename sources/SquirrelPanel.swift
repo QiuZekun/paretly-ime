@@ -15,6 +15,7 @@ protocol SquirrelPanelInput: AnyObject {
   func moveCaret(forward: Bool) -> Bool
 }
 
+@objc(ParetlyCandidatePanel)
 final class SquirrelPanel: NSPanel {
   private let view: SquirrelView
   private let back: NSVisualEffectView

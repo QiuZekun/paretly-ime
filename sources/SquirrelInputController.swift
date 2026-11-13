@@ -7,6 +7,10 @@
 
 import InputMethodKit
 
+/// Runtime name is `ParetlyInputController`, not `Paretly.SquirrelInputController`.
+/// The unqualified suffix `SquirrelInputController` is what Squirrel registers, and
+/// the input menu treats that shared name as one input source.
+@objc(ParetlyInputController)
 final class SquirrelInputController: IMKInputController, SquirrelPanelInput {
   private static let keyRollOver = 50
   private static var unknownAppCnt: UInt = 0
