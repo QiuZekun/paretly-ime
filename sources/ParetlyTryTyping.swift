@@ -27,11 +27,14 @@ final class ParetlyTryTyping: SquirrelPanelInput {
   }
 
   func begin(editor: NSTextView) {
-    self.editor = editor
-    if !active {
+    // A settings refresh can replace the text view without a matching
+    // resign/become pair. Treat a different view as a new editing session
+    // so the candidate panel is allowed to show again.
+    if !active || self.editor !== editor {
       committed = editor.string
       active = true
     }
+    self.editor = editor
   }
 
   func end() {
@@ -43,9 +46,35 @@ final class ParetlyTryTyping: SquirrelPanelInput {
     editor = nil
   }
 
+  /// Drop the librime session destroyed by redeploy and reattach the panel
+  /// when this field is still editing. Safe to call more than once. Does not
+  /// touch the panel while another client (an external app) owns it.
+  func noteDeployed() {
+    let cleared = ParetlyTryTypingDeployState(
+      hasSession: session != 0,
+      schemaId: schemaId,
+      inlinePreedit: inlinePreedit,
+      active: active
+    ).cleared()
+    // Do not destroy_session: finalize has already freed it, and a second
+    // destroy on a dead id is not safe. The next key creates a new one.
+    session = 0
+    schemaId = cleared.schemaId
+    inlinePreedit = cleared.inlinePreedit
+    active = cleared.active
+    guard active, let window = editor?.window else { return }
+    guard let panel = NSApp.squirrelAppDelegate.panel else { return }
+    guard panel.inputController == nil || panel.inputController === self else { return }
+    panel.inputController = self
+    panel.reclaimForTryField(above: window)
+  }
+
   /// True when the field consumed the key.
   func handle(_ event: NSEvent, editor: NSTextView) -> Bool {
-    self.editor = editor
+    // Apply & Deploy resigns the field (active becomes false) and the same
+    // text view can keep receiving keys without another becomeFirstResponder.
+    // showPanel refuses to run unless active, which is the missing bubble.
+    begin(editor: editor)
     guard ensureSession() else { return false }
     syncPanelOptions()
     let consumed = process(event)
@@ -316,7 +345,7 @@ final class ParetlyTryTyping: SquirrelPanelInput {
     panel.inputController = self
     panel.position = caretScreenRect()
     if let window = editor?.window {
-      panel.anchorAbove(window)
+      panel.reclaimForTryField(above: window)
     }
     panel.update(
       preedit: preedit,

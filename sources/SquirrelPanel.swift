@@ -45,6 +45,9 @@ final class SquirrelPanel: NSPanel {
   /// that window. Cleared before the panel is used for any other client.
   private var aboveParent = false
   private var savedBehavior: NSWindow.CollectionBehavior?
+  /// Settings window the try-field last attached. Ordering the panel front
+  /// can drop `parent` while that field is still the client.
+  private weak var anchorWindow: NSWindow?
 
   init(position: NSRect) {
     self.position = position
@@ -57,14 +60,21 @@ final class SquirrelPanel: NSPanel {
     self.backgroundColor = .clear
     back.blendingMode = .behindWindow
     back.material = .hudWindow
-    back.state = .active
+    // Hidden until a theme asks for translucency. A visible HUD plate is a
+    // rectangle behind the rounded bubble, and a layer mask does not clip it.
+    back.state = .inactive
+    back.isHidden = true
+    back.alphaValue = 0
     back.wantsLayer = true
-    back.layer?.mask = view.shape
     let contentView = NSView()
+    contentView.wantsLayer = true
+    contentView.layer?.isOpaque = false
+    contentView.layer?.backgroundColor = NSColor.clear.cgColor
     contentView.addSubview(back)
     contentView.addSubview(view)
     contentView.addSubview(view.textView)
     self.contentView = contentView
+    prepareClearWindow()
     // Nonactivating panels start with hidesOnDeactivate == false. Keep it
     // that way, and join every Space: this panel is shown while another app is key.
     placeForCurrentClient()
@@ -191,17 +201,23 @@ final class SquirrelPanel: NSPanel {
     behavior.remove(.moveToActiveSpace)
     collectionBehavior = behavior
     aboveParent = true
-    guard parent !== window else {
-      level = window.level
-      return
+    anchorWindow = window
+    // Always detach first. Deploy orders this panel out while it is still a
+    // child of Settings; addChildWindow ignores a window that is already
+    // attached, so the bubble stays behind the key window.
+    if parent != nil {
+      parent?.removeChildWindow(self)
     }
-    parent?.removeChildWindow(self)
+    prepareClearWindow()
+    // A child cannot use a level above its parent. The rectangular window
+    // shadow AppKit gives a child ignores the rounded alpha, so the shadow
+    // is drawn from the theme shape instead.
+    hasShadow = false
     level = window.level
     window.addChildWindow(self, ordered: .above)
-    // addChildWindow clamps a higher level down to the parent. Reapply that
-    // level, and keep the panel from hiding if Paretly briefly deactivates.
     level = window.level
     remainVisibleWhenInactive()
+    prepareClearWindow()
   }
 
   /// Drop the settings-window parent so the next client gets the normal panel.
@@ -213,6 +229,7 @@ final class SquirrelPanel: NSPanel {
   /// frame, but `kCGWindowIsOnscreen` is false.
   func releaseAnchor() {
     aboveParent = false
+    anchorWindow = nil
     if let savedBehavior {
       collectionBehavior = savedBehavior
       self.savedBehavior = nil
@@ -220,6 +237,9 @@ final class SquirrelPanel: NSPanel {
     if let parent {
       parent.removeChildWindow(self)
     }
+    clearLayerShadow()
+    hasShadow = true
+    prepareClearWindow()
     placeForCurrentClient()
   }
 
@@ -384,6 +404,9 @@ final class SquirrelPanel: NSPanel {
     }
   }
 
+}
+
+extension SquirrelPanel {
   func show(status message: String) {
     let theme = view.currentTheme
     let text = NSMutableAttributedString(string: message, attributes: theme.attrs)
@@ -398,6 +421,17 @@ final class SquirrelPanel: NSPanel {
     statusTimer = Timer.scheduledTimer(withTimeInterval: SquirrelTheme.showStatusDuration, repeats: false) { _ in
       self.hide()
     }
+  }
+
+  /// Attach this panel above the settings window again after a deploy.
+  ///
+  /// Redeploy finalizes librime and reloads the theme. Either one can order
+  /// the panel out while it is still a child of Settings. External apps call
+  /// `releaseAnchor()` first, which is why their candidates keep working.
+  /// The try-field must not take that path: a detached panel at the shielding
+  /// level stays behind this process's own key window.
+  func reclaimForTryField(above window: NSWindow) {
+    anchorAbove(window)
   }
 }
 
@@ -414,6 +448,79 @@ private extension SquirrelPanel {
     // isFloatingPanel == true forces hidesOnDeactivate back on.
     isFloatingPanel = false
     hidesOnDeactivate = false
+  }
+
+  func prepareClearWindow() {
+    isOpaque = false
+    backgroundColor = .clear
+    styleMask.remove(.titled)
+    styleMask.remove(.hudWindow)
+    styleMask.remove(.utilityWindow)
+    guard let content = contentView else { return }
+    content.wantsLayer = true
+    content.layer?.isOpaque = false
+    content.layer?.backgroundColor = NSColor.clear.cgColor
+    content.layer?.masksToBounds = false
+    view.layer?.isOpaque = false
+    view.layer?.backgroundColor = NSColor.clear.cgColor
+    view.textView.drawsBackground = false
+    view.textView.backgroundColor = .clear
+  }
+
+  func clearLayerShadow() {
+    contentView?.layer?.shadowOpacity = 0
+    contentView?.layer?.shadowPath = nil
+  }
+
+  /// Clip the vibrancy plate to the theme's rounded shape and, while this
+  /// panel is a child of Settings, shadow that shape instead of the window
+  /// rectangle. A child window's own shadow is computed from the rectangular
+  /// frame. External clients keep upstream's window shadow.
+  func applyRoundedChrome() {
+    prepareClearWindow()
+    let path = view.shape.path
+    let mask = (back.layer?.mask as? CAShapeLayer) ?? CAShapeLayer()
+    mask.path = path
+    mask.fillColor = NSColor.black.cgColor
+    if back.layer?.mask !== mask {
+      back.wantsLayer = true
+      back.layer?.mask = mask
+    }
+    guard let content = contentView else { return }
+    if aboveParent {
+      // Never fall back to the window shadow here. It is a rectangle.
+      hasShadow = false
+      if let path, !path.isEmpty {
+        content.layer?.shadowColor = NSColor.black.cgColor
+        content.layer?.shadowOpacity = 0.28
+        content.layer?.shadowRadius = 8
+        content.layer?.shadowOffset = CGSize(width: 0, height: -1)
+        content.layer?.shadowPath = path
+        content.layer?.masksToBounds = false
+      } else {
+        clearLayerShadow()
+      }
+    } else {
+      clearLayerShadow()
+      hasShadow = true
+      invalidateShadow()
+    }
+  }
+
+  func presentAbove(_ window: NSWindow) {
+    if parent != nil {
+      parent?.removeChildWindow(self)
+    }
+    prepareClearWindow()
+    hasShadow = false
+    level = window.level
+    remainVisibleWhenInactive()
+    orderFrontRegardless()
+    window.addChildWindow(self, ordered: .above)
+    level = window.level
+    remainVisibleWhenInactive()
+    prepareClearWindow()
+    hasShadow = false
   }
 
   /// Shielding level for other apps. While parented to Settings, the level
@@ -559,23 +666,44 @@ private extension SquirrelPanel {
       back.frame = contentView!.bounds
       back.frame.size.width += theme.pagingOffset
       back.appearance = NSApp.effectiveAppearance
+      back.alphaValue = 1
+      back.state = .active
       back.isHidden = false
     } else {
+      // Leave the plate out of the window. Hiding alone still composites a
+      // rectangular vibrancy sample behind the rounded fill.
       back.isHidden = true
+      back.alphaValue = 0
+      back.state = .inactive
     }
     alphaValue = theme.alpha
-    invalidateShadow()
     // orderFront is a no-op for this panel once the process is foreground:
     // the key window stays above it. orderFrontRegardless shows it whether
     // or not the input method itself is the active app. hidesOnDeactivate
     // has to be false first, or WindowServer still leaves the panel offscreen
     // while another app is key — including after Settings demotes this
     // process back to a UI element.
-    placeForCurrentClient()
-    orderFrontRegardless()
-    // Ordering front can clear the level. Put the shielding (or parent)
-    // level back, and keep hidesOnDeactivate off after the order.
-    placeForCurrentClient()
+    if aboveParent, let window = anchorWindow ?? parent {
+      // Order while detached, then parent. orderFrontRegardless on a child
+      // that deploy ordered out does not raise it over the key window, and
+      // it can also clear the child link.
+      presentAbove(window)
+    } else {
+      placeForCurrentClient()
+      orderFrontRegardless()
+      // Ordering front can clear the level. Put the shielding level back,
+      // and keep hidesOnDeactivate off after the order.
+      placeForCurrentClient()
+    }
+    // The shape path clips the vibrancy plate and, while parented to
+    // Settings, is the shadow. Draw after the frames and the order are final.
+    contentView?.layoutSubtreeIfNeeded()
+    view.needsDisplay = true
+    view.displayIfNeeded()
+    if view.shape.path?.isEmpty != false, view.bounds.width > 1, view.bounds.height > 1 {
+      view.draw(view.bounds)
+    }
+    applyRoundedChrome()
   }
 
   func convert(range: Range<String.Index>, in string: String) -> NSRange {

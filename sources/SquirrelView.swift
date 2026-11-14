@@ -58,12 +58,15 @@ final class SquirrelView: NSView {
     squirrelLayoutDelegate = SquirrelLayoutDelegate()
     textView = NSTextView(frame: frameRect)
     textView.drawsBackground = false
+    textView.backgroundColor = .clear
     textView.isEditable = false
     textView.isSelectable = false
     textView.textLayoutManager?.delegate = squirrelLayoutDelegate
     super.init(frame: frameRect)
     textContainer.lineFragmentPadding = 0
     self.wantsLayer = true
+    self.layer?.isOpaque = false
+    self.layer?.backgroundColor = NSColor.clear.cgColor
     self.layer?.masksToBounds = true
   }
   required init?(coder: NSCoder) {

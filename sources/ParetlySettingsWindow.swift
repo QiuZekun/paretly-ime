@@ -338,6 +338,16 @@ enum ParetlyWindowActivation {
 }
 
 final class ParetlyAuxiliaryWindow: NSWindow {
+  override func addChildWindow(_ childWin: NSWindow, ordered place: NSWindow.OrderingMode) {
+    // Parenting the candidate panel to this titled window otherwise gives
+    // the child a rectangular frame and an opaque backing.
+    childWin.isOpaque = false
+    childWin.backgroundColor = .clear
+    super.addChildWindow(childWin, ordered: place)
+    childWin.isOpaque = false
+    childWin.backgroundColor = .clear
+  }
+
   override func fieldEditor(_ createFlag: Bool, for object: Any?) -> NSText? {
     // The try field is the NSTextView itself (ParetlyTryField.identifier), not
     // a field editor attached to an NSTextField. Returning that view keeps

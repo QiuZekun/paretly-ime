@@ -72,9 +72,13 @@ final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUSta
 
   func deploy() {
     print("Start maintenance...")
+    // Drop the try-field session before finalize so a reused session id
+    // cannot skip the schema reload. Called again when maintenance finishes.
+    ParetlyTryTyping.shared.noteDeployed()
     self.shutdownRime()
     self.startRime(fullCheck: true)
     self.loadSettings()
+    ParetlyTryTyping.shared.noteDeployed()
   }
 
   func syncUserData() {
@@ -260,6 +264,12 @@ private func notificationHandler(contextObject: UnsafeMutableRawPointer?, sessio
       SquirrelApplicationDelegate.showMessage(msgText: NSLocalizedString("deploy_failure", comment: ""))
     default:
       break
+    }
+    // The deployer thread destroys sessions when maintenance ends. A session
+    // the try-field created while deploy was still running dies here, and
+    // find_session can still report the old id. This callback is not main.
+    DispatchQueue.main.async {
+      ParetlyTryTyping.shared.noteDeployed()
     }
     return
   }

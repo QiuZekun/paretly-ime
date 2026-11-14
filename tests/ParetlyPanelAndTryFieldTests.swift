@@ -82,12 +82,120 @@ final class ParetlyCandidatePanelTests: XCTestCase {
     XCTAssertFalse(panel.isVisible)
   }
 
+  func testTryFieldPanelReturnsAfterDeployAndKeepsARoundedBacking() {
+    let settings = track(NSWindow(
+      contentRect: NSRect(x: 200, y: 200, width: 420, height: 280),
+      styleMask: [.titled, .closable],
+      backing: .buffered,
+      defer: false
+    ))
+    let panel = track(SquirrelPanel(position: NSRect(x: 80, y: 80, width: 40, height: 20)))
+
+    // Apply & Deploy, and the input-menu Deploy, can run more than once.
+    // Each pass orders the panel out while the try-field still needs it.
+    for _ in 0..<2 {
+      panel.orderOut(nil)
+      XCTAssertFalse(panel.isVisible)
+      panel.reclaimForTryField(above: settings)
+      showCandidates(panel)
+      XCTAssertTrue(panel.isVisible)
+      XCTAssertIdentical(panel.parent, settings)
+      XCTAssertEqual(panel.level, settings.level)
+      XCTAssertFalse(panel.hidesOnDeactivate)
+      XCTAssertFalse(panel.isFloatingPanel)
+      XCTAssertEqual(settings.childWindows?.filter { $0 === panel }.count, 1)
+      assertNoRectangularPlate(panel, anchored: true)
+    }
+
+    panel.releaseAnchor()
+    showCandidates(panel)
+    XCTAssertNil(panel.parent)
+    XCTAssertFalse(settings.childWindows?.contains { $0 === panel } ?? false)
+    XCTAssertTrue(panel.isVisible)
+    XCTAssertTrue(panel.hasShadow)
+    XCTAssertFalse(panel.hidesOnDeactivate)
+    assertNoRectangularPlate(panel, anchored: false)
+
+    panel.hide()
+    assertReadyForAnotherApp(panel)
+    XCTAssertFalse(panel.isVisible)
+  }
+
+  func testDeployClearsTheTryFieldSessionWithoutClosingTheField() {
+    let editing = ParetlyTryTypingDeployState(
+      hasSession: true,
+      schemaId: "luna_pinyin",
+      inlinePreedit: false,
+      active: true
+    )
+    XCTAssertEqual(
+      editing.cleared(),
+      ParetlyTryTypingDeployState(hasSession: false, schemaId: "", inlinePreedit: true, active: true)
+    )
+
+    let idle = ParetlyTryTypingDeployState(
+      hasSession: true,
+      schemaId: "luna_pinyin",
+      inlinePreedit: true,
+      active: false
+    )
+    let cleared = idle.cleared()
+    XCTAssertFalse(cleared.hasSession)
+    XCTAssertEqual(cleared.schemaId, "")
+    XCTAssertFalse(cleared.active)
+  }
+
   /// Level while the panel is not ordered in. A normal test host can drop
   /// `CGShieldingWindowLevel` once the window is on screen; the input method
   /// process does not. Hide-on-deactivate is checked either way.
   private func assertReadyForAnotherApp(_ panel: SquirrelPanel, file: StaticString = #filePath, line: UInt = #line) {
     assertShownForAnotherApp(panel, file: file, line: line)
     XCTAssertEqual(panel.level.rawValue, Int(CGShieldingWindowLevel()), file: file, line: line)
+  }
+
+  private func showCandidates(_ panel: SquirrelPanel) {
+    if let screen = NSScreen.main {
+      panel.position = NSRect(x: screen.frame.midX, y: screen.frame.midY, width: 1, height: 16)
+    }
+    panel.update(
+      preedit: "ni",
+      selRange: NSRange(location: 0, length: 2),
+      caretPos: 2,
+      candidates: ["你"],
+      comments: [""],
+      labels: ["1"],
+      highlighted: 0,
+      page: 0,
+      lastPage: true,
+      update: true
+    )
+  }
+
+  private func assertNoRectangularPlate(_ panel: SquirrelPanel, anchored: Bool, file: StaticString = #filePath, line: UInt = #line) {
+    XCTAssertFalse(panel.isOpaque, file: file, line: line)
+    XCTAssertFalse(panel.styleMask.contains(.titled), file: file, line: line)
+    XCTAssertFalse(panel.styleMask.contains(.hudWindow), file: file, line: line)
+    let alpha = panel.backgroundColor?.alphaComponent ?? 1
+    XCTAssertEqual(alpha, 0, accuracy: 0.001, file: file, line: line)
+    let content = panel.contentView
+    XCTAssertTrue(content?.wantsLayer ?? false, file: file, line: line)
+    XCTAssertFalse(content?.layer?.isOpaque ?? true, file: file, line: line)
+    let effects = content?.subviews.compactMap { $0 as? NSVisualEffectView } ?? []
+    XCTAssertFalse(effects.isEmpty, file: file, line: line)
+    for effect in effects where effect.isHidden {
+      XCTAssertEqual(effect.alphaValue, 0, accuracy: 0.001, file: file, line: line)
+      XCTAssertNotNil(effect.layer?.mask, "unmasked vibrancy is a rectangle behind the bubble", file: file, line: line)
+    }
+    let opacity = content?.layer?.shadowOpacity ?? 0
+    if anchored {
+      XCTAssertFalse(panel.hasShadow, "a child window shadow is a rectangle around the bubble", file: file, line: line)
+      XCTAssertNotNil(content?.layer?.shadowPath, file: file, line: line)
+      XCTAssertGreaterThan(opacity, Float(0), file: file, line: line)
+    } else {
+      XCTAssertTrue(panel.hasShadow, file: file, line: line)
+      XCTAssertEqual(opacity, Float(0), file: file, line: line)
+      XCTAssertNil(content?.layer?.shadowPath, file: file, line: line)
+    }
   }
 
   private func assertShownForAnotherApp(_ panel: SquirrelPanel, file: StaticString = #filePath, line: UInt = #line) {

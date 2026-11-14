@@ -31,6 +31,29 @@ extension NSRange {
   static let empty = NSRange(location: NSNotFound, length: 0)
 }
 
+/// What the settings try-field must drop when librime is redeployed.
+///
+/// `RimeFinalize` destroys every session. The old id can still pass
+/// `find_session` (the id is reused, or the session is findable but has no
+/// menu). A matching `schemaId` then skips the theme read that decides
+/// inline preedit, and the candidate panel never opens again. `active` stays
+/// as it was so a field that is still editing shows the panel on the next
+/// key without another `becomeFirstResponder`.
+struct ParetlyTryTypingDeployState: Equatable {
+  var hasSession: Bool
+  var schemaId: String
+  var inlinePreedit: Bool
+  var active: Bool
+
+  func cleared() -> Self {
+    var copy = self
+    copy.hasSession = false
+    copy.schemaId = ""
+    copy.inlinePreedit = true
+    return copy
+  }
+}
+
 extension NSPoint {
   static func += (lhs: inout Self, rhs: Self) {
     lhs.x += rhs.x
