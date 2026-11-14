@@ -55,9 +55,14 @@ final class SquirrelPanel: NSPanel {
     self.back = NSVisualEffectView()
     super.init(contentRect: position, styleMask: .nonactivatingPanel, backing: .buffered, defer: true)
     self.becomesKeyOnlyIfNeeded = true
-    self.hasShadow = true
+    // The window shadow is a rectangle around the rounded bubble, in other
+    // apps as well as over Settings. The bubble is the theme shape only.
+    self.hasShadow = false
     self.isOpaque = false
     self.backgroundColor = .clear
+    self.titlebarAppearsTransparent = true
+    self.titleVisibility = .hidden
+    self.styleMask = [.borderless, .nonactivatingPanel]
     back.blendingMode = .behindWindow
     back.material = .hudWindow
     // Hidden until a theme asks for translucency. A visible HUD plate is a
@@ -209,9 +214,7 @@ final class SquirrelPanel: NSPanel {
       parent?.removeChildWindow(self)
     }
     prepareClearWindow()
-    // A child cannot use a level above its parent. The rectangular window
-    // shadow AppKit gives a child ignores the rounded alpha, so the shadow
-    // is drawn from the theme shape instead.
+    // A child cannot use a level above its parent.
     hasShadow = false
     level = window.level
     window.addChildWindow(self, ordered: .above)
@@ -238,7 +241,7 @@ final class SquirrelPanel: NSPanel {
       parent.removeChildWindow(self)
     }
     clearLayerShadow()
-    hasShadow = true
+    hasShadow = false
     prepareClearWindow()
     placeForCurrentClient()
   }
@@ -453,18 +456,33 @@ private extension SquirrelPanel {
   func prepareClearWindow() {
     isOpaque = false
     backgroundColor = .clear
-    styleMask.remove(.titled)
-    styleMask.remove(.hudWindow)
-    styleMask.remove(.utilityWindow)
+    hasShadow = false
+    titlebarAppearsTransparent = true
+    titleVisibility = .hidden
+    if styleMask.contains(.titled) || styleMask.contains(.utilityWindow) || styleMask.contains(.hudWindow) {
+      styleMask = [.borderless, .nonactivatingPanel]
+    }
     guard let content = contentView else { return }
     content.wantsLayer = true
     content.layer?.isOpaque = false
     content.layer?.backgroundColor = NSColor.clear.cgColor
     content.layer?.masksToBounds = false
+    content.layer?.borderWidth = 0
+    content.layer?.shadowOpacity = 0
     view.layer?.isOpaque = false
     view.layer?.backgroundColor = NSColor.clear.cgColor
     view.textView.drawsBackground = false
     view.textView.backgroundColor = .clear
+    view.textView.wantsLayer = true
+    view.textView.layer?.isOpaque = false
+    view.textView.layer?.backgroundColor = NSColor.clear.cgColor
+    if let frame = content.superview {
+      frame.wantsLayer = true
+      frame.layer?.isOpaque = false
+      frame.layer?.backgroundColor = NSColor.clear.cgColor
+      frame.layer?.borderWidth = 0
+      frame.layer?.shadowOpacity = 0
+    }
   }
 
   func clearLayerShadow() {
@@ -472,38 +490,30 @@ private extension SquirrelPanel {
     contentView?.layer?.shadowPath = nil
   }
 
-  /// Clip the vibrancy plate to the theme's rounded shape and, while this
-  /// panel is a child of Settings, shadow that shape instead of the window
-  /// rectangle. A child window's own shadow is computed from the rectangular
-  /// frame. External clients keep upstream's window shadow.
+  /// Clip every subview to the theme's rounded shape and drop the window
+  /// shadow. A rectangular shadow, HUD plate, or text-view fill shows up as
+  /// a square frame in Settings and in other apps.
   func applyRoundedChrome() {
     prepareClearWindow()
+    clearLayerShadow()
+    hasShadow = false
+    // Changing styleMask can turn hidesOnDeactivate back on.
+    remainVisibleWhenInactive()
     let path = view.shape.path
-    let mask = (back.layer?.mask as? CAShapeLayer) ?? CAShapeLayer()
-    mask.path = path
-    mask.fillColor = NSColor.black.cgColor
-    if back.layer?.mask !== mask {
-      back.wantsLayer = true
-      back.layer?.mask = mask
+    guard let path, !path.isEmpty, let content = contentView else { return }
+    let contentMask = (content.layer?.mask as? CAShapeLayer) ?? CAShapeLayer()
+    contentMask.path = path
+    contentMask.fillColor = NSColor.black.cgColor
+    content.wantsLayer = true
+    if content.layer?.mask !== contentMask {
+      content.layer?.mask = contentMask
     }
-    guard let content = contentView else { return }
-    if aboveParent {
-      // Never fall back to the window shadow here. It is a rectangle.
-      hasShadow = false
-      if let path, !path.isEmpty {
-        content.layer?.shadowColor = NSColor.black.cgColor
-        content.layer?.shadowOpacity = 0.28
-        content.layer?.shadowRadius = 8
-        content.layer?.shadowOffset = CGSize(width: 0, height: -1)
-        content.layer?.shadowPath = path
-        content.layer?.masksToBounds = false
-      } else {
-        clearLayerShadow()
-      }
-    } else {
-      clearLayerShadow()
-      hasShadow = true
-      invalidateShadow()
+    let plateMask = (back.layer?.mask as? CAShapeLayer) ?? CAShapeLayer()
+    plateMask.path = path
+    plateMask.fillColor = NSColor.black.cgColor
+    back.wantsLayer = true
+    if back.layer?.mask !== plateMask {
+      back.layer?.mask = plateMask
     }
   }
 
@@ -663,6 +673,9 @@ private extension SquirrelPanel {
     view.textView.textContainerInset = theme.edgeInset
 
     if theme.translucency {
+      if back.superview == nil {
+        contentView!.addSubview(back, positioned: .below, relativeTo: view)
+      }
       back.frame = contentView!.bounds
       back.frame.size.width += theme.pagingOffset
       back.appearance = NSApp.effectiveAppearance
@@ -670,11 +683,12 @@ private extension SquirrelPanel {
       back.state = .active
       back.isHidden = false
     } else {
-      // Leave the plate out of the window. Hiding alone still composites a
-      // rectangular vibrancy sample behind the rounded fill.
+      // Hiding the HUD view still leaves its rectangular plate in the
+      // window. Take it out of the hierarchy unless the theme asked for it.
       back.isHidden = true
       back.alphaValue = 0
       back.state = .inactive
+      back.removeFromSuperview()
     }
     alphaValue = theme.alpha
     // orderFront is a no-op for this panel once the process is foreground:

@@ -256,19 +256,19 @@
         }
       }
     },
-    "Paretly is not signed or notarized, so it will not replace itself quietly. Update Now asks for an administrator password, installs the package in place, and opens the input method again. If that fails, the package opens in Installer. If macOS blocks it, right-click the package and choose Open, or open System Settings > Privacy & Security and choose Open Anyway." : {
+    "Update Now downloads Paretly-unsigned.pkg into Downloads, shows it in Finder, and opens it in Installer. You install it yourself. If macOS blocks it, right-click the package and choose Open, or open System Settings > Privacy & Security and choose Open Anyway." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paretly 没有签名，也没有公证，所以不会悄悄替换正在运行的程序。点「一键更新」会要求输入管理员密码，原地安装，然后重新打开输入法。如果这一步失败，安装包会用「安装器」打开。如果系统拦截，请在安装包上右键选择「打开」，或到系统设置 > 隐私与安全性点「仍要打开」。"
+            "value" : "「一键更新」会把 Paretly-unsigned.pkg 下载到「下载」文件夹，在访达里显示，并用「安装器」打开。需要你自己完成安装。如果系统拦截，请在安装包上右键选择「打开」，或到系统设置 > 隐私与安全性点「仍要打开」。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paretly 沒有簽名，也沒有公證，所以不會悄悄替換正在執行的程式。點「一鍵更新」會要求輸入管理員密碼，原地安裝，然後重新打開輸入法。如果這一步失敗，安裝包會用「安裝程式」打開。如果系統攔截，請在安裝包上按右鍵選擇「打開」，或到系統設定 > 隱私權與安全性點「仍要打開」。"
+            "value" : "「一鍵更新」會把 Paretly-unsigned.pkg 下載到「下載項目」檔案夾，在 Finder 裡顯示，並用「安裝程式」打開。需要你自己完成安裝。如果系統攔截，請在安裝包上按右鍵選擇「打開」，或到系統設定 > 隱私權與安全性點「仍要打開」。"
           }
         }
       }
@@ -477,19 +477,19 @@
         }
       }
     },
-    "Automatic install did not finish. Finish installing in Installer." : {
+    "The package is in your Downloads folder. Install it with Installer. If macOS blocks it, right-click the package and choose Open, or open System Settings > Privacy & Security and choose Open Anyway." : {
       "comment" : "Update",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "没能自动安装。请在安装器里完成安装。"
+            "value" : "安装包在「下载」文件夹里。请用「安装器」安装。如果系统拦截，请在安装包上右键选择「打开」，或到系统设置 > 隐私与安全性点「仍要打开」。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒能自動安裝。請在安裝程式裡完成安裝。"
+            "value" : "安裝包在「下載項目」檔案夾裡。請用「安裝程式」安裝。如果系統攔截，請在安裝包上按右鍵選擇「打開」，或到系統設定 > 隱私權與安全性點「仍要打開」。"
           }
         }
       }
@@ -1952,21 +1952,126 @@
         }
       }
     },
-    "Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer." : {
+    "Update Now downloads the package and opens it in Installer for you to install." : {
       "comment" : "Settings",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「一键更新」会要求输入管理员密码，原地安装，然后重新打开 Paretly。如果失败，安装包会用「安装器」打开。"
+            "value" : "「一键更新」会下载安装包并用「安装器」打开，由你自己完成安装。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「一鍵更新」會要求輸入管理員密碼，原地安裝，然後重新打開 Paretly。如果失敗，安裝包會用「安裝程式」打開。"
+            "value" : "「一鍵更新」會下載安裝包並用「安裝程式」打開，由你自己完成安裝。"
           }
         }
+      }
+    },
+    "Hide Paretly" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "隐藏 Paretly" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "隱藏 Paretly" } }
+      }
+    },
+    "Hide Others" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "隐藏其他" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "隱藏其他" } }
+      }
+    },
+    "Show All" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全部显示" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "全部顯示" } }
+      }
+    },
+    "Close Settings" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭设置" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "關閉設定" } }
+      }
+    },
+    "Edit" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "编辑" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "編輯" } }
+      }
+    },
+    "Undo" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "撤销" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "還原" } }
+      }
+    },
+    "Redo" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重做" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "重做" } }
+      }
+    },
+    "Cut" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "剪切" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "剪下" } }
+      }
+    },
+    "Copy" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "拷贝" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "拷貝" } }
+      }
+    },
+    "Paste" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "粘贴" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "貼上" } }
+      }
+    },
+    "Select All" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全选" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "全選" } }
+      }
+    },
+    "Window" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "窗口" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "視窗" } }
+      }
+    },
+    "Minimize" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "最小化" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "最小化" } }
+      }
+    },
+    "Copyright © 2026 Paretly contributors" : {
+      "comment" : "About",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "版权所有 © 2026 Paretly 贡献者" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "版權所有 © 2026 Paretly 貢獻者" } }
+      }
+    },
+    "Close" : {
+      "comment" : "Menu",
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "關閉" } }
       }
     }
   },

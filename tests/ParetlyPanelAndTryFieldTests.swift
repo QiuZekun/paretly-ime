@@ -112,13 +112,34 @@ final class ParetlyCandidatePanelTests: XCTestCase {
     XCTAssertNil(panel.parent)
     XCTAssertFalse(settings.childWindows?.contains { $0 === panel } ?? false)
     XCTAssertTrue(panel.isVisible)
-    XCTAssertTrue(panel.hasShadow)
+    XCTAssertFalse(panel.hasShadow)
     XCTAssertFalse(panel.hidesOnDeactivate)
     assertNoRectangularPlate(panel, anchored: false)
 
     panel.hide()
     assertReadyForAnotherApp(panel)
     XCTAssertFalse(panel.isVisible)
+  }
+
+  func testRoundedBubbleCornersAreTransparent() {
+    let panel = track(SquirrelPanel(position: NSRect(x: 40, y: 40, width: 20, height: 20)))
+    let config = RoundedBubbleConfig()
+    panel.load(config: config, forDarkMode: false)
+    panel.load(config: config, forDarkMode: true)
+    showCandidates(panel)
+    assertClearCorners(panel)
+
+    let settings = track(NSWindow(
+      contentRect: NSRect(x: 80, y: 80, width: 420, height: 280),
+      styleMask: [.titled, .closable],
+      backing: .buffered,
+      defer: false
+    ))
+    panel.reclaimForTryField(above: settings)
+    showCandidates(panel)
+    XCTAssertIdentical(panel.parent, settings)
+    assertClearCorners(panel)
+    panel.hide()
   }
 
   func testDeployClearsTheTryFieldSessionWithoutClosingTheField() {
@@ -180,22 +201,66 @@ final class ParetlyCandidatePanelTests: XCTestCase {
     let content = panel.contentView
     XCTAssertTrue(content?.wantsLayer ?? false, file: file, line: line)
     XCTAssertFalse(content?.layer?.isOpaque ?? true, file: file, line: line)
+    XCTAssertFalse(panel.hasShadow, "the window shadow is a rectangle around the bubble", file: file, line: line)
+    XCTAssertEqual(content?.layer?.shadowOpacity ?? 1, Float(0), file: file, line: line)
+    XCTAssertNil(content?.layer?.shadowPath, file: file, line: line)
+    XCTAssertTrue(panel.styleMask.contains(.nonactivatingPanel), file: file, line: line)
+    XCTAssertFalse(panel.styleMask.contains(.utilityWindow), file: file, line: line)
     let effects = content?.subviews.compactMap { $0 as? NSVisualEffectView } ?? []
-    XCTAssertFalse(effects.isEmpty, file: file, line: line)
-    for effect in effects where effect.isHidden {
-      XCTAssertEqual(effect.alphaValue, 0, accuracy: 0.001, file: file, line: line)
-      XCTAssertNotNil(effect.layer?.mask, "unmasked vibrancy is a rectangle behind the bubble", file: file, line: line)
+    XCTAssertTrue(effects.isEmpty, "the HUD plate is a rectangle behind the bubble", file: file, line: line)
+    _ = anchored
+  }
+
+  private func assertClearCorners(_ panel: SquirrelPanel, file: StaticString = #filePath, line: UInt = #line) {
+    guard let content = panel.contentView else {
+      XCTFail("missing content view", file: file, line: line)
+      return
     }
-    let opacity = content?.layer?.shadowOpacity ?? 0
-    if anchored {
-      XCTAssertFalse(panel.hasShadow, "a child window shadow is a rectangle around the bubble", file: file, line: line)
-      XCTAssertNotNil(content?.layer?.shadowPath, file: file, line: line)
-      XCTAssertGreaterThan(opacity, Float(0), file: file, line: line)
-    } else {
-      XCTAssertTrue(panel.hasShadow, file: file, line: line)
-      XCTAssertEqual(opacity, Float(0), file: file, line: line)
-      XCTAssertNil(content?.layer?.shadowPath, file: file, line: line)
+    content.layoutSubtreeIfNeeded()
+    guard let image = bitmap(of: content) else {
+      XCTFail("candidate bubble did not render", file: file, line: line)
+      return
     }
+    let width = image.pixelsWide
+    let height = image.pixelsHigh
+    XCTAssertGreaterThan(width, 8, file: file, line: line)
+    XCTAssertGreaterThan(height, 8, file: file, line: line)
+    guard width > 8, height > 8 else { return }
+    for (x, y) in [(1, 1), (width - 2, 1), (1, height - 2), (width - 2, height - 2)] {
+      let alpha = image.colorAt(x: x, y: y)?.alphaComponent ?? 0
+      XCTAssertEqual(alpha, 0, accuracy: 0.05, "corner \(x),\(y) is a square frame", file: file, line: line)
+    }
+    let center = image.colorAt(x: width / 2, y: height / 2)
+    XCTAssertGreaterThan(center?.alphaComponent ?? 0, 0.5, "the rounded fill should still be visible", file: file, line: line)
+  }
+
+  private func bitmap(of view: NSView) -> NSBitmapImageRep? {
+    let bounds = view.bounds
+    guard bounds.width > 2, bounds.height > 2 else { return nil }
+    let scale = view.window?.backingScaleFactor ?? 2
+    let pixelsWide = max(1, Int((bounds.width * scale).rounded()))
+    let pixelsHigh = max(1, Int((bounds.height * scale).rounded()))
+    guard let rep = NSBitmapImageRep(
+      bitmapDataPlanes: nil,
+      pixelsWide: pixelsWide,
+      pixelsHigh: pixelsHigh,
+      bitsPerSample: 8,
+      samplesPerPixel: 4,
+      hasAlpha: true,
+      isPlanar: false,
+      colorSpaceName: .deviceRGB,
+      bytesPerRow: 0,
+      bitsPerPixel: 0
+    ) else { return nil }
+    rep.size = bounds.size
+    NSGraphicsContext.saveGraphicsState()
+    defer { NSGraphicsContext.restoreGraphicsState() }
+    guard let graphics = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
+    NSGraphicsContext.current = graphics
+    graphics.cgContext.clear(CGRect(x: 0, y: 0, width: pixelsWide, height: pixelsHigh))
+    graphics.cgContext.scaleBy(x: scale, y: scale)
+    view.layer?.render(in: graphics.cgContext)
+    return rep
   }
 
   private func assertShownForAnotherApp(_ panel: SquirrelPanel, file: StaticString = #filePath, line: UInt = #line) {
@@ -286,6 +351,101 @@ final class ParetlyTryFieldLayoutTests: XCTestCase {
       if let found = findBox(in: child) {
         return found
       }
+    }
+    return nil
+  }
+}
+
+final class ParetlyMenuBarTests: XCTestCase {
+  func testSettingsMenuHasAppEditAndWindowMenus() throws {
+    let menu = ParetlyMainMenu.make()
+    XCTAssertEqual(menu.items.map(\.title), ["Paretly", "Edit", "Window"])
+
+    let app = try XCTUnwrap(menu.items[0].submenu)
+    XCTAssertEqual(title(app, "About Paretly")?.action, #selector(ParetlyMenuActions.showAbout(_:)))
+    let settings = try XCTUnwrap(title(app, "Settings…"))
+    XCTAssertEqual(settings.keyEquivalent, ",")
+    XCTAssertTrue(settings.keyEquivalentModifierMask.contains(.command))
+    XCTAssertEqual(settings.action, #selector(ParetlyMenuActions.showSettings(_:)))
+    XCTAssertEqual(title(app, "Check for Updates…")?.action, #selector(ParetlyMenuActions.checkForUpdates(_:)))
+    XCTAssertEqual(title(app, "Hide Paretly")?.action, #selector(NSApplication.hide(_:)))
+    let closeSettings = try XCTUnwrap(title(app, "Close Settings"))
+    XCTAssertEqual(closeSettings.keyEquivalent, "q")
+    XCTAssertEqual(closeSettings.action, #selector(ParetlyMenuActions.closeSettings(_:)))
+    XCTAssertNotEqual(closeSettings.action, #selector(NSApplication.terminate(_:)))
+
+    let edit = try XCTUnwrap(menu.items[1].submenu)
+    XCTAssertEqual(title(edit, "Undo")?.action, Selector(("undo:")))
+    XCTAssertEqual(title(edit, "Redo")?.action, Selector(("redo:")))
+    XCTAssertEqual(title(edit, "Cut")?.action, Selector(("cut:")))
+    XCTAssertEqual(title(edit, "Copy")?.action, Selector(("copy:")))
+    XCTAssertEqual(title(edit, "Paste")?.action, Selector(("paste:")))
+    XCTAssertEqual(title(edit, "Select All")?.action, Selector(("selectAll:")))
+    XCTAssertNil(title(edit, "Copy")?.target)
+
+    let window = try XCTUnwrap(menu.items[2].submenu)
+    let minimize = try XCTUnwrap(title(window, "Minimize"))
+    XCTAssertEqual(minimize.keyEquivalent, "m")
+    XCTAssertEqual(minimize.action, #selector(NSWindow.performMiniaturize(_:)))
+    let close = try XCTUnwrap(title(window, "Close"))
+    XCTAssertEqual(close.keyEquivalent, "w")
+    XCTAssertEqual(close.action, #selector(NSWindow.performClose(_:)))
+  }
+
+  func testActivationPolicyIsRegularWhileUIIsOpenAndAccessoryAfterClose() {
+    XCTAssertEqual(ParetlyActivationChoice.forVisibleUI(settings: true, about: false, update: false), .regular)
+    XCTAssertEqual(ParetlyActivationChoice.forVisibleUI(settings: false, about: true, update: false), .regular)
+    XCTAssertEqual(ParetlyActivationChoice.forVisibleUI(settings: false, about: false, update: true), .regular)
+    XCTAssertEqual(
+      ParetlyActivationChoice.forVisibleUI(settings: true, about: true, update: true),
+      .regular
+    )
+    let closed = ParetlyActivationChoice.forVisibleUI(settings: false, about: false, update: false)
+    XCTAssertEqual(closed, .accessory)
+    XCTAssertEqual(closed.policy, .accessory)
+    XCTAssertEqual(ParetlyActivationChoice.regular.policy, .regular)
+  }
+
+  private func title(_ menu: NSMenu, _ name: String) -> NSMenuItem? {
+    menu.items.first { $0.title == name }
+  }
+}
+
+private struct RoundedBubbleConfig: SquirrelThemeConfig {
+  func getBool(_ option: String) -> Bool? {
+    option == "style/translucency" ? false : nil
+  }
+
+  func getDouble(_ option: String) -> CGFloat? {
+    switch option {
+    case "style/corner_radius":
+      return 16
+    case "style/border_height", "style/border_width":
+      return 6
+    case "style/alpha":
+      return 1
+    default:
+      return nil
+    }
+  }
+
+  func getString(_ option: String) -> String? {
+    switch option {
+    case "style/color_scheme", "style/color_scheme_dark":
+      return "solid"
+    case "style/candidate_list_layout":
+      return "stacked"
+    default:
+      return nil
+    }
+  }
+
+  func getColor(_ option: String, inSpace colorSpace: SquirrelTheme.RimeColorSpace) -> NSColor? {
+    if option.hasSuffix("/back_color") {
+      return NSColor(srgbRed: 0.12, green: 0.13, blue: 0.16, alpha: 1)
+    }
+    if option.hasSuffix("text_color") {
+      return .white
     }
     return nil
   }

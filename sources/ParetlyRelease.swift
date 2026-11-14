@@ -361,6 +361,16 @@ enum ParetlyChecksum {
   }
 }
 
+/// In-app update never runs the installer. The user installs the downloaded
+/// package themselves.
+enum ParetlyManualUpdate: Equatable {
+  case revealAndOpen
+
+  static func handoff() -> Self {
+    .revealAndOpen
+  }
+}
+
 private extension Character {
   var isHexDigit: Bool {
     return ("0"..."9").contains(self) || ("a"..."f").contains(self)

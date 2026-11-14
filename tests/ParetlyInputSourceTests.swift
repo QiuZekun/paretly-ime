@@ -91,6 +91,30 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertFalse(postinstall.contains("im.rime"))
   }
 
+  func testUpgradeDoesNotRegisterOrEnableAgain() throws {
+    XCTAssertEqual(ParetlyInputInstall.step(registeredSourceCount: 0, enabledSourceCount: 0), .registerAndEnable)
+    XCTAssertEqual(ParetlyInputInstall.step(registeredSourceCount: 2, enabledSourceCount: 0), .enableOnly)
+    XCTAssertEqual(ParetlyInputInstall.step(registeredSourceCount: 3, enabledSourceCount: 2), .leaveEnabledSourceAlone)
+    XCTAssertEqual(ParetlyInputInstall.step(registeredSourceCount: 1, enabledSourceCount: 1), .leaveEnabledSourceAlone)
+
+    let installer = try text("sources/InputSource.swift")
+    XCTAssertTrue(installer.contains("ParetlyInputInstall.step"))
+    XCTAssertTrue(installer.contains("not registering again"))
+    XCTAssertTrue(installer.contains("not enabling again"))
+  }
+
+  func testUpdateDownloadsThePackageInsteadOfInstallingIt() throws {
+    XCTAssertEqual(ParetlyManualUpdate.handoff(), .revealAndOpen)
+    let source = try text("sources/ParetlyUpdateController.swift")
+    XCTAssertFalse(source.contains("administrator privileges"))
+    XCTAssertFalse(source.contains("installWithAdministratorPrivileges"))
+    XCTAssertFalse(source.contains("/usr/sbin/installer"))
+    XCTAssertFalse(source.contains("NSAppleScript"))
+    XCTAssertTrue(source.contains("activateFileViewerSelecting"))
+    XCTAssertTrue(source.contains("NSWorkspace.shared.open"))
+    XCTAssertTrue(source.contains("ParetlyManualUpdate.handoff()"))
+  }
+
   func testInfoPlistKeysDoNotReuseSquirrelIdentifiers() throws {
     let plist = try propertyList("resources/Info.plist")
     XCTAssertEqual(plist["InputMethodConnectionName"] as? String, "Paretly_Connection")
@@ -165,8 +189,9 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertTrue(window.contains("TransformProcessType"))
     XCTAssertTrue(window.contains("kProcessTransformToForegroundApplication"))
     XCTAssertTrue(window.contains("kProcessTransformToUIElementApplication"))
-    XCTAssertTrue(window.contains("ParetlyDockIcon.visibility"))
-    XCTAssertFalse(window.contains("setActivationPolicy("))
+    XCTAssertTrue(window.contains("ParetlyActivationChoice.forVisibleUI"))
+    XCTAssertTrue(window.contains("setActivationPolicy(choice.policy)"))
+    XCTAssertTrue(window.contains("ParetlyMainMenu.install()"))
     XCTAssertFalse(window.contains("orderFrontRegardless"))
     let promote = try XCTUnwrap(window.range(of: "ParetlyWindowActivation.promote()"))
     let install = try XCTUnwrap(window.range(of: "installWindow()"))

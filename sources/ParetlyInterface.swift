@@ -31,6 +31,31 @@ enum ParetlyInputSource {
   static let menuIconFile = "paretly.tiff"
 }
 
+/// Whether an install should register or enable the input source.
+///
+/// `TISRegisterInputSource` on every upgrade of this unsigned bundle makes
+/// macOS treat the new cdhash as another third-party input method. It asks
+/// to enable Paretly and adds a second row under Keyboard > Input Sources.
+/// A first install still registers and enables. An upgrade that is already
+/// enabled does neither, so there is no second row and no enable prompt.
+enum ParetlyInputInstallStep: Equatable {
+  case registerAndEnable
+  case enableOnly
+  case leaveEnabledSourceAlone
+}
+
+enum ParetlyInputInstall {
+  static func step(registeredSourceCount: Int, enabledSourceCount: Int) -> ParetlyInputInstallStep {
+    if enabledSourceCount > 0 {
+      return .leaveEnabledSourceAlone
+    }
+    if registeredSourceCount > 0 {
+      return .enableOnly
+    }
+    return .registerAndEnable
+  }
+}
+
 /// Top-to-bottom sections of the single settings window.
 /// `ParetlySettingsView` iterates `allCases`, so this order is the layout.
 enum ParetlySettingsSection: String, CaseIterable, Equatable {
@@ -67,8 +92,9 @@ enum ParetlySettingsSection: String, CaseIterable, Equatable {
 /// Info.plist sets `LSUIElement`, so the process is an agent and the Dock has
 /// no tile while Settings is closed. `TransformProcessType` changes that
 /// process into a foreground app for a visible Settings window, About window,
-/// or update panel, which is one tile. `setActivationPolicy(.regular)` is not
-/// used: on an agent it leaves the agent tile in place and adds another.
+/// or update panel, which is one tile. The menu bar uses
+/// `ParetlyActivationChoice`: `.regular` while that UI is visible, and
+/// `.accessory` when it closes so the Dock tile does not stay.
 enum ParetlyDockIcon: Equatable {
   case hidden
   case shown
@@ -244,9 +270,10 @@ enum ParetlyInterfaceStrings {
     "Software Update",
     "Receive beta updates",
     "Beta releases are offered only when this is on. A beta build turns it on until you change it.",
-    "Update Now asks for an administrator password, installs the package in place, and opens Paretly again. If that fails, the package opens in Installer.",
+    "Update Now downloads the package and opens it in Installer for you to install.",
     "Version %@",
     "Version unavailable",
+    "Copyright © 2026 Paretly contributors",
     "Licensed under GPL-3.0.",
     "Paretly is a GPL-3.0 fork of Squirrel. It uses librime and ships Rime ICE.",
     "Credits",
