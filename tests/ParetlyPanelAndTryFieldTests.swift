@@ -212,15 +212,38 @@ final class ParetlyCandidatePanelTests: XCTestCase {
   }
 
   private func assertClearCorners(_ panel: SquirrelPanel, file: StaticString = #filePath, line: UInt = #line) {
-    guard let content = panel.contentView else {
-      XCTFail("missing content view", file: file, line: line)
+    guard let content = panel.contentView, let bubble = findBubble(in: content) else {
+      XCTFail("missing candidate bubble", file: file, line: line)
       return
     }
     content.layoutSubtreeIfNeeded()
-    guard let image = bitmap(of: content) else {
-      XCTFail("candidate bubble did not render", file: file, line: line)
+    guard let shape = bubble.layer?.sublayers?.compactMap({ $0 as? CAShapeLayer }).first(where: { $0.path != nil && $0.fillColor != nil }),
+          let path = shape.path, let fill = shape.fillColor else {
+      XCTFail("bubble did not draw a filled shape", file: file, line: line)
       return
     }
+    guard let image = bitmap(of: bubble.bounds, path: path, fill: fill) else {
+      XCTFail("could not rasterize the bubble", file: file, line: line)
+      return
+    }
+    assertRoundedBitmap(image, file: file, line: line)
+    guard let mask = content.layer?.mask as? CAShapeLayer, let maskPath = mask.path else {
+      XCTFail("content view is not clipped to the rounded shape", file: file, line: line)
+      return
+    }
+    let bounds = content.bounds
+    XCTAssertTrue(maskPath.contains(CGPoint(x: bounds.midX, y: bounds.midY)), "mask hid the bubble", file: file, line: line)
+    for point in [
+      CGPoint(x: 1, y: 1),
+      CGPoint(x: bounds.maxX - 1, y: 1),
+      CGPoint(x: 1, y: bounds.maxY - 1),
+      CGPoint(x: bounds.maxX - 1, y: bounds.maxY - 1)
+    ] {
+      XCTAssertFalse(maskPath.contains(point), "corner \(point) is inside the square frame", file: file, line: line)
+    }
+  }
+
+  private func assertRoundedBitmap(_ image: NSBitmapImageRep, file: StaticString, line: UInt) {
     let width = image.pixelsWide
     let height = image.pixelsHigh
     XCTAssertGreaterThan(width, 8, file: file, line: line)
@@ -234,12 +257,10 @@ final class ParetlyCandidatePanelTests: XCTestCase {
     XCTAssertGreaterThan(center?.alphaComponent ?? 0, 0.5, "the rounded fill should still be visible", file: file, line: line)
   }
 
-  private func bitmap(of view: NSView) -> NSBitmapImageRep? {
-    let bounds = view.bounds
+  private func bitmap(of bounds: CGRect, path: CGPath, fill: CGColor) -> NSBitmapImageRep? {
     guard bounds.width > 2, bounds.height > 2 else { return nil }
-    let scale = view.window?.backingScaleFactor ?? 2
-    let pixelsWide = max(1, Int((bounds.width * scale).rounded()))
-    let pixelsHigh = max(1, Int((bounds.height * scale).rounded()))
+    let pixelsWide = max(1, Int(bounds.width.rounded(.up)))
+    let pixelsHigh = max(1, Int(bounds.height.rounded(.up)))
     guard let rep = NSBitmapImageRep(
       bitmapDataPlanes: nil,
       pixelsWide: pixelsWide,
@@ -257,11 +278,24 @@ final class ParetlyCandidatePanelTests: XCTestCase {
     defer { NSGraphicsContext.restoreGraphicsState() }
     guard let graphics = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
     NSGraphicsContext.current = graphics
-    graphics.cgContext.clear(CGRect(x: 0, y: 0, width: CGFloat(pixelsWide), height: CGFloat(pixelsHigh)))
-    graphics.cgContext.scaleBy(x: scale, y: scale)
-    view.layoutSubtreeIfNeeded()
-    view.layer?.render(in: graphics.cgContext)
+    let ctx = graphics.cgContext
+    ctx.clear(CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height))
+    ctx.setFillColor(fill)
+    ctx.addPath(path)
+    ctx.fillPath()
     return rep
+  }
+
+  private func findBubble(in view: NSView) -> SquirrelView? {
+    if let bubble = view as? SquirrelView {
+      return bubble
+    }
+    for child in view.subviews {
+      if let found = findBubble(in: child) {
+        return found
+      }
+    }
+    return nil
   }
 
   private func assertShownForAnotherApp(_ panel: SquirrelPanel, file: StaticString = #filePath, line: UInt = #line) {
