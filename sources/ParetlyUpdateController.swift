@@ -8,8 +8,8 @@
 //  See LICENSE.txt.
 //
 //  Updates come from the public GitHub Releases API. The package is
-//  unsigned. A verified download is installed in place with administrator
-//  privileges; if that fails, Installer opens the package.
+//  unsigned. A verified download is revealed in Finder and opened in
+//  Installer. Paretly does not install it.
 
 import AppKit
 
@@ -201,7 +201,7 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
       release.version.display
     )
     let gatekeeper = NSLocalizedString(
-      "Paretly is not signed or notarized, so it will not replace itself quietly. Update Now asks for an administrator password, installs the package in place, and opens the input method again. If that fails, the package opens in Installer. If macOS blocks it, right-click the package and choose Open, or open System Settings > Privacy & Security and choose Open Anyway.",
+      "Update Now downloads Paretly-unsigned.pkg into Downloads, shows it in Finder, and opens it in Installer. You install it yourself. If macOS blocks it, right-click the package and choose Open, or open System Settings > Privacy & Security and choose Open Anyway.",
       comment: "Update"
     )
     let youHave = String(format: NSLocalizedString("You have version %@.", comment: "Update"), current.display)
@@ -320,19 +320,15 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
         try verifyChecksum(checksum, data: data)
       }
       let destination = try installDownload(data)
-      if checksum != nil && installWithAdministratorPrivileges(destination) {
-        relaunchInstalledCopy()
-        inform(
-          title: NSLocalizedString("Paretly was updated.", comment: "Update"),
-          detail: NSLocalizedString("The input method is opening again.", comment: "Update"),
-          informational: true
-        )
-        return
+      switch ParetlyManualUpdate.handoff() {
+      case .revealAndOpen:
+        clearQuarantine(destination)
+        NSWorkspace.shared.activateFileViewerSelecting([destination])
+        NSWorkspace.shared.open(destination)
       }
-      NSWorkspace.shared.open(destination)
       inform(
         title: NSLocalizedString("The installer is open.", comment: "Update"),
-        detail: NSLocalizedString("Automatic install did not finish. Finish installing in Installer.", comment: "Update")
+        detail: NSLocalizedString("The package is in your Downloads folder. Install it with Installer. If macOS blocks it, right-click the package and choose Open, or open System Settings > Privacy & Security and choose Open Anyway.", comment: "Update")
       )
     } catch let error as UpdateFailure {
       inform(title: error.title, detail: error.detail)
@@ -402,34 +398,14 @@ final class ParetlyUpdatePresenter: NSObject, URLSessionDownloadDelegate {
     return destination
   }
 
-  /// Standard macOS password dialog, then an in-place install. The package scripts stop Paretly and register the new copy.
-  private func installWithAdministratorPrivileges(_ package: URL) -> Bool {
-    let quoted = package.path
-      .replacingOccurrences(of: "\\", with: "\\\\")
-      .replacingOccurrences(of: "\"", with: "\\\"")
-    let source = """
-    do shell script "xattr -dr com.apple.quarantine \\"\(quoted)\\" && /usr/sbin/installer -pkg \\"\(quoted)\\" -target /" with administrator privileges
-    """
-    var error: NSDictionary?
-    guard let script = NSAppleScript(source: source) else {
-      return false
-    }
-    _ = script.executeAndReturnError(&error)
-    return error == nil
-  }
-
-  private func relaunchInstalledCopy() {
-    let app = URL(fileURLWithPath: "/Library/Input Methods/Paretly.app", isDirectory: true)
-    guard FileManager.default.fileExists(atPath: app.path) else {
-      return
-    }
-    let configuration = NSWorkspace.OpenConfiguration()
-    configuration.createsNewApplicationInstance = true
-    NSWorkspace.shared.openApplication(at: app, configuration: configuration) { _, _ in
-      DispatchQueue.main.async {
-        NSApp.terminate(nil)
-      }
-    }
+  /// The file is one this process just wrote into the user's Downloads
+  /// folder, so clearing the quarantine flag does not need an administrator.
+  private func clearQuarantine(_ package: URL) {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+    task.arguments = ["-d", "com.apple.quarantine", package.path]
+    try? task.run()
+    task.waitUntilExit()
   }
 
   private func closeProgress() {

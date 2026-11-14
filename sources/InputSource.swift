@@ -35,14 +35,19 @@ final class SquirrelInstaller {
   @discardableResult
   func register() -> Bool {
     guard assertConsoleUser(action: "register") else { return false }
+    let counts = registrationCounts()
+    switch ParetlyInputInstall.step(registeredSourceCount: counts.registered, enabledSourceCount: counts.enabled) {
+    case .leaveEnabledSourceAlone, .enableOnly:
+      print("Input source already registered; not registering again.")
+      return true
+    case .registerAndEnable:
+      break
+    }
     let url = SquirrelApp.registrationBundleURL
     guard FileManager.default.fileExists(atPath: url.path) else {
       print("Input method bundle is missing at \(url.path)")
       return false
     }
-    // Always register. Replacing the bundle at the same path does not refresh
-    // the running session, and skipping this when a mode is already enabled
-    // leaves the menu bar attached to the previous binary.
     let status = TISRegisterInputSource(url as CFURL)
     print("Register \(status == noErr ? "succeeds" : "fails (\(status))") for \(url.path)")
     return status == noErr
@@ -55,6 +60,11 @@ final class SquirrelInstaller {
   @discardableResult
   func enable(modes: [InputMode] = []) -> Bool {
     guard assertConsoleUser(action: "enable") else { return false }
+    let counts = registrationCounts()
+    if ParetlyInputInstall.step(registeredSourceCount: counts.registered, enabledSourceCount: counts.enabled) == .leaveEnabledSourceAlone {
+      print("Input source already enabled; not enabling again.")
+      return true
+    }
     let already = enabledModes()
     let modesToEnable = modes.isEmpty ? (already.isEmpty ? InputMode.allCases : already) : modes
     _ = enableParent()
@@ -126,6 +136,16 @@ final class SquirrelInstaller {
       }
     }
     return Array(enabledModes)
+  }
+
+  private func registrationCounts() -> (registered: Int, enabled: Int) {
+    let ids = ParetlyInputSource.modes + [ParetlyInputSource.bundleIdentifier]
+    let registered = ids.reduce(into: 0) { count, id in
+      if inputSources[id] != nil {
+        count += 1
+      }
+    }
+    return (registered, enabledModes().count)
   }
 
   private func enableParent() -> Bool {

@@ -62,9 +62,14 @@ struct SquirrelApp {
       if args.count > 1 {
         switch args[1] {
         case "--quit":
-          let bundleId = Bundle.main.bundleIdentifier!
-          let runningCopies = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId)
-          runningCopies.forEach { $0.terminate() }
+          // A menu Quit only closes Settings. This notification is the
+          // installer's request to actually exit.
+          DistributedNotificationCenter.default().postNotificationName(
+            ParetlyTermination.notificationName,
+            object: nil,
+            userInfo: nil,
+            deliverImmediately: true
+          )
           return true
         case "--reload":
           DistributedNotificationCenter.default().postNotificationName(.init("ParetlyReloadNotification"), object: nil)

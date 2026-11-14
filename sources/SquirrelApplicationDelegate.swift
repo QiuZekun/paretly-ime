@@ -61,6 +61,13 @@ final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUSta
   func applicationWillFinishLaunching(_ notification: Notification) {
     panel = SquirrelPanel(position: .zero)
     addObservers()
+    ParetlyMenuActions.shared.onAbout = { ParetlyAboutController.shared.present() }
+    ParetlyMenuActions.shared.onSettings = { ParetlySettingsController.shared.present() }
+    ParetlyMenuActions.shared.onUpdates = { ParetlyUpdatePresenter.shared.checkManually() }
+    ParetlyMenuActions.shared.onCloseSettings = {
+      ParetlySettingsController.shared.window?.close()
+      ParetlyAboutController.shared.window?.close()
+    }
   }
 
   func applicationWillTerminate(_ notification: Notification) {
@@ -239,12 +246,20 @@ final class SquirrelApplicationDelegate: NSObject, NSApplicationDelegate, SPUSta
     notifCenter.addObserver(forName: .init("ParetlyReloadNotification"), object: nil, queue: nil, using: rimeNeedsReload)
     notifCenter.addObserver(forName: .init("ParetlySyncNotification"), object: nil, queue: nil, using: rimeNeedsSync)
     notifCenter.addObserver(forName: .init("ParetlyShowSettingsNotification"), object: nil, queue: .main, using: rimeNeedsSettings)
+    notifCenter.addObserver(forName: ParetlyTermination.notificationName, object: nil, queue: .main) { _ in
+      ParetlyTermination.requestExit()
+    }
   }
 
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-    print("Paretly is quitting.")
-    rimeAPI.cleanup_all_sessions()
-    return .terminateNow
+    if ParetlyTermination.allowExit || ParetlyTermination.systemIsEndingSession(NSAppleEventManager.shared().currentAppleEvent) {
+      print("Paretly is quitting.")
+      rimeAPI.cleanup_all_sessions()
+      return .terminateNow
+    }
+    // Quit from the menu or the Dock closes Settings. The input method stays running.
+    ParetlyMenuActions.shared.closeSettings(nil)
+    return .terminateCancel
   }
 
 }

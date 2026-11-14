@@ -247,8 +247,9 @@ enum ParetlyAppIcon {
 
 enum ParetlyWindowActivation {
   /// True after this process has been transformed to a foreground app.
-  /// `setActivationPolicy` is not used: on an `LSUIElement` process it keeps
-  /// the agent tile and adds a regular tile beside it.
+  /// The transform keeps a single Dock tile. `setActivationPolicy` is what
+  /// gives that foreground app Paretly's menu bar, and `.accessory` on the
+  /// way out drops the tile again.
   private static var foreground = false
 
   static func show(_ window: NSWindow?) {
@@ -280,17 +281,17 @@ enum ParetlyWindowActivation {
   /// Call this before the window is created. A window created while the
   /// process is still an agent registers a tile of its own.
   static func promote() {
-    apply(.shown)
+    apply(.regular)
   }
 
   /// The closing window is still visible from `windowWillClose`, so callers
   /// pass it and it is left out of the count. Hide on the next turn so the
   /// transform does not overlap the Dock's show animation.
   static func sync(ignoring closing: NSWindow? = nil) {
-    apply(ParetlyDockIcon.visibility(
-      settingsVisible: occupiesDock(ParetlySettingsController.shared.window, ignoring: closing),
-      aboutVisible: occupiesDock(ParetlyAboutController.shared.window, ignoring: closing),
-      updateUIVisible: ParetlyUpdatePresenter.shared.hasVisibleUI
+    apply(ParetlyActivationChoice.forVisibleUI(
+      settings: occupiesDock(ParetlySettingsController.shared.window, ignoring: closing),
+      about: occupiesDock(ParetlyAboutController.shared.window, ignoring: closing),
+      update: ParetlyUpdatePresenter.shared.hasVisibleUI
     ))
   }
 
@@ -299,8 +300,11 @@ enum ParetlyWindowActivation {
     return window.isVisible || window.isMiniaturized
   }
 
-  private static func apply(_ icon: ParetlyDockIcon) {
-    let showDock = icon == .shown
+  private static func apply(_ choice: ParetlyActivationChoice) {
+    let showDock = choice == .regular
+    if showDock {
+      ParetlyMainMenu.install()
+    }
     guard foreground != showDock else { return }
     var psn = ProcessSerialNumber(highLongOfPSN: 0, lowLongOfPSN: UInt32(kCurrentProcess))
     let state = ProcessApplicationTransformState(
@@ -308,8 +312,12 @@ enum ParetlyWindowActivation {
     )
     // Replaces the process type. A second call with the same type is skipped
     // above; repeating a policy change is what leaves the extra tile.
+    // The activation policy is changed once in the same transition: `.regular`
+    // while a window is open so the menu bar is Paretly's, `.accessory` when
+    // the last window closes so the Dock tile does not stay.
     guard TransformProcessType(&psn, state) == 0 else { return }
     foreground = showDock
+    _ = NSApp.setActivationPolicy(choice.policy)
   }
 
   private static func bringToFront(_ window: NSWindow?, requireVisible: Bool) {

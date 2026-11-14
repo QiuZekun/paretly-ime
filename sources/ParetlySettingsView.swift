@@ -285,6 +285,8 @@ struct ParetlyAboutContent: View {
       Text(ParetlyAbout.versionLabel(marketingVersion: ParetlyAbout.marketingVersion()))
         .font(.body)
         .foregroundStyle(.secondary)
+      Text(settingsText("Copyright © 2026 Paretly contributors"))
+        .font(.body)
       Text(settingsText("Licensed under GPL-3.0."))
         .font(.body)
       Text(settingsText("Paretly is a GPL-3.0 fork of Squirrel. It uses librime and ships Rime ICE."))
