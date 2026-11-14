@@ -257,8 +257,9 @@ final class ParetlyCandidatePanelTests: XCTestCase {
     defer { NSGraphicsContext.restoreGraphicsState() }
     guard let graphics = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
     NSGraphicsContext.current = graphics
-    graphics.cgContext.clear(CGRect(x: 0, y: 0, width: pixelsWide, height: pixelsHigh))
+    graphics.cgContext.clear(CGRect(x: 0, y: 0, width: CGFloat(pixelsWide), height: CGFloat(pixelsHigh)))
     graphics.cgContext.scaleBy(x: scale, y: scale)
+    view.layoutSubtreeIfNeeded()
     view.layer?.render(in: graphics.cgContext)
     return rep
   }

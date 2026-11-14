@@ -499,8 +499,17 @@ private extension SquirrelPanel {
     hasShadow = false
     // Changing styleMask can turn hidesOnDeactivate back on.
     remainVisibleWhenInactive()
-    let path = view.shape.path
-    guard let path, !path.isEmpty, let content = contentView else { return }
+    guard let content = contentView else { return }
+    let bounds = content.bounds
+    let radius = min(view.currentTheme.cornerRadius, min(bounds.width, bounds.height) / 2)
+    // The hit-test path is flipped for the text view. A layer mask needs the
+    // content view's own coordinates, or it clips the whole bubble away and
+    // leaves a blank window. A rounded rect of the theme radius is that shape.
+    guard radius > 0.5, bounds.width > 1, bounds.height > 1 else {
+      content.layer?.mask = nil
+      return
+    }
+    let path = CGPath(roundedRect: bounds, cornerWidth: radius, cornerHeight: radius, transform: nil)
     let contentMask = (content.layer?.mask as? CAShapeLayer) ?? CAShapeLayer()
     contentMask.path = path
     contentMask.fillColor = NSColor.black.cgColor
