@@ -478,7 +478,8 @@ final class ParetlyAboutController: NSWindowController, NSWindowDelegate {
 
   private func installWindow() {
     let host = NSHostingController(rootView: ParetlyAboutPanelView())
-    host.sizingOptions = [.standardBounds]
+    // standardBounds lets the scroll view collapse to an empty window.
+    host.sizingOptions = []
     let window = ParetlyAuxiliaryWindow(
       contentRect: NSRect(x: 0, y: 0, width: 460, height: 540),
       styleMask: [.titled, .closable],

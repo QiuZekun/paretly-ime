@@ -46,6 +46,7 @@ jobs:
         shell: bash
         run: |
           echo "CURRENT_PROJECT_VERSION=${GITHUB_RUN_NUMBER}" >> "${GITHUB_ENV}"
+          echo "PARETLY_COMMIT=$(git rev-parse --short=7 HEAD)" >> "${GITHUB_ENV}"
           if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == "refs/heads/main" ]]; then
             echo "PARETLY_UPDATE_CHANNEL=beta" >> "${GITHUB_ENV}"
           fi
@@ -83,15 +84,24 @@ jobs:
           short="$(plutil -extract CFBundleShortVersionString raw -o - "${plist}")"
           bundle="$(plutil -extract CFBundleVersion raw -o - "${plist}")"
           channel="$(plutil -extract ParetlyUpdateChannel raw -o - "${plist}")"
+          copyright="$(plutil -extract NSHumanReadableCopyright raw -o - "${plist}")"
+          commit="$(plutil -extract ParetlyCommit raw -o - "${plist}")"
           echo "CFBundleShortVersionString=${short}"
           echo "CFBundleVersion=${bundle}"
           echo "ParetlyUpdateChannel=${channel}"
+          echo "NSHumanReadableCopyright=${copyright}"
+          echo "ParetlyCommit=${commit}"
           echo "short_version=${short}" >> "${GITHUB_OUTPUT}"
           echo "channel=${channel}" >> "${GITHUB_OUTPUT}"
           test -n "${short}"
           test "${short}" != '$(MARKETING_VERSION)'
           test "${bundle}" = "${GITHUB_RUN_NUMBER}"
           test "${channel}" != '$(PARETLY_UPDATE_CHANNEL)'
+          test -n "${copyright}"
+          test "${copyright}" != '$(NSHumanReadableCopyright)'
+          test -n "${commit}"
+          test "${commit}" != '$(PARETLY_COMMIT)'
+          test "${commit}" != 'dev'
           if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == "refs/heads/main" ]]; then
             test "${channel}" = "beta"
           else

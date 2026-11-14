@@ -35,9 +35,8 @@ final class SquirrelInstaller {
   @discardableResult
   func register() -> Bool {
     guard assertConsoleUser(action: "register") else { return false }
-    let counts = registrationCounts()
-    switch ParetlyInputInstall.step(registeredSourceCount: counts.registered, enabledSourceCount: counts.enabled) {
-    case .leaveEnabledSourceAlone, .enableOnly:
+    switch ParetlyInputInstall.action(modes: modeStates()) {
+    case .enableWithoutRegister, .leaveAlone:
       print("Input source already registered; not registering again.")
       return true
     case .registerAndEnable:
@@ -60,9 +59,8 @@ final class SquirrelInstaller {
   @discardableResult
   func enable(modes: [InputMode] = []) -> Bool {
     guard assertConsoleUser(action: "enable") else { return false }
-    let counts = registrationCounts()
-    if ParetlyInputInstall.step(registeredSourceCount: counts.registered, enabledSourceCount: counts.enabled) == .leaveEnabledSourceAlone {
-      print("Input source already enabled; not enabling again.")
+    if ParetlyInputInstall.action(modes: modeStates()) == .leaveAlone {
+      print("Input source already selectable; not enabling again.")
       return true
     }
     let already = enabledModes()
@@ -138,14 +136,18 @@ final class SquirrelInstaller {
     return Array(enabledModes)
   }
 
-  private func registrationCounts() -> (registered: Int, enabled: Int) {
-    let ids = ParetlyInputSource.modes + [ParetlyInputSource.bundleIdentifier]
-    let registered = ids.reduce(into: 0) { count, id in
-      if inputSources[id] != nil {
-        count += 1
+  private func modeStates() -> [ParetlyInputModeState] {
+    (ParetlyInputSource.modes + [ParetlyInputSource.bundleIdentifier]).map { id in
+      guard let source = inputSources[id] else {
+        return ParetlyInputModeState(id: id, registered: false, enabled: false, selectable: false)
       }
+      return ParetlyInputModeState(
+        id: id,
+        registered: true,
+        enabled: getBool(for: source, key: kTISPropertyInputSourceIsEnabled) ?? false,
+        selectable: getBool(for: source, key: kTISPropertyInputSourceIsSelectCapable) ?? false
+      )
     }
-    return (registered, enabledModes().count)
   }
 
   private func enableParent() -> Bool {

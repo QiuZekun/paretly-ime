@@ -261,10 +261,13 @@ private struct SchemeSwatch: View {
 }
 
 struct ParetlyAboutPanelView: View {
+  var identity = ParetlyAbout.current()
+
   var body: some View {
     ScrollView {
-      ParetlyAboutContent()
+      ParetlyAboutContent(identity: identity)
         .padding(24)
+        .frame(maxWidth: .infinity, minHeight: 480, alignment: .top)
     }
     .background(Color(nsColor: .windowBackgroundColor))
     .background(WindowCloseShortcuts())
@@ -276,41 +279,43 @@ struct ParetlyAboutPanelView: View {
 }
 
 struct ParetlyAboutContent: View {
+  var identity: ParetlyAboutIdentity
+
   var body: some View {
     VStack(spacing: 14) {
       icon
-      Text("Paretly")
+      Text(identity.name)
         .font(.title2.weight(.semibold))
         .accessibilityAddTraits(.isHeader)
-      Text(ParetlyAbout.versionLabel(marketingVersion: ParetlyAbout.marketingVersion()))
+      if !identity.versionLine.isEmpty {
+        Text(identity.versionLine)
+          .font(.body)
+          .foregroundStyle(.secondary)
+          .textSelection(.enabled)
+      }
+      Text(identity.summary)
         .font(.body)
-        .foregroundStyle(.secondary)
-      Text(settingsText("Copyright © 2026 Paretly contributors"))
-        .font(.body)
-      Text(settingsText("Licensed under GPL-3.0."))
-        .font(.body)
-      Text(settingsText("Paretly is a GPL-3.0 fork of Squirrel. It uses librime and ships Rime ICE."))
-        .font(.callout)
-        .foregroundStyle(.secondary)
         .multilineTextAlignment(.center)
         .frame(maxWidth: 380)
-      VStack(alignment: .leading, spacing: 8) {
+      VStack(alignment: .leading, spacing: 6) {
         Text(settingsText("Credits"))
           .font(.headline)
-          .frame(maxWidth: .infinity, alignment: .leading)
-        ForEach(ParetlyAbout.credits, id: \.name) { credit in
-          HStack(alignment: .firstTextBaseline) {
-            Link(credit.name, destination: credit.url)
-              .accessibilityHint(Text(credit.url.absoluteString))
-            Spacer(minLength: 12)
-            Text(credit.url.host ?? "")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-              .accessibilityHidden(true)
-          }
-        }
+        Text(identity.squirrel)
+        Text(identity.librime)
+        Text(identity.dictionary)
       }
-      .frame(maxWidth: 380)
+      .frame(maxWidth: 380, alignment: .leading)
+      Text(identity.license)
+        .font(.body)
+      Text(identity.copyright)
+        .font(.body)
+        .foregroundStyle(.secondary)
+      VStack(alignment: .leading, spacing: 4) {
+        Link(identity.repositoryURL.absoluteString, destination: identity.repositoryURL)
+        Link(identity.releasesURL.absoluteString, destination: identity.releasesURL)
+      }
+      .font(.callout)
+      .frame(maxWidth: 380, alignment: .leading)
     }
     .frame(maxWidth: .infinity)
     .padding(.vertical, 8)

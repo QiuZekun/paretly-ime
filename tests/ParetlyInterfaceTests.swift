@@ -121,6 +121,32 @@ final class ParetlyInterfaceTests: XCTestCase {
     XCTAssertTrue(window.contains("ParetlyTryField.identifier"))
   }
 
+  func testAboutIdentityIsFilledIn() {
+    let about = ParetlyAbout.identity(name: "Paretly", shortVersion: "0.1.0", build: "51", commit: "87dcc38")
+    XCTAssertTrue(about.isComplete)
+    XCTAssertEqual(about.name, "Paretly")
+    XCTAssertEqual(about.versionLine, "0.1.0 · build 51 · 87dcc38")
+    XCTAssertEqual(about.summary, "开箱即用的 macOS 中文输入法，基于 Rime")
+    XCTAssertTrue(about.squirrel.contains("鼠须管"))
+    XCTAssertTrue(about.squirrel.contains("1.1.2"))
+    XCTAssertTrue(about.librime.contains("1.16.0"))
+    XCTAssertTrue(about.dictionary.contains("雾凇拼音"))
+    XCTAssertTrue(about.dictionary.contains("2026.06.30"))
+    XCTAssertEqual(about.license, "Licensed under GPL-3.0.")
+    XCTAssertTrue(about.copyright.contains("2026"))
+    XCTAssertEqual(about.repositoryURL.absoluteString, "https://github.com/QiuZekun/paretly-ime")
+    XCTAssertEqual(about.releasesURL.absoluteString, "https://github.com/QiuZekun/paretly-ime/releases")
+
+    let unset = ParetlyAbout.identity(
+      name: "Paretly",
+      shortVersion: "$(MARKETING_VERSION)",
+      build: "$(CURRENT_PROJECT_VERSION)",
+      commit: "$(PARETLY_COMMIT)"
+    )
+    XCTAssertFalse(unset.isComplete)
+    XCTAssertTrue(unset.versionLine.isEmpty)
+  }
+
   func testDockIconShowsForSettingsAboutOrUpdateUIOnly() {
     XCTAssertEqual(
       ParetlyDockIcon.visibility(settingsVisible: false, aboutVisible: false, updateUIVisible: false),

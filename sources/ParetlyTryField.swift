@@ -87,9 +87,12 @@ final class ParetlyTryFieldBox: NSView {
 
   override init(frame frameRect: NSRect) {
     super.init(frame: frameRect)
-    cell.isBezeled = true
-    cell.isBordered = true
-    cell.bezelStyle = .roundedBezel
+    // A bezeled cell strokes a square at the view bounds and then draws the
+    // rounded bezel inside it. The focus ring is already a rounded rect, so
+    // that square is the extra gray outline. The field draws its own rounded
+    // fill and border instead.
+    cell.isBezeled = false
+    cell.isBordered = false
     cell.isEditable = false
     cell.isSelectable = false
     cell.font = .systemFont(ofSize: NSFont.systemFontSize)
@@ -125,6 +128,10 @@ final class ParetlyTryFieldBox: NSView {
     addSubview(textView)
     focusRing.autoresizingMask = [.width, .height]
     addSubview(focusRing)
+    focusRingType = .none
+    wantsLayer = true
+    layer?.isOpaque = false
+    layer?.backgroundColor = NSColor.clear.cgColor
     setContentHuggingPriority(.required, for: .vertical)
     setContentCompressionResistancePriority(.required, for: .vertical)
   }
@@ -163,10 +170,19 @@ final class ParetlyTryFieldBox: NSView {
     focusRing.isFocused = window?.firstResponder === textView
   }
 
+  /// True when AppKit's text-field bezel is still allowed to stroke the bounds.
+  var usesSystemBezel: Bool { cell.isBezeled || cell.isBordered }
+
+  override var isOpaque: Bool { false }
+
   override func draw(_ dirtyRect: NSRect) {
-    cell.stringValue = ""
-    cell.placeholderString = ""
-    cell.draw(withFrame: bounds, in: self)
+    let rect = bounds.insetBy(dx: 0.5, dy: 0.5)
+    let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
+    NSColor.textBackgroundColor.setFill()
+    path.fill()
+    NSColor.separatorColor.setStroke()
+    path.lineWidth = 1
+    path.stroke()
   }
 
   override func mouseDown(with event: NSEvent) {
