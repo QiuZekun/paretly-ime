@@ -17,6 +17,14 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertEqual(plist["InputMethodServerControllerClass"] as? String, ParetlyInputSource.serverControllerClass)
     XCTAssertEqual(plist["InputMethodServerDelegateClass"] as? String, ParetlyInputSource.serverControllerClass)
     XCTAssertEqual(plist["CFBundleIdentifier"] as? String, "$(PRODUCT_BUNDLE_IDENTIFIER)")
+    XCTAssertEqual(plist["CFBundleShortVersionString"] as? String, "$(MARKETING_VERSION)")
+    XCTAssertEqual(plist["CFBundleVersion"] as? String, "$(CURRENT_PROJECT_VERSION)")
+    XCTAssertEqual(
+      plist["NSHumanReadableCopyright"] as? String,
+      "Copyright © 2026 Paretly contributors. Licensed under GPL-3.0."
+    )
+    XCTAssertEqual(plist["ParetlyCommit"] as? String, "$(PARETLY_COMMIT)")
+    XCTAssertFalse((plist["NSHumanReadableCopyright"] as? String ?? "").isEmpty)
     XCTAssertEqual(plist["tsInputMethodIconFileKey"] as? String, ParetlyInputSource.menuIconFile)
     XCTAssertEqual(plist["LSBackgroundOnly"] as? Bool, false)
     XCTAssertEqual(plist["LSUIElement"] as? Bool, true)
@@ -91,14 +99,31 @@ final class ParetlyInputSourceTests: XCTestCase {
     XCTAssertFalse(postinstall.contains("im.rime"))
   }
 
-  func testUpgradeDoesNotRegisterOrEnableAgain() throws {
-    XCTAssertEqual(ParetlyInputInstall.step(registeredSourceCount: 0, enabledSourceCount: 0), .registerAndEnable)
-    XCTAssertEqual(ParetlyInputInstall.step(registeredSourceCount: 2, enabledSourceCount: 0), .enableOnly)
-    XCTAssertEqual(ParetlyInputInstall.step(registeredSourceCount: 3, enabledSourceCount: 2), .leaveEnabledSourceAlone)
-    XCTAssertEqual(ParetlyInputInstall.step(registeredSourceCount: 1, enabledSourceCount: 1), .leaveEnabledSourceAlone)
+  func testUpgradeEnablesAStaleSourceWithoutRegisteringAgain() throws {
+    let hans = ParetlyInputSource.modeHans
+    let missing = ParetlyInputModeState(id: hans, registered: false, enabled: false, selectable: false)
+    XCTAssertEqual(ParetlyInputInstall.action(modes: [missing]), .registerAndEnable)
+
+    let disabled = ParetlyInputModeState(id: hans, registered: true, enabled: false, selectable: false)
+    XCTAssertEqual(ParetlyInputInstall.action(modes: [disabled]), .enableWithoutRegister)
+
+    // Enabled but missing from the input menu: the running process still
+    // types, and enabling again must not register a second source.
+    let stale = ParetlyInputModeState(id: hans, registered: true, enabled: true, selectable: false)
+    XCTAssertEqual(ParetlyInputInstall.action(modes: [stale]), .enableWithoutRegister)
+
+    let ready = ParetlyInputModeState(id: hans, registered: true, enabled: true, selectable: true)
+    XCTAssertEqual(ParetlyInputInstall.action(modes: [ready]), .leaveAlone)
+
+    let mixed = [
+      ready,
+      ParetlyInputModeState(id: ParetlyInputSource.modeHant, registered: true, enabled: true, selectable: false)
+    ]
+    XCTAssertEqual(ParetlyInputInstall.action(modes: mixed), .enableWithoutRegister)
 
     let installer = try text("sources/InputSource.swift")
-    XCTAssertTrue(installer.contains("ParetlyInputInstall.step"))
+    XCTAssertTrue(installer.contains("ParetlyInputInstall.action"))
+    XCTAssertTrue(installer.contains("kTISPropertyInputSourceIsSelectCapable"))
     XCTAssertTrue(installer.contains("not registering again"))
     XCTAssertTrue(installer.contains("not enabling again"))
   }

@@ -24,6 +24,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Paretly contributors. Licensed under GPL-3.0.</string>
+	<key>ParetlyCommit</key>
+	<string>$(PARETLY_COMMIT)</string>
 	<key>ParetlyUpdateChannel</key>
 	<string>$(PARETLY_UPDATE_CHANNEL)</string>
 	<key>TISIconIsTemplate</key>

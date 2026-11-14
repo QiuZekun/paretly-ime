@@ -378,6 +378,52 @@ final class ParetlyTryFieldLayoutTests: XCTestCase {
     XCTAssertEqual(placed.midY, host.bounds.midY, accuracy: 2)
   }
 
+  func testTryFieldHasNoSquareOutline() throws {
+    let box = ParetlyTryFieldBox(frame: NSRect(x: 0, y: 0, width: ParetlyTryField.preferredWidth, height: ParetlyTryField.preferredHeight))
+    XCTAssertFalse(box.usesSystemBezel)
+    box.layoutSubtreeIfNeeded()
+    for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+      let image = try XCTUnwrap(render(box, appearance: appearance))
+      let width = image.pixelsWide
+      let height = image.pixelsHigh
+      XCTAssertGreaterThan(width, 8)
+      XCTAssertGreaterThan(height, 8)
+      for (x, y) in [(0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1)] {
+        let alpha = image.colorAt(x: x, y: y)?.alphaComponent ?? 1
+        XCTAssertEqual(alpha, 0, accuracy: 0.05, "\(appearance.rawValue) corner \(x),\(y) is a square outline")
+      }
+      let edge = image.colorAt(x: width / 2, y: 1)
+      XCTAssertGreaterThan(edge?.alphaComponent ?? 0, 0.2, "\(appearance.rawValue) rounded border")
+    }
+  }
+
+  private func render(_ box: ParetlyTryFieldBox, appearance name: NSAppearance.Name) -> NSBitmapImageRep? {
+    box.appearance = NSAppearance(named: name)
+    let bounds = box.bounds
+    guard let rep = NSBitmapImageRep(
+      bitmapDataPlanes: nil,
+      pixelsWide: Int(bounds.width.rounded(.up)),
+      pixelsHigh: Int(bounds.height.rounded(.up)),
+      bitsPerSample: 8,
+      samplesPerPixel: 4,
+      hasAlpha: true,
+      isPlanar: false,
+      colorSpaceName: .deviceRGB,
+      bytesPerRow: 0,
+      bitsPerPixel: 0
+    ) else { return nil }
+    rep.size = bounds.size
+    NSGraphicsContext.saveGraphicsState()
+    defer { NSGraphicsContext.restoreGraphicsState() }
+    guard let graphics = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
+    NSGraphicsContext.current = graphics
+    box.appearance?.performAsCurrentDrawingAppearance {
+      graphics.cgContext.clear(bounds)
+      box.draw(bounds)
+    }
+    return rep
+  }
+
   private func findBox(in view: NSView) -> ParetlyTryFieldBox? {
     if let box = view as? ParetlyTryFieldBox {
       return box

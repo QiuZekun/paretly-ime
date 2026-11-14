@@ -31,28 +31,39 @@ enum ParetlyInputSource {
   static let menuIconFile = "paretly.tiff"
 }
 
-/// Whether an install should register or enable the input source.
+/// One input-mode row as Text Input Sources reports it.
+struct ParetlyInputModeState: Equatable {
+  var id: String
+  var registered: Bool
+  var enabled: Bool
+  var selectable: Bool
+}
+
+/// What an install may do to the input source.
 ///
-/// `TISRegisterInputSource` on every upgrade of this unsigned bundle makes
-/// macOS treat the new cdhash as another third-party input method. It asks
-/// to enable Paretly and adds a second row under Keyboard > Input Sources.
-/// A first install still registers and enables. An upgrade that is already
-/// enabled does neither, so there is no second row and no enable prompt.
-enum ParetlyInputInstallStep: Equatable {
+/// Registering this unsigned bundle on every upgrade gives it a new cdhash,
+/// so macOS adds a second Paretly row and asks to enable it. Skipping both
+/// calls leaves the old row enabled but not selectable, so the menu bar
+/// input menu omits Paretly while the running process still types.
+/// Register only when nothing is registered. Enable without registering
+/// when a row exists but is off or not selectable. Leave a selectable
+/// source alone.
+enum ParetlyInputInstallAction: Equatable {
   case registerAndEnable
-  case enableOnly
-  case leaveEnabledSourceAlone
+  case enableWithoutRegister
+  case leaveAlone
 }
 
 enum ParetlyInputInstall {
-  static func step(registeredSourceCount: Int, enabledSourceCount: Int) -> ParetlyInputInstallStep {
-    if enabledSourceCount > 0 {
-      return .leaveEnabledSourceAlone
+  static func action(modes: [ParetlyInputModeState]) -> ParetlyInputInstallAction {
+    let present = modes.filter(\.registered)
+    if present.isEmpty {
+      return .registerAndEnable
     }
-    if registeredSourceCount > 0 {
-      return .enableOnly
+    if present.contains(where: { !$0.enabled || !$0.selectable }) {
+      return .enableWithoutRegister
     }
-    return .registerAndEnable
+    return .leaveAlone
   }
 }
 
@@ -197,6 +208,81 @@ enum ParetlyAbout {
       return NSLocalizedString("Version unavailable", comment: "About")
     }
     return String(format: NSLocalizedString("Version %@", comment: "About"), trimmed)
+  }
+
+  static let summary = "开箱即用的 macOS 中文输入法，基于 Rime"
+  static let squirrelVersion = "1.1.2"
+  static let librimeVersion = "1.16.0"
+  static let rimeIceVersion = "2026.06.30"
+  static let copyright = "Copyright © 2026 Paretly contributors"
+  static let license = "Licensed under GPL-3.0."
+  static let repositoryURL = paretlyURL("https://github.com/QiuZekun/paretly-ime")
+  static let releasesURL = paretlyURL("https://github.com/QiuZekun/paretly-ime/releases")
+
+  /// Lines shown in the About window. Unexpanded build settings count as empty.
+  static func current(in bundle: Bundle = .main) -> ParetlyAboutIdentity {
+    let name = (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? "Paretly"
+    return identity(
+      name: name,
+      shortVersion: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+      build: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String,
+      commit: bundle.object(forInfoDictionaryKey: "ParetlyCommit") as? String
+    )
+  }
+
+  static func identity(name: String, shortVersion: String?, build: String?, commit: String?) -> ParetlyAboutIdentity {
+    ParetlyAboutIdentity(
+      name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+      shortVersion: resolved(shortVersion),
+      build: resolved(build),
+      commit: resolved(commit),
+      summary: summary,
+      squirrel: "Squirrel 鼠须管 \(squirrelVersion)",
+      librime: "librime \(librimeVersion)",
+      dictionary: "rime-ice 雾凇拼音 \(rimeIceVersion)",
+      license: license,
+      copyright: copyright,
+      repositoryURL: repositoryURL,
+      releasesURL: releasesURL
+    )
+  }
+
+  private static func resolved(_ value: String?) -> String {
+    let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    if trimmed.isEmpty || trimmed.contains("$(") {
+      return ""
+    }
+    return trimmed
+  }
+}
+
+struct ParetlyAboutIdentity: Equatable {
+  var name: String
+  var shortVersion: String
+  var build: String
+  var commit: String
+  var summary: String
+  var squirrel: String
+  var librime: String
+  var dictionary: String
+  var license: String
+  var copyright: String
+  var repositoryURL: URL
+  var releasesURL: URL
+
+  var versionLine: String {
+    var parts = [String]()
+    if !shortVersion.isEmpty { parts.append(shortVersion) }
+    if !build.isEmpty { parts.append("build \(build)") }
+    if !commit.isEmpty { parts.append(commit) }
+    return parts.joined(separator: " · ")
+  }
+
+  var isComplete: Bool {
+    !name.isEmpty && !shortVersion.isEmpty && !build.isEmpty && !summary.isEmpty
+      && !squirrel.isEmpty && !librime.isEmpty && !dictionary.isEmpty
+      && !license.isEmpty && !copyright.isEmpty
+      && !versionLine.isEmpty
   }
 }
 
